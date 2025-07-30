@@ -1,16 +1,54 @@
-# walk
+# 🌙 저녁 산책 (Evening Walk App)
 
-A new Flutter project.
+**“저녁 식사 후 30분, 특별한 산책이 기다려요.”**  
+사용자의 감정을 기록하고, 산책을 더 의미 있는 경험으로 만드는 감성 산책 앱입니다.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📱 About
 
-A few resources to get you started if this is your first Flutter project:
+`저녁 산책`은 위치 기반 기술과 감성 콘텐츠를 결합하여  
+사용자에게 **목적지 있는 산책 + 맞춤형 이벤트 + 회고 기록**을 제공하는 모바일 앱입니다.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🎯 주요 기능 (MVP)
+
+### 🧭 1. 산책 준비
+- `산책 코스 설정하기` 버튼 클릭
+- 현재 위치 기반 반경 1.2km 지도 시각화
+- 지도에서 건물 등 목적지 선택
+- 산책 메이트 선택 (혼자 / 연인 / 친구)
+  - 메이트에 따라 중간 이벤트 콘텐츠가 다름
+
+### 🚶‍♀️ 2. 산책 진행
+- 경유지 포함 산책 경로 지도 생성
+- 경유지 도착 시, 메이트에 맞는 이벤트 카드 표시
+  - 예: 사색 질문 / 커플 밸런스 게임 / 친구 미션 등
+- 목적지 도착 시 결과 입력 및 감성사진 촬영
+
+### 🏠 3. 산책 마무리
+- 집 도착 시 산책 결과 저장 및 회고 기능 제공
+- 오늘의 산책 기록이 카드 형태로 보관됨
+
+---
+
+## 🛠️ 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| Framework | Flutter |
+| State Management | Provider / Riverpod (예정) |
+| 위치 서비스 | geolocator |
+| 지도 기능 | Google Maps API |
+| 백엔드 | Firebase |
+| 로그인 | Google / Kakao SDK |
+| 저장 방식 | 로컬 + 클라우드 (후속 구현) |
+
+
+## 📸 UI 미리보기
+(스크린샷 추가 예정)
+
+
+
+
