@@ -49,3 +49,6 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# EveninigWalk/.gitignore (루트)
+/android/app/google-services.json
