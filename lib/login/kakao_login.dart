@@ -1,44 +1,52 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-Future<void> signInWithKakao(BuildContext context) async {
+Future<bool> signInWithKakao() async {
   try {
+    OAuthToken token;
     // 1. 카카오톡 앱이 설치되어 있으면 그걸로 로그인 시도
     if (await isKakaoTalkInstalled()) {
-      await UserApi.instance.loginWithKakaoTalk();
+      token = await UserApi.instance.loginWithKakaoTalk();
     } else {
-      await UserApi.instance.loginWithKakaoAccount(); // 없으면 웹뷰로
+      token = await UserApi.instance.loginWithKakaoAccount(); // 없으면 웹뷰로
     }
 
-    // // 2. 로그인 성공 후 사용자 정보 가져오기
-    // User user = await UserApi.instance.me();
+    // 2. 카카오 사용자 정보 가져오기
+    final kakaoUser = await UserApi.instance.me();
+    final email = kakaoUser.kakaoAccount?.email ?? '';
+    final profileImage = kakaoUser.kakaoAccount?.profile?.profileImageUrl ?? '';
 
-    // final uid = user.id.toString(); // 카카오 ID → 문자열 UID로 사용
-    // final nickname = user.kakaoAccount?.profile?.nickname ?? '사용자';
+    //1.provider 만들기
+    var provider = OAuthProvider("oidc.todaywalk");
 
-    // // 3. 공통 로그인 후처리 흐름으로 넘기기
-    // await handleLoginFlow(
-    //   context: context,
-    //   uid: uid,
-    //   nickname: nickname,
-    //   provider: 'kakao',
-    // );
-
-    var provider = OAuthProvider("oidc.todaywalk"); //1.provider 만들기
-
-    OAuthToken token =
-        await UserApi.instance.loginWithKakaoAccount(); //2. Credential 만들기
+    //2. Credential 만들기
     var credential = provider.credential(
       idToken: token.idToken,
       accessToken: token.accessToken,
     );
 
-    FirebaseAuth.instance.signInWithCredential(credential); // 3. 파베 로그인하기
+    // 3. 파베 로그인하기
+    final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    final user = userCredential.user;
+    if (user == null) return false;
+
+    // 4. Firestore에 사용자 정보 저장
+    final userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    await userDoc.set({
+      'uid': user.uid,
+      'email': email,
+      'provider': 'kakao',
+      'profileImage': profileImage,
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)); // 중복 로그인 대비
+
+    return true;
   } catch (e) {
     print('❌ 카카오 로그인 실패: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('카카오 로그인에 실패했습니다. 다시 시도해주세요.')),
-    );
+    return false;
   }
 }

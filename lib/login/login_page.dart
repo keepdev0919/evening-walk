@@ -1,9 +1,39 @@
 import 'package:flutter/material.dart';
 import './kakao_login.dart';
 import './google_login.dart';
+import '../onboarding/user_info.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
+
+  Future<void> handleLogin(
+    BuildContext context,
+    Future<bool> Function() loginMethod, //얘는 signInWithGoogle,Kakao를 말함
+  ) async {
+    showDialog(
+      context: context, //뒤의 context는 로그인페이지 context
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+      //(context)의 context는 다이얼로그의 context임
+    );
+
+    final success = await loginMethod();
+
+    if (!context.mounted) return; // ✅ context 유효성 체크
+
+    Navigator.pop(context);
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const UserInfo()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인에 실패했습니다.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,19 +64,6 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                // const Padding(
-                //   padding: EdgeInsets.symmetric(horizontal: 24.0),
-                //   child: Text(
-                //     'After dinner, in just 30 minutes, a special walk awaits. Leave your own story as you go.',
-                //     textAlign: TextAlign.center,
-                //     style: TextStyle(
-                //       color: Color(0xFF111618),
-                //       fontSize: 22,
-                //       fontWeight: FontWeight.bold,
-                //       height: 1.3,
-                //     ),
-                //   ),
-                // ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(30.0, 30.0, 0.0, 0.0),
                   child: Column(
@@ -73,7 +90,7 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 50),
                       Center(
                         child: GestureDetector(
-                          onTap: () => signInWithKakao(context),
+                          onTap: () => handleLogin(context, signInWithKakao),
                           child: Image.asset(
                             'assets/images/kakao_login.png',
                           ),
@@ -82,7 +99,7 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 20),
                       Center(
                         child: GestureDetector(
-                          onTap: () => signInWithGoogle(context),
+                          onTap: () => handleLogin(context, signInWithGoogle),
                           child: Image.asset(
                             'assets/images/google_login.png',
                             width: 200,
@@ -94,81 +111,9 @@ class LoginPage extends StatelessWidget {
                 )
               ],
             ),
-
-            // 소셜 로그인 버튼
-            // Padding(
-            //   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            //   child: Column(
-            //     children: [
-            //       _buildSocialButton("Continue with Kakao"),
-            //       const SizedBox(height: 12),
-            //       _buildSocialButton("Continue with Google"),
-            //     ],
-            //   ),
-            // ),
           ],
         ),
       ),
     );
   }
 }
-
-// import 'package:flutter/material.dart';
-// import './kakao_login.dart';
-// import './google_login.dart';
-
-// class LoginPage extends StatelessWidget {
-//   const LoginPage({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       body: Padding(
-//         padding: EdgeInsets.fromLTRB(30.0, 300.0, 0.0, 0.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text('저녁 먹고 30분,',
-//                 style: TextStyle(
-//                   fontSize: 30,
-//                   fontWeight: FontWeight.bold,
-//                   letterSpacing: 1.0,
-//                 )),
-//             Text('특별한 산책 경험,',
-//                 style: TextStyle(
-//                   fontSize: 30,
-//                   fontWeight: FontWeight.bold,
-//                   letterSpacing: 1.0,
-//                 )),
-//             Text('그리고 반짝이는 기록,',
-//                 style: TextStyle(
-//                   fontSize: 30,
-//                   fontWeight: FontWeight.bold,
-//                   letterSpacing: 1.0,
-//                 )),
-//             SizedBox(height: 50),
-//             Center(
-//               child: GestureDetector(
-//                 onTap: () => signInWithKakao(context),
-//                 child: Image.asset(
-//                   'assets/images/kakao_login.png',
-//                 ),
-//               ),
-//             ),
-//             SizedBox(height: 20),
-//             Center(
-//               child: GestureDetector(
-//                 onTap: () => signInWithGoogle(context),
-//                 child: Image.asset(
-//                   'assets/images/google_login.png',
-//                   width: 200,
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
