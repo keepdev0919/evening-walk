@@ -6,6 +6,21 @@ plugins {
     id "com.google.gms.google-services"
 }
 
+// .env 파일 로드를 위한 설정
+def localProperties = new Properties()
+def localPropertiesFile = new File(rootProject.projectDir.parentFile, 'assets/config/.env')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def googleMapsApiKey = localProperties.getProperty('GOOGLE_MAPS_API_KEY')
+if (googleMapsApiKey == null) {
+    // .env 파일에 키가 없을 경우 기본값 설정 (또는 에러 처리)
+    googleMapsApiKey = "YOUR_DEFAULT_API_KEY" 
+}
+
 android {
     namespace = "com.ikjun.walk"
     compileSdk = flutter.compileSdkVersion
@@ -29,6 +44,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // API 키를 Manifest 파일에 전달
+        manifestPlaceholders += [GOOGLE_MAPS_API_KEY: googleMapsApiKey]
     }
 
     buildTypes {
