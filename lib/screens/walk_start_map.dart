@@ -27,6 +27,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     _determinePosition();
   }
 
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
   Future<void> _determinePosition() async {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
@@ -41,11 +45,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     });
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
-
-  Future<void> _onMapTap(LatLng position) async {
+  void _onMapTap(LatLng position) async {
     // 1. 탭한 위치의 주소 정보 가져오기
     final address = await _getAddressFromLatLng(position);
 
@@ -90,7 +90,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             children: [
               Text(
                 _selectedAddress,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -98,12 +99,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 child: ElevatedButton(
                   child: const Text('목적지로 설정하기'),
                   onPressed: () {
-                    _confirmDestination();
                     Navigator.pop(context); // Bottom Sheet 닫기
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SelectMateScreen()),
-                    );
+                    _confirmDestination();
                   },
                 ),
               ),
@@ -114,7 +111,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     );
   }
 
-  void _confirmDestination() {
+  void _confirmDestination() async {
     if (_selectedDestination != null) {
       setState(() {
         // 목적지가 확정되었음을 표시 (마커 색상 변경)
@@ -122,16 +119,23 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
           markerId: const MarkerId('destination'),
           position: _selectedDestination!,
           infoWindow: InfoWindow(title: _selectedAddress),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('목적지 설정 완료: $_selectedAddress')),
       );
-      // TODO: 이후 경로 탐색 등 다음 작업으로 연결
+
+      // SelectMateScreen 이동
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const SelectMateScreen()),
+        MaterialPageRoute(
+          builder: (context) => SelectMateScreen(
+            startLocation: _currentPosition!,
+            destinationLocation: _selectedDestination!,
+          ),
+        ),
       );
     }
   }
@@ -140,9 +144,11 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   Widget build(BuildContext context) {
     Set<Marker> allMarkers = {};
     if (_currentLocationMarker != null) {
-      allMarkers.add(_currentLocationMarker!);}
+      allMarkers.add(_currentLocationMarker!);
+    }
     if (_destinationMarker != null) {
-      allMarkers.add(_destinationMarker!);}
+      allMarkers.add(_destinationMarker!);
+    }
 
     return Scaffold(
       appBar: AppBar(
