@@ -46,6 +46,33 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   }
 
   void _onMapTap(LatLng position) async {
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.')),
+      );
+      return;
+    }
+
+    // Calculate distance between current position and tapped position
+    double distance = Geolocator.distanceBetween(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+      position.latitude,
+      position.longitude,
+    );
+
+    const double allowedRadius = 1700.0; // The radius of the blue circle
+
+    if (distance > allowedRadius) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('목적지는 최대 빨간원까지만 설정할 수 있습니다.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return; // Do not proceed with setting destination
+    }
+
     // 1. 탭한 위치의 주소 정보 가져오기
     final address = await _getAddressFromLatLng(position);
 
@@ -152,29 +179,83 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('목표 지점 선택'),
+        title: const Text('목적지를 설정해주세요'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back), // 표준 뒤로 가기 아이콘
+          onPressed: () {
+            Navigator.pop(context); // 이전 화면으로 돌아가기
+          },
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _currentPosition!,
-                zoom: 15.0,
-              ),
-              onTap: _onMapTap, // 지도 탭 이벤트 연결
-              circles: {
-                Circle(
-                  circleId: const CircleId('walk_radius'),
-                  center: _currentPosition!,
-                  radius: 1200,
-                  fillColor: Colors.blue.withOpacity(0.1),
-                  strokeColor: Colors.blue,
-                  strokeWidth: 2,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : GoogleMap(
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPosition!,
+                    zoom: 14.5,
+                  ),
+                  onTap: _onMapTap, // 지도 탭 이벤트 연결
+                  circles: {
+                    Circle(
+                      circleId: const CircleId('walk_radius_15min'),
+                      center: _currentPosition!,
+                      radius: 850,
+                      fillColor: Colors.blue.withOpacity(0.1),
+                      strokeColor: Colors.blue,
+                      strokeWidth: 2,
+                    ),
+                    Circle(
+                      circleId: const CircleId('walk_radius_30min'),
+                      center: _currentPosition!,
+                      radius: 1700, // 15분 반경의 2배
+                      fillColor: Colors.red.withOpacity(0.1),
+                      strokeColor: Colors.red,
+                      strokeWidth: 2,
+                    ),
+                  },
+                  markers: allMarkers,
                 ),
-              },
-              markers: allMarkers,
+          // 지도 위에 도움말 아이콘과 텍스트 배치
+          if (!_isLoading)
+            Positioned(
+              top: 10, // AppBar 아래 여백
+              left: 10, // 좌측 여백
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.8), // 배경색
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            '파란 원은 보통 도보로 15분, 빨간 원은 30분 정도 걸리는 거리에요. 참고해서 목적지를 정해보세요!'),
+                        duration: Duration(seconds: 5),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.help_outline,
+                          size: 20, color: Colors.black87),
+                      const Text(
+                        '이 원은 뭔가요?',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
+        ],
+      ),
     );
   }
 }
