@@ -64,7 +64,7 @@ class _ProfileState extends State<Profile> {
 
     String? imageUrl;
     if (_image != null) {
-      final ref = _storage.ref().child('profile_images').child('${_user!.uid}.jpg');
+      final ref = _storage.ref().child('profile_images').child(_user!.uid).child('profile.jpg');
       await ref.putFile(_image!);
       imageUrl = await ref.getDownloadURL();
     }

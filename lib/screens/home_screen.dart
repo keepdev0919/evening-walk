@@ -181,10 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // 어둡게 오버레이
-          Container(
-            color: Colors.black.withOpacity(0.3),
-          ),
+
           // 위치 + 날씨 정보
           Positioned(
             top: 10,
@@ -241,13 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     height: 1.5,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 8.0,
-                        color: Colors.black87,
-                        offset: Offset(2.0, 2.0),
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 60),
