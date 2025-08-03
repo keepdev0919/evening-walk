@@ -1,29 +1,37 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
+import 'dart:convert'; // JSON 디코딩을 위해 추가
+import 'package:flutter/services.dart' show rootBundle; // rootBundle을 위해 추가
 
 class WaypointEventHandler {
   // 경유지 도착 반경 (미터) - 50m에서 20m로 수정
   static const double waypointArrivalRadius = 20.0;
 
-  // 산책 메이트별 질문 목록
-  final Map<String, List<String>> _questions = {
-    '혼자': [
-      '오늘 하루 어땠나요? 가장 기억에 남는 순간은?',
-      '지금 이 순간, 당신을 가장 행복하게 하는 것은 무엇인가요?',
-      '앞으로 5년 뒤, 당신은 어떤 모습이 되고 싶나요?',
-    ],
-    '연인': [
-      '우리 처음 만났을 때 어땠는지 기억나? 그때 어떤 느낌이었어?',
-      '서로에게 가장 고마웠던 순간은 언제야?',
-      '앞으로 함께 하고 싶은 일 한 가지를 말해줄래?',
-    ],
-    '친구': [
-      '우리 우정의 시작은 언제였을까? 가장 기억에 남는 추억은?',
-      '서로에게 가장 힘이 되어주었던 순간은 언제야?',
-      '다음에 같이 하고 싶은 활동이 있다면?',
-    ],
-  };
+  // 산책 메이트별 질문 목록 (로드 후 저장될 맵)
+  Map<String, List<String>> _loadedQuestions = {};
+
+  // 생성자에서 질문 로드를 시작합니다.
+  WaypointEventHandler() {
+    _loadQuestions();
+  }
+
+  // JSON 파일에서 질문을 비동기적으로 로드합니다.
+  Future<void> _loadQuestions() async {
+    try {
+      final String aloneJson = await rootBundle.loadString('lib/src/features/walk/application/data/walk_question/alone_questions.json');
+      final String coupleJson = await rootBundle.loadString('lib/src/features/walk/application/data/walk_question/couple_questions.json');
+      final String friendJson = await rootBundle.loadString('lib/src/features/walk/application/data/walk_question/friend_questions.json');
+
+      _loadedQuestions['혼자'] = List<String>.from(json.decode(aloneJson));
+      _loadedQuestions['연인'] = List<String>.from(json.decode(coupleJson));
+      _loadedQuestions['친구'] = List<String>.from(json.decode(friendJson));
+
+      print('WaypointEventHandler: 질문 파일 로드 완료.');
+    } catch (e) {
+      print('WaypointEventHandler: 질문 파일 로드 실패: $e');
+    }
+  }
 
   // 시작점과 목적지 사이의 중간 지점을 경유지로 생성
   LatLng generateWaypoint(LatLng start, LatLng destination) {
@@ -53,7 +61,7 @@ class WaypointEventHandler {
     if (forceWaypointEvent || distance <= waypointArrivalRadius) { // 조건 변경
       print('WaypointEventHandler: 경유지 도착! 선택된 메이트: $selectedMate');
       
-      final List<String>? mateQuestions = _questions[selectedMate];
+      final List<String>? mateQuestions = _loadedQuestions[selectedMate]; // 로드된 질문 사용
       if (mateQuestions != null && mateQuestions.isNotEmpty) {
         final Random random = Random();
         final String question = mateQuestions[random.nextInt(mateQuestions.length)];
