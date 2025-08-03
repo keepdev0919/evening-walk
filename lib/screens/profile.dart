@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+/// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
@@ -14,16 +15,18 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  // Firebase 서비스 인스턴스
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  User? _user;
-  bool _isEditing = false;
-  Future<DocumentSnapshot>? _userFuture;
-  File? _image;
-  final ImagePicker _picker = ImagePicker();
+  User? _user; // 현재 로그인된 사용자
+  bool _isEditing = false; // 수정 모드 활성화 여부
+  Future<DocumentSnapshot>? _userFuture; // Firestore에서 사용자 정보를 가져오는 Future
+  File? _image; // 갤러리에서 선택된 이미지 파일
+  final ImagePicker _picker = ImagePicker(); // 이미지 선택을 위한 ImagePicker 인스턴스
 
+  // 사용자 정보 입력을 위한 TextEditingController
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _regionController = TextEditingController();
@@ -35,12 +38,14 @@ class _ProfileState extends State<Profile> {
     super.initState();
     _user = _auth.currentUser;
     if (_user != null) {
+      // 현재 사용자의 정보를 Firestore에서 가져옵니다.
       _userFuture = _firestore.collection('users').doc(_user!.uid).get();
     }
   }
 
   @override
   void dispose() {
+    // 위젯이 dispose될 때 컨트롤러들을 정리합니다.
     _nicknameController.dispose();
     _ageController.dispose();
     _regionController.dispose();
@@ -49,8 +54,9 @@ class _ProfileState extends State<Profile> {
     super.dispose();
   }
 
+  /// 갤러리에서 이미지를 선택하는 함수입니다.
   Future<void> _pickImage() async {
-    if (!_isEditing) return; // Only allow picking image in edit mode
+    if (!_isEditing) return; // 수정 모드가 아닐 때는 이미지 선택 비활성화
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
@@ -59,16 +65,23 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  /// 프로필 정보를 Firestore와 Storage에 업데이트하는 함수입니다.
   Future<void> _updateProfile() async {
     if (_user == null) return;
 
     String? imageUrl;
+    // 새 이미지가 선택된 경우 Storage에 업로드하고 URL을 가져옵니다.
     if (_image != null) {
-      final ref = _storage.ref().child('profile_images').child(_user!.uid).child('profile.jpg');
+      final ref = _storage
+          .ref()
+          .child('profile_images')
+          .child(_user!.uid)
+          .child('profile.jpg');
       await ref.putFile(_image!);
       imageUrl = await ref.getDownloadURL();
     }
 
+    // 업데이트할 데이터를 Map으로 구성합니다.
     Map<String, dynamic> dataToUpdate = {
       'nickname': _nicknameController.text,
       'age': int.tryParse(_ageController.text),
@@ -77,16 +90,19 @@ class _ProfileState extends State<Profile> {
       'email': _emailController.text,
     };
 
+    // 이미지 URL이 있으면 데이터에 추가합니다.
     if (imageUrl != null) {
       dataToUpdate['profileImageUrl'] = imageUrl;
     }
 
+    // Firestore에 데이터를 업데이트합니다.
     await _firestore.collection('users').doc(_user!.uid).update(dataToUpdate);
 
     setState(() {
-      _isEditing = false;
+      _isEditing = false; // 수정 모드 비활성화
+      // 사용자 정보를 다시 불러와 화면을 갱신합니다.
       _userFuture = _firestore.collection('users').doc(_user!.uid).get();
-      _image = null; // Clear the local image after upload
+      _image = null; // 로컬 이미지 선택 초기화
     });
 
     ScaffoldMessenger.of(context)
@@ -96,110 +112,177 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true, // body를 AppBar 뒤까지 확장
       appBar: AppBar(
-        title: const Text('내 정보'),
+        backgroundColor: Colors.transparent, // 배경색 투명
+        elevation: 0, // 그림자 제거
+        iconTheme: const IconThemeData(color: Colors.white), // 뒤로가기 아이콘 색상 변경
+        title: const Text(
+          '내 정보',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         actions: [
+          // 수정/저장 버튼
           IconButton(
-            icon: Icon(_isEditing ? Icons.save : Icons.edit),
+            icon:
+                Icon(_isEditing ? Icons.save : Icons.edit, color: Colors.white),
             onPressed: () {
               if (_isEditing) {
-                _updateProfile();
+                _updateProfile(); // 저장 로직 실행
               } else {
                 setState(() {
-                  _isEditing = true;
+                  _isEditing = true; // 수정 모드 활성화
                 });
               }
             },
           ),
         ],
       ),
-      body: _user == null
-          ? const Center(child: Text('로그인이 필요합니다.'))
-          : FutureBuilder<DocumentSnapshot>(
-              future: _userFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(child: Text('데이터를 불러오는 중 오류가 발생했습니다.'));
-                }
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Center(child: Text('사용자 정보를 찾을 수 없습니다.'));
-                }
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 배경 이미지
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/nature_walk.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          // 반투명 오버레이
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          _user == null
+              ? const Center(
+                  child: Text('로그인이 필요합니다.',
+                      style: TextStyle(color: Colors.white)))
+              : FutureBuilder<DocumentSnapshot>(
+                  future: _userFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return const Center(
+                          child: Text('데이터를 불러오는 중 오류가 발생했습니다.',
+                              style: TextStyle(color: Colors.white)));
+                    }
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return const Center(
+                          child: Text('사용자 정보를 찾을 수 없습니다.',
+                              style: TextStyle(color: Colors.white)));
+                    }
 
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                if (!_isEditing) {
-                  _nicknameController.text = userData['nickname'] ?? '';
-                  _ageController.text = userData['age']?.toString() ?? '';
-                  _regionController.text = userData['region'] ?? '';
-                  _sexController.text = userData['sex'] ?? '';
-                  _emailController.text = userData['email'] ?? '';
-                }
+                    final userData =
+                        snapshot.data!.data() as Map<String, dynamic>;
+                    // 수정 모드가 아닐 때만 컨트롤러의 텍스트를 Firestore 데이터로 설정합니다.
+                    if (!_isEditing) {
+                      _nicknameController.text = userData['nickname'] ?? '';
+                      _ageController.text = userData['age']?.toString() ?? '';
+                      _regionController.text = userData['region'] ?? '';
+                      _sexController.text = userData['sex'] ?? '';
+                      _emailController.text = userData['email'] ?? '';
+                    }
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 50,
-                                backgroundImage: _image != null
-                                    ? FileImage(_image!)
-                                    : (userData['profileImageUrl'] != null
-                                        ? NetworkImage(userData['profileImageUrl'])
-                                        : null) as ImageProvider?,
-                                child: _image == null && userData['profileImageUrl'] == null
-                                    ? const Icon(Icons.person, size: 50)
-                                    : null,
+                    return SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 20), // AppBar 공간 확보
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Column(
+                                children: [
+                                  // 프로필 이미지 표시
+                                  CircleAvatar(
+                                    radius: 60,
+                                    backgroundColor: Colors.white54,
+                                    backgroundImage: _image != null
+                                        ? FileImage(_image!)
+                                        : (userData['profileImageUrl'] != null
+                                            ? NetworkImage(
+                                                userData['profileImageUrl'])
+                                            : null) as ImageProvider?,
+                                    child: _image == null &&
+                                            userData['profileImageUrl'] == null
+                                        ? const Icon(Icons.person,
+                                            size: 60, color: Colors.white)
+                                        : null,
+                                  ),
+                                  // 수정 모드일 때 '이미지 변경' 텍스트 표시
+                                  if (_isEditing)
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 12.0),
+                                      child: Text('이미지 변경',
+                                          style: TextStyle(
+                                              color: Colors.blueAccent,
+                                              fontSize: 16)),
+                                    )
+                                ],
                               ),
-                              if (_isEditing)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 8.0),
-                                  child: Text('이미지 변경', style: TextStyle(color: Colors.blue)),
-                                )
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 30),
+                            // 각 정보 필드를 생성합니다.
+                            _buildInfoField('닉네임', _nicknameController),
+                            _buildInfoField('나이', _ageController,
+                                keyboardType: TextInputType.number),
+                            _buildInfoField('지역', _regionController),
+                            _buildInfoField('성별', _sexController),
+                            _buildInfoField('이메일', _emailController,
+                                keyboardType: TextInputType.emailAddress),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _buildInfoField('닉네임', _nicknameController),
-                      _buildInfoField('나이', _ageController, keyboardType: TextInputType.number),
-                      _buildInfoField('지역', _regionController),
-                      _buildInfoField('성별', _sexController),
-                      _buildInfoField('이메일', _emailController, keyboardType: TextInputType.emailAddress),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+        ],
+      ),
     );
   }
 
-  Widget _buildInfoField(String label, TextEditingController controller, {TextInputType keyboardType = TextInputType.text}) {
+  /// 사용자 정보 필드를 생성하는 위젯입니다.
+  Widget _buildInfoField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
       child: _isEditing
           ? TextField(
               controller: controller,
+              style: const TextStyle(color: Colors.white), // 입력 텍스트 색상
               decoration: InputDecoration(
                 labelText: label,
-                border: const OutlineInputBorder(),
+                labelStyle: const TextStyle(color: Colors.white70), // 라벨 텍스트 색상
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white54),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               keyboardType: keyboardType,
             )
           : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('$label: ', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Expanded(child: Text(controller.text, style: const TextStyle(fontSize: 18))),
+                Text('$label: ',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: Text(controller.text,
+                        style: const TextStyle(
+                            fontSize: 18, color: Colors.white))),
               ],
             ),
     );
   }
 }
-

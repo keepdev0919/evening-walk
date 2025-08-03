@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: '산책 앱',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
           useMaterial3: false,
         ),
         home: FutureBuilder(

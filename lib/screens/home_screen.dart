@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:walk/screens/walk_start_map.dart';
 import './profile.dart';
@@ -19,16 +21,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Firebase
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  User? _user;
+  Future<DocumentSnapshot>? _userFuture;
+
+  // 날씨 및 위치
   String _location = '';
   String _weather = '';
   final String _apiKey = dotenv.env['OPENWEATHER_API_KEY']!;
-
   InfoStatus _locationStatus = InfoStatus.loading;
   InfoStatus _weatherStatus = InfoStatus.loading;
 
   @override
   void initState() {
     super.initState();
+    _user = _auth.currentUser;
+    if (_user != null) {
+      _userFuture = _firestore.collection('users').doc(_user!.uid).get();
+    }
     _determinePosition();
   }
 
@@ -88,12 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       Placemark place = placemarks[0];
       setState(() {
-        _location = "${place.locality} ${place.thoroughfare}";
+        _location = "📍 ${place.locality} ${place.thoroughfare}";
         _locationStatus = InfoStatus.success;
       });
     } catch (e) {
       setState(() {
-        _location = "주소를 불러올 수 없어요";
+        _location = "📍 주소를 불러올 수 없어요";
         _locationStatus = InfoStatus.error;
       });
     }
@@ -107,18 +119,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _weather = '${data['main']['temp']}°C';
+          _weather = '🌤 ${data['main']['temp']}°C';
           _weatherStatus = InfoStatus.success;
         });
       } else {
         setState(() {
-          _weather = '날씨 정보를 불러올 수 없어요';
+          _weather = '🌤 날씨 정보를 불러올 수 없어요';
           _weatherStatus = InfoStatus.error;
         });
       }
     } catch (e) {
       setState(() {
-        _weather = '날씨 정보를 가져오는 중 오류 발생';
+        _weather = '🌤 날씨 정보를 가져오는 중 오류 발생';
         _weatherStatus = InfoStatus.error;
       });
     }
@@ -151,20 +163,46 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar를 투명하게 만들어 배경과 일체감을 줍니다.
+      extendBodyBehindAppBar: true, // body를 AppBar 뒤까지 확장
       appBar: AppBar(
+        backgroundColor: Colors.transparent, // 배경색 투명
+        elevation: 0, // 그림자 제거
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 15.0),
+          child: _buildProfileCircle(),
+        ),
         title: const Text(
           '저녁산책',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                blurRadius: 4.0,
+                color: Colors.black54,
+                offset: Offset(1.0, 1.0),
+              ),
+            ],
+          ),
         ),
-        backgroundColor: Color(0xFF2C3E50),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white, size: 28),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const Profile()),
-              );
+              ).then((_) {
+                // 프로필 화면에서 돌아왔을 때 상태 갱신
+                setState(() {
+                  if (_user != null) {
+                    _userFuture =
+                        _firestore.collection('users').doc(_user!.uid).get();
+                  }
+                });
+              });
             },
           ),
         ],
@@ -182,95 +220,150 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 위치 + 날씨 정보
-          Positioned(
-            top: 10,
-            left: 25,
-            right: 25,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  getLocationText(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4.0,
-                        color: Colors.black54,
-                        offset: Offset(1.0, 1.0),
-                      ),
+          // 콘텐츠
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10), // AppBar 공간 확보
+
+                  // 위치 및 날씨 정보
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildInfoText(getLocationText()),
+                      const SizedBox(width: 16),
+                      _buildInfoText(getWeatherText()),
                     ],
                   ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  getWeatherText(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4.0,
-                        color: Colors.black54,
-                        offset: Offset(1.0, 1.0),
-                      ),
-                    ],
+
+                  const Spacer(),
+
+                  // 중앙 문구
+                  const Text(
+                    '오늘 하루도 수고했어요\n가볍게 걸어볼까요?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4.0,
+                          color: Colors.black87,
+                          offset: Offset(1.0, 1.0),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 60),
+
+                  // 산책하기 버튼
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const WalkStartMapScreen()),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 60,
+                        vertical: 18,
+                      ),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text(
+                      '산책하기',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
 
-          // 중앙 문구 + 산책 버튼
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '오늘 하루도 수고했어요\n가볍게 걸어볼까요?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 60),
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const WalkStartMapScreen()),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 60,
-                      vertical: 18,
-                    ),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    '산책하기',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-              ],
+  /// 프로필 사진 CircleAvatar를 빌드하는 위젯
+  Widget _buildProfileCircle() {
+    // 로그인하지 않은 사용자를 위한 기본 아이콘
+    if (_user == null) {
+      return const CircleAvatar(
+        radius: 22,
+        backgroundColor: Colors.white54,
+        child: Icon(Icons.person, size: 28, color: Colors.black87),
+      );
+    }
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: _userFuture,
+      builder: (context, snapshot) {
+        // 로딩 중일 때
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.white54,
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.black87),
             ),
+          );
+        }
+        // 에러가 있거나 데이터가 없을 때
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return const CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.white54,
+            child: Icon(Icons.person, size: 28, color: Colors.black87),
+          );
+        }
+
+        // 데이터가 성공적으로 로드되었을 때
+        final userData = snapshot.data!.data() as Map<String, dynamic>;
+        final imageUrl = userData['profileImageUrl'];
+
+        return CircleAvatar(
+          radius: 22,
+          backgroundColor: Colors.white,
+          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+          child: imageUrl == null
+              ? const Icon(Icons.person, size: 28, color: Colors.black87)
+              : null,
+        );
+      },
+    );
+  }
+
+  /// 위치/날씨 정보 텍스트 스타일을 적용하는 위젯
+  Widget _buildInfoText(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        shadows: [
+          Shadow(
+            blurRadius: 4.0,
+            color: Colors.black54,
+            offset: Offset(1.0, 1.0),
           ),
         ],
       ),
