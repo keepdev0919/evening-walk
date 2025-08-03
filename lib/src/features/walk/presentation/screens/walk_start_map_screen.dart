@@ -12,7 +12,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:walk/screens/select_mate.dart';
+import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
+
+/// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
+/// 현재 위치를 기반으로 지도를 표시하고, 사용자가 지도를 탭하여 목적지를 선택하거나
+/// 랜덤 목적지 기능을 통해 새로운 산책 경로를 탐색할 수 있도록 합니다.
 
 /// 산책 시작 전 목적지를 설정하는 지도 화면입니다.
 class WalkStartMapScreen extends StatefulWidget {
@@ -24,31 +28,52 @@ class WalkStartMapScreen extends StatefulWidget {
 
 class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   // --- 지도 및 위치 관련 변수 ---
+  /// Google Map 컨트롤러. 지도 제어에 사용됩니다.
   late GoogleMapController mapController;
+
+  /// 사용자의 현재 위치를 저장하는 LatLng 객체입니다.
   LatLng? _currentPosition;
+
+  /// 지도 로딩 상태를 나타내는 플래그입니다. true이면 로딩 중, false이면 로딩 완료입니다.
   bool _isLoading = true;
 
   // --- 마커 관련 변수 ---
+  /// 현재 위치를 표시하는 마커입니다.
   Marker? _currentLocationMarker;
+
+  /// 사용자가 선택한 목적지를 표시하는 마커입니다.
   Marker? _destinationMarker;
+
+  /// 사용자가 선택한 목적지의 LatLng 값입니다.
   LatLng? _selectedDestination;
+
+  /// 사용자가 선택한 목적지의 주소 문자열입니다.
   String _selectedAddress = "";
 
   // --- Firebase 및 API 관련 변수 ---
+  /// 현재 로그인한 Firebase 사용자 정보입니다.
   User? _user;
+
+  /// Google Maps API 키입니다. .env 파일에서 로드됩니다.
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
 
   @override
   void initState() {
     super.initState();
+    // 현재 사용자 정보를 가져옵니다.
     _user = FirebaseAuth.instance.currentUser;
+    // 현재 위치를 결정하고 지도를 초기화합니다.
     _determinePosition();
   }
 
+  /// 지도가 생성될 때 호출되는 콜백 함수입니다.
+  /// GoogleMapController를 초기화합니다.
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
+  /// 사용자의 현재 위치를 비동기적으로 결정합니다.
+  /// 위치 권한을 요청하고, 현재 위치를 가져와 지도에 표시합니다.
   Future<void> _determinePosition() async {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
@@ -58,11 +83,14 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         position: _currentPosition!,
         infoWindow: const InfoWindow(title: '현재 위치'),
       );
-      _isLoading = false;
+      _isLoading = false; // 로딩 완료
     });
+    // 프로필 이미지를 사용하여 현재 위치 마커를 업데이트합니다.
     _updateMarkerWithProfileImage();
   }
 
+  /// 사용자 프로필 이미지를 사용하여 현재 위치 마커를 업데이트합니다.
+  /// Firebase에서 프로필 이미지 URL을 가져와 마커 아이콘으로 사용합니다.
   Future<void> _updateMarkerWithProfileImage() async {
     String? imageUrl;
     if (_user != null) {
@@ -95,6 +123,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     }
   }
 
+  /// 주어진 이미지 URL을 사용하여 사용자 정의 마커 비트맵을 생성합니다.
+  /// 프로필 이미지가 없으면 기본 회색 원을 표시합니다.
   Future<BitmapDescriptor> _createCustomMarkerBitmap(String? imageUrl) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -151,6 +181,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     return BitmapDescriptor.fromBytes(uint8List);
   }
 
+  /// 지도를 탭했을 때 호출되는 함수입니다.
+  /// 탭한 위치를 목적지로 설정하고, 현재 위치와의 거리를 계산하여 유효성을 검사합니다.
+  /// 유효한 목적지인 경우 하단 시트를 표시합니다.
   void _onMapTap(LatLng position) async {
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +199,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       position.longitude,
     );
 
-    const double allowedRadius = 1700.0;
+    const double allowedRadius = 1700.0; // 1.7km 반경
 
     if (distance > allowedRadius) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -193,6 +226,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     _showDestinationBottomSheet();
   }
 
+  /// LatLng 좌표로부터 주소를 가져옵니다.
   Future<String> _getAddressFromLatLng(LatLng position) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -206,6 +240,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     }
   }
 
+  /// 목적지 설정 확인을 위한 하단 시트를 표시합니다.
   void _showDestinationBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -239,6 +274,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     );
   }
 
+  /// 선택된 목적지를 최종 확인하고 다음 화면으로 전환합니다.
   void _confirmDestination() async {
     if (_selectedDestination != null) {
       setState(() {
@@ -250,12 +286,15 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         );
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('목적지 설정 완료: $_selectedAddress'),
-          duration: const Duration(seconds: 2),
-        ),
-      ).closed.whenComplete(() {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+            SnackBar(
+              content: Text('목적지 설정 완료: $_selectedAddress'),
+              duration: const Duration(seconds: 2),
+            ),
+          )
+          .closed
+          .whenComplete(() {
         // SnackBar가 닫힌 후에 화면 전환
         Navigator.push(
           context,
@@ -272,7 +311,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
   // --- 랜덤 목적지 관련 함수 ---
 
-  /// 두 가지 산책 옵션을 선택하는 다이얼로그를 표시합니다.
+  /// 두 가지 산책 옵션(15분, 30분)을 선택하는 다이얼로그를 표시합니다.
   void _showRandomDestinationDialog() {
     showDialog(
       context: context,
@@ -359,15 +398,19 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   }
 
   /// 설정된 거리 내에서 랜덤 목적지 탐색을 시작하는 메인 함수입니다.
+  /// Google Places API를 사용하여 유효한 장소를 찾습니다.
   Future<void> _findRandomDestination(
       {required double minDistance, required double maxDistance}) async {
     if (_currentPosition == null) return;
 
-    final SnackBar snackBar = const SnackBar(content: Text('주변의 멋진 장소를 찾고 있어요...'));
+    final SnackBar snackBar =
+        const SnackBar(content: Text('주변의 멋진 장소를 찾고 있어요...'));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-    for (int i = 0; i < 10; i++) { // 최대 10번 시도
-      final randomPoint = _calculateRandomPoint(_currentPosition!, minDistance, maxDistance);
+    for (int i = 0; i < 10; i++) {
+      // 최대 10번 시도
+      final randomPoint =
+          _calculateRandomPoint(_currentPosition!, minDistance, maxDistance);
       final placeDetails = await _validatePlaceNearby(randomPoint);
 
       if (placeDetails != null) {
@@ -418,6 +461,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   }
 
   /// Google Places API를 사용하여 해당 좌표가 유효한 장소인지 검증합니다.
+  /// 주변의 관심 지점, 공원, 카페, 식당, 관광 명소를 검색합니다.
   Future<Map<String, dynamic>?> _validatePlaceNearby(LatLng position) async {
     final url =
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${position.latitude},${position.longitude}&radius=100&key=$_googleApiKey&language=ko&type=point_of_interest|park|cafe|restaurant|tourist_attraction';
@@ -442,83 +486,103 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 모든 마커를 담을 Set을 초기화합니다.
     Set<Marker> allMarkers = {};
+    // 현재 위치 마커가 있으면 추가합니다.
     if (_currentLocationMarker != null) {
       allMarkers.add(_currentLocationMarker!);
     }
+    // 목적지 마커가 있으면 추가합니다.
     if (_destinationMarker != null) {
       allMarkers.add(_destinationMarker!);
     }
 
     return Scaffold(
+      // AppBar 영역까지 body를 확장합니다.
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          child: const Text(
-            '목적지를 설정해주세요',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
-        centerTitle: true,
+        backgroundColor: Colors.transparent, // 투명한 배경
+        elevation: 0, // 그림자 제거
+        // 뒤로가기 버튼: 로딩 중에는 표시하지 않습니다.
+        leading: _isLoading
+            ? null
+            : Container(
+                margin: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+        // 제목 ("목적지를 설정해주세요"): 로딩 중에는 표시하지 않습니다.
+        title: _isLoading
+            ? null
+            : Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: const Text(
+                  '목적지를 설정해주세요',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16),
+                ),
+              ),
+        centerTitle: true, // 제목을 중앙에 정렬합니다.
       ),
       body: Stack(
-        fit: StackFit.expand,
+        fit: StackFit.expand, // 스택의 자식 위젯들이 가능한 모든 공간을 차지하도록 합니다.
         children: [
+          // 로딩 중이면 CircularProgressIndicator를 표시하고, 아니면 GoogleMap을 표시합니다.
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : GoogleMap(
-                  onMapCreated: _onMapCreated,
+                  onMapCreated: _onMapCreated, // 지도 생성 시 호출될 콜백 함수
                   initialCameraPosition: CameraPosition(
-                    target: _currentPosition!,
-                    zoom: 14.5,
+                    target: _currentPosition!, // 초기 카메라 위치는 현재 위치
+                    zoom: 14.5, // 초기 줌 레벨
                   ),
-                  onTap: _onMapTap,
+                  onTap: _onMapTap, // 지도를 탭했을 때 호출될 콜백 함수
                   circles: {
+                    // 15분 산책 반경을 나타내는 파란색 원
                     Circle(
                       circleId: const CircleId('walk_radius_15min'),
                       center: _currentPosition!,
-                      radius: 850,
-                      fillColor: Colors.blue.withOpacity(0.1),
-                      strokeColor: Colors.blue,
-                      strokeWidth: 2,
+                      radius: 850, // 850미터 반경
+                      fillColor: Colors.blue.withOpacity(0.1), // 채우기 색상
+                      strokeColor: Colors.blue, // 테두리 색상
+                      strokeWidth: 2, // 테두리 두께
                     ),
+                    // 30분 산책 반경을 나타내는 빨간색 원
                     Circle(
                       circleId: const CircleId('walk_radius_30min'),
                       center: _currentPosition!,
-                      radius: 1700,
+                      radius: 1700, // 1700미터 반경
                       fillColor: Colors.red.withOpacity(0.1),
                       strokeColor: Colors.red,
                       strokeWidth: 2,
                     ),
                   },
-                  markers: allMarkers,
+                  markers: allMarkers, // 지도에 표시될 모든 마커
                   padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + kToolbarHeight),
+                      top: MediaQuery.of(context).padding.top +
+                          kToolbarHeight), // 상단 패딩
                 ),
+          // 로딩이 완료되면 "이 원은 뭔가요?" 텍스트를 표시합니다.
           if (!_isLoading)
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
               left: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20.0),
@@ -541,7 +605,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                       const SizedBox(width: 8),
                       const Text(
                         '이 원은 뭔가요?',
-                        style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -550,30 +617,33 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             ),
         ],
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(20.0),
+      // 플로팅 액션 버튼: 로딩 중에는 표시하지 않습니다.
+      floatingActionButton: _isLoading
+          ? null
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: const Text(
+                    '어디 갈지 고민된다면?',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  onPressed: _showRandomDestinationDialog,
+                  tooltip: '랜덤 목적지',
+                  child: const Icon(Icons.shuffle),
+                ),
+              ],
             ),
-            child: const Text(
-              '어디 갈지 고민된다면?',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 8),
-          FloatingActionButton(
-            onPressed: _showRandomDestinationDialog,
-            tooltip: '랜덤 목적지',
-            child: const Icon(Icons.shuffle),
-          ),
-        ],
-      ),
     );
   }
 }

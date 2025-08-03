@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
-import './login/login_page.dart';
-import './screens/home_screen.dart';
+import 'src/features/auth/presentation/screens/login_page_screen.dart';
+import 'src/features/home/presentation/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import './kakao_login.dart';
-import './google_login.dart';
-import '../onboarding/user_info.dart';
+import '../../application/services/kakao_auth_service.dart';
+import '../../application/services/google_auth_service.dart';
+import 'user_info_screen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

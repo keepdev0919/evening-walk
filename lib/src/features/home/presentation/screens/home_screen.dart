@@ -7,8 +7,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:walk/screens/walk_start_map.dart';
-import './profile.dart';
+import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 
 // 상태 구분용 enum
 enum InfoStatus { loading, success, error }

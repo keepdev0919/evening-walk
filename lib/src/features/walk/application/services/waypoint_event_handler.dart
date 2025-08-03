@@ -37,6 +37,7 @@ class WaypointEventHandler {
     required LatLng userLocation,
     required LatLng? waypointLocation,
     required String? selectedMate,
+    bool forceWaypointEvent = false, // forceWaypointEvent 매개변수 추가
   }) {
     if (waypointLocation == null || selectedMate == null) {
       return null;
@@ -49,7 +50,7 @@ class WaypointEventHandler {
       waypointLocation.longitude,
     );
 
-    if (distance <= waypointArrivalRadius) {
+    if (forceWaypointEvent || distance <= waypointArrivalRadius) { // 조건 변경
       print('WaypointEventHandler: 경유지 도착! 선택된 메이트: $selectedMate');
       
       final List<String>? mateQuestions = _questions[selectedMate];

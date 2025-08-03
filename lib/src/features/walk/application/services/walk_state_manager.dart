@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import './waypoint_event_handler.dart';
-import './destination_event_handler.dart';
+import 'waypoint_event_handler.dart';
+import 'destination_event_handler.dart';
 
 class WalkStateManager {
   // 핸들러 인스턴스
@@ -15,8 +15,8 @@ class WalkStateManager {
 
   // 이벤트 결과 저장 변수
   String? _waypointQuestion;
-  String? _userAnswer; // <<< 변수 선언 추가
-  String? _photoPath; // <<< 변수 선언 추가
+  String? _userAnswer;
+  String? _photoPath;
   bool _waypointEventOccurred = false;
   bool _destinationEventOccurred = false;
 
@@ -51,13 +51,14 @@ class WalkStateManager {
   }
 
   // 실시간 위치 업데이트 처리
-  String? updateUserLocation(LatLng userLocation) {
+  String? updateUserLocation(LatLng userLocation, {bool forceWaypointEvent = false}) {
     // 경유지 이벤트 확인
-    if (!_waypointEventOccurred) {
+    if (forceWaypointEvent || !_waypointEventOccurred) {
       final String? question = _waypointHandler.checkWaypointArrival(
         userLocation: userLocation,
         waypointLocation: _waypointLocation,
         selectedMate: _selectedMate,
+        forceWaypointEvent: forceWaypointEvent, // forceWaypointEvent 전달
       );
 
       if (question != null) {
