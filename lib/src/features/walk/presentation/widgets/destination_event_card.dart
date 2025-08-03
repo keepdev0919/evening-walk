@@ -47,12 +47,12 @@ class _DestinationEventCardState extends State<DestinationEventCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 질문 섹션
-          Text(
-            '경유지에서 떠올랐던 질문', 
-            style: TextStyle(color: Colors.grey[600], fontSize: 14)
-          ),
+          Text('경유지에서 받은 이벤트',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14)),
           const SizedBox(height: 8),
-          Text(widget.question, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(widget.question,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
 
           // 답변 입력 섹션
@@ -67,7 +67,8 @@ class _DestinationEventCardState extends State<DestinationEventCard> {
           const SizedBox(height: 24),
 
           // 사진 촬영 섹션
-          const Text('지금의 순간을 사진으로 남겨보세요', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const Text('지금의 순간을 사진으로 남겨보세요',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -107,11 +108,11 @@ class _DestinationEventCardState extends State<DestinationEventCard> {
               widget.onComplete(_textController.text, _photoFile?.path);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-            ),
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

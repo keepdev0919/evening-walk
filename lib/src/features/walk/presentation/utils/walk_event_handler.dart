@@ -24,10 +24,10 @@ class WalkEventHandler {
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),
           ),
-          title: const Text(
-            '🚩 경유지 이벤트 발생!',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          // title: const Text(
+          //   '🚩 경유지 이벤트 발생!',
+          //   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          // ),
           content: Text(
             question,
             style: const TextStyle(color: Colors.white70),
@@ -35,6 +35,9 @@ class WalkEventHandler {
           actions: <Widget>[
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // 원하는 색상으로 지정
+              ),
               child: const Text('확인'),
             ),
           ],

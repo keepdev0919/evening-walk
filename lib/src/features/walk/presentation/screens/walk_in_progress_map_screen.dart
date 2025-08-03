@@ -288,6 +288,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 _walkEventHandler
                     .showQuestionDialog(questionPayload); // 질문 다이얼로그 표시
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // 원하는 색상으로 지정
+              ),
               child: const Text('이벤트 확인'),
             ),
           ],

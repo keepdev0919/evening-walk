@@ -138,7 +138,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     pinPath.quadraticBezierTo(pinSize, pinSize * 0.6, pinSize / 2, pinSize);
     canvas.drawPath(pinPath, pinPaint);
 
-    final Paint circlePaint = Paint()..color = Colors.white;
+    final Paint circlePaint = Paint()..color = Colors.black;
     canvas.drawCircle(
         const Offset(pinSize / 2, pinSize / 2), avatarRadius + 5, circlePaint);
 
@@ -244,27 +244,54 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   void _showDestinationBottomSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
+        return Container(
+          padding: const EdgeInsets.all(16.0), // 패딩
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.7), // 반투명 검정 배경
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(color: Colors.white54, width: 1), // 얇은 테두리
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 _selectedAddress,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18, // 폰트 크기
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // 텍스트 색상
+                ),
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  child: const Text('목적지로 설정하기'),
                   onPressed: () {
                     Navigator.pop(context);
                     _confirmDestination();
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey, // 스낵바와 유사한 배경색
+                    foregroundColor: Colors.white, // 텍스트 색상
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20), // 둥근 모서리
+                      side: const BorderSide(
+                          color: Colors.white54, width: 0.5), // 얇은 테두리
+                    ),
+                    elevation: 0, // 그림자 제거
+                    padding: const EdgeInsets.symmetric(vertical: 12), // 패딩
+                    textStyle: const TextStyle(
+                      fontSize: 18, // 폰트 크기
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  child: const Text('목적지로 설정하기'),
                 ),
               ),
             ],
@@ -289,7 +316,16 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(
             SnackBar(
-              content: Text('목적지 설정 완료: $_selectedAddress'),
+              content: Text(
+                '목적지 설정 완료: $_selectedAddress',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: Colors.blue,
+              behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
             ),
           )
@@ -403,8 +439,19 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       {required double minDistance, required double maxDistance}) async {
     if (_currentPosition == null) return;
 
-    final SnackBar snackBar =
-        const SnackBar(content: Text('주변의 멋진 장소를 찾고 있어요...'));
+    final SnackBar snackBar = SnackBar(
+      content: const Text(
+        '주변 장소를 살펴보는 중이에요...',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      backgroundColor: Colors.blue,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 3),
+    );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
     for (int i = 0; i < 10; i++) {
@@ -436,7 +483,19 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
     // 10번 시도 후에도 실패하면 사용자에게 알림
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('추천할 만한 장소를 찾지 못했어요. 다시 시도해주세요.')),
+      SnackBar(
+        content: const Text(
+          '추천할 만한 장소를 찾지 못했어요. 다시 시도해주세요.',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.redAccent, // 실패 메시지이므로 빨간색 계열로
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
@@ -590,10 +649,18 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 child: GestureDetector(
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            '파란 원은 보통 도보로 15분, 빨간 원은 30분 정도 걸리는 거리에요. 참고해서 목적지를 정해보세요!'),
-                        duration: Duration(seconds: 5),
+                      SnackBar(
+                        content: const Text(
+                          '파란 원은 보통 도보로 15분, 빨간 원은 30분 정도 걸리는 거리에요. 참고해서 목적지를 정해보세요!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        backgroundColor: Colors.blue,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 5),
                       ),
                     );
                   },
