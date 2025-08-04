@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
 import 'src/features/auth/presentation/screens/login_page_screen.dart';
 import 'src/features/home/presentation/screens/home_screen.dart';
 
@@ -10,6 +11,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: 'assets/config/.env');
   await Firebase.initializeApp();
+
+  // // Firebase App Check 초기화 (디버그 공급자 사용)
+  // await FirebaseAppCheck.instance.activate(
+  //   androidProvider: AndroidProvider.debug, // Android 에뮬레이터/디바이스용
+  //   appleProvider: AppleProvider.debug, // iOS 시뮬레이터/디바이스용
+  // );
 
   // await FirebaseAuth.instance.signOut();
 

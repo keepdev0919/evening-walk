@@ -10,7 +10,6 @@ class DebugModeButtons extends StatelessWidget {
   final LatLng? currentPosition;
   final WalkStateManager walkStateManager;
   final String selectedMate;
-  final Map<String, List<String>> mateImagesManifest;
   final Function(bool, String?) updateWaypointEventState;
 
   const DebugModeButtons({
@@ -19,7 +18,6 @@ class DebugModeButtons extends StatelessWidget {
     required this.currentPosition,
     required this.walkStateManager,
     required this.selectedMate,
-    required this.mateImagesManifest,
     required this.updateWaypointEventState,
   }) : super(key: key);
 
@@ -77,7 +75,6 @@ class DebugModeButtons extends StatelessWidget {
                   context: context,
                   walkStateManager: walkStateManager,
                   selectedMate: selectedMate,
-                  mateImagesManifest: mateImagesManifest,
                 );
               },
               style: ElevatedButton.styleFrom(
