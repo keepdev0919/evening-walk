@@ -23,7 +23,6 @@ class WalkMapView extends StatelessWidget {
       markers: markers,
       myLocationButtonEnabled: false, // 현재 위치 버튼 비활성화
       zoomControlsEnabled: false, // 줌 컨트롤 비활성화
-      // 기타 지도 설정 (필요에 따라 추가)
     );
   }
 }

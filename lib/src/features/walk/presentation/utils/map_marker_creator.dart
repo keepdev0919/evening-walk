@@ -8,12 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
-/// 지도에 표시될 사용자 정의 마커 비트맵을 생성하는 유틸리티 클래스입니다.
+//walk_in_progress에서 사용합니다.
 /// 프로필 이미지, 선물 상자, 깃발 모양의 마커를 생성하는 기능을 제공합니다.
 class MapMarkerCreator {
-  /// 사용자 프로필 이미지를 사용하여 사용자 정의 마커 비트맵을 생성합니다.
-  /// Firebase에서 프로필 이미지 URL을 가져와 마커 아이콘으로 사용합니다.
-  static Future<BitmapDescriptor> createCustomProfileMarkerBitmap(User? user) async {
+  /// 프로필 이미지의 마커 비트맵을 생성합니다. 출발지 마커로 사용됩니다.
+  static Future<BitmapDescriptor> createCustomProfileMarkerBitmap(
+      User? user) async {
     String? imageUrl;
     if (user != null) {
       try {

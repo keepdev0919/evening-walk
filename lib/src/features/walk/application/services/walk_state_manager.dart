@@ -1,6 +1,7 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'waypoint_event_handler.dart';
 import 'destination_event_handler.dart';
+import 'package:image_picker/image_picker.dart'; // 위에 추가 필요
 
 class WalkStateManager {
   // 핸들러 인스턴스
@@ -8,7 +9,6 @@ class WalkStateManager {
   final DestinationEventHandler _destinationHandler = DestinationEventHandler();
 
   // 산책 상태 변수
-  LatLng? _startLocation;
   LatLng? _destinationLocation;
   LatLng? _waypointLocation;
   String? _selectedMate;
@@ -38,7 +38,6 @@ class WalkStateManager {
     required LatLng destination,
     required String mate,
   }) {
-    _startLocation = start;
     _destinationLocation = destination;
     _selectedMate = mate;
     _waypointLocation = _waypointHandler.generateWaypoint(start, destination);
@@ -51,7 +50,8 @@ class WalkStateManager {
   }
 
   // 실시간 위치 업데이트 처리
-  String? updateUserLocation(LatLng userLocation, {bool forceWaypointEvent = false}) {
+  String? updateUserLocation(LatLng userLocation,
+      {bool forceWaypointEvent = false}) {
     // 경유지 이벤트 확인
     if (forceWaypointEvent || !_waypointEventOccurred) {
       final String? question = _waypointHandler.checkWaypointArrival(
@@ -84,5 +84,25 @@ class WalkStateManager {
     }
 
     return null;
+  }
+
+  // 사진 촬영 메서드
+  Future<String?> takePhoto() async {
+    final ImagePicker picker = ImagePicker();
+
+    try {
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+
+      if (photo != null) {
+        print('사진 촬영 성공: ${photo.path}');
+        return photo.path;
+      } else {
+        print('사용자가 사진 촬영을 취소했습니다.');
+        return null;
+      }
+    } catch (e) {
+      print('사진 촬영 중 오류 발생: $e');
+      return null;
+    }
   }
 }
