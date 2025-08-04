@@ -37,4 +37,8 @@ flutter:
     - assets/images/
     - assets/config/.env
     - lib/src/features/walk/application/data/walk_question/
+    - assets/images_destination/alone/
+    - assets/images_destination/couple/
+    - assets/images_destination/friend/
+
 

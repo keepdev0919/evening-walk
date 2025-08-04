@@ -9,7 +9,8 @@ class DebugModeButtons extends StatelessWidget {
   final bool isLoading;
   final LatLng? currentPosition;
   final WalkStateManager walkStateManager;
-  // final WalkEventHandler walkEventHandler;
+  final String selectedMate;
+  final Map<String, List<String>> mateImagesManifest;
   final Function(bool, String?) updateWaypointEventState;
 
   const DebugModeButtons({
@@ -17,7 +18,8 @@ class DebugModeButtons extends StatelessWidget {
     required this.isLoading,
     required this.currentPosition,
     required this.walkStateManager,
-    // required this.walkEventHandler,
+    required this.selectedMate,
+    required this.mateImagesManifest,
     required this.updateWaypointEventState,
   }) : super(key: key);
 
@@ -44,7 +46,6 @@ class DebugModeButtons extends StatelessWidget {
                       context: context,
                       questionPayload: question,
                       updateWaypointEventState: updateWaypointEventState,
-                      // walkEventHandler: walkEventHandler,
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -72,9 +73,11 @@ class DebugModeButtons extends StatelessWidget {
             // 목적지 도착 버튼
             ElevatedButton(
               onPressed: () {
-                DestinationDialog.showDestinationCard(
+                DestinationDialog.showDestinationArrivalDialog(
                   context: context,
                   walkStateManager: walkStateManager,
+                  selectedMate: selectedMate,
+                  mateImagesManifest: mateImagesManifest,
                 );
               },
               style: ElevatedButton.styleFrom(

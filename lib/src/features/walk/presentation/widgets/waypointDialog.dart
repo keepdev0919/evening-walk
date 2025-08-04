@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-// import 'package:walk/src/features/walk/presentation/utils/walk_event_handler.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
     required BuildContext context,
     required String questionPayload,
     required Function(bool, String?) updateWaypointEventState,
-    // required WalkEventHandler walkEventHandler,
   }) async {
     return showDialog<void>(
       context: context,

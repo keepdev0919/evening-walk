@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert'; // Add this import
+import 'package:flutter/services.dart'; // Add this import
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -69,6 +71,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   /// 마지막으로 발생한 경유지 질문 내용을 저장합니다.
   String? _lastWaypointQuestion;
 
+  // Add this variable
+  Map<String, List<String>> _mateImagesManifest = {};
+
   @override
   void initState() {
     super.initState();
@@ -83,8 +88,27 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         NotificationService(FlutterLocalNotificationsPlugin());
     _notificationService.initialize(context);
 
+    // Load mate images manifest
+    _loadMateImagesManifest(); // Call this function
+
     // 산책 초기화를 시작합니다.
     _initializeWalk();
+  }
+
+  // Add this function
+  Future<void> _loadMateImagesManifest() async {
+    try {
+      final String jsonString = await rootBundle
+          .loadString('assets/images_destination/image_manifest.json');
+      setState(() {
+        _mateImagesManifest = Map<String, List<String>>.from(json
+            .decode(jsonString)
+            .map((key, value) => MapEntry(key, List<String>.from(value))));
+      });
+      print('이미지 매니페스트 로드 완료: $_mateImagesManifest');
+    } catch (e) {
+      print('이미지 매니페스트 로드 실패: $e');
+    }
   }
 
   @override
@@ -179,9 +203,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       if (eventSignal != null) {
         if (eventSignal == "destination_reached") {
           _positionStreamSubscription?.cancel();
-          DestinationDialog.showDestinationCard(
-            walkStateManager: _walkStateManager,
+          DestinationDialog.showDestinationArrivalDialog(
             context: context,
+            walkStateManager: _walkStateManager,
+            selectedMate: widget.selectedMate,
+            mateImagesManifest: _mateImagesManifest, // Pass the manifest
           );
         } else {
           // 앱 상태에 따라 알림 방식 분기
@@ -294,6 +320,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             isLoading: _isLoading,
             currentPosition: _currentPosition,
             walkStateManager: _walkStateManager,
+            selectedMate: widget.selectedMate,
+            mateImagesManifest: _mateImagesManifest,
             updateWaypointEventState: (show, question) {
               setState(() {
                 _showWaypointEventButton = show;
