@@ -52,11 +52,14 @@ class WalkStateManager {
   }
 
   // 실시간 위치 업데이트 처리 (Future<String?>으로 변경)
-  Future<String?> updateUserLocation(LatLng userLocation,
-      {bool forceWaypointEvent = false}) async {
+  Future<String?> updateUserLocation(LatLng userLocation, {
+    bool forceWaypointEvent = false,
+    bool forceDestinationEvent = false,
+  }) async {
     // 경유지 이벤트 확인 (아직 발생하지 않았을 때만)
     if (!_waypointEventOccurred) {
       final bool arrived = _waypointHandler.checkWaypointArrival(
+        //이함수는 waypoint_event_handler에 있음.
         userLocation: userLocation,
         waypointLocation: _waypointLocation,
         forceWaypointEvent: forceWaypointEvent,
@@ -81,6 +84,7 @@ class WalkStateManager {
       final bool arrived = _destinationHandler.checkDestinationArrival(
         userLocation: userLocation,
         destinationLocation: _destinationLocation!,
+        forceDestinationEvent: forceDestinationEvent,
       );
 
       if (arrived) {

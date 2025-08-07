@@ -80,12 +80,35 @@ class DebugModeButtons extends StatelessWidget {
             const SizedBox(height: 8),
             // 목적지 도착 버튼
             ElevatedButton(
-              onPressed: () {
-                DestinationDialog.showDestinationArrivalDialog(
-                  context: context,
-                  walkStateManager: walkStateManager,
-                  selectedMate: selectedMate,
-                );
+              onPressed: () async {
+                if (currentPosition != null) {
+                  final result = await walkStateManager.updateUserLocation(
+                    currentPosition!,
+                    forceDestinationEvent: true,
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (result == 'destination_reached') {
+                    DestinationDialog.showDestinationArrivalDialog(
+                      context: context,
+                      walkStateManager: walkStateManager,
+                      selectedMate: selectedMate,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('목적지 도착 이벤트 처리에 실패했습니다.'),
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('현재 위치를 알 수 없어 목적지 도착을 강제할 수 없습니다.'),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.withOpacity(0.8),

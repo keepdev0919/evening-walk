@@ -9,7 +9,11 @@ class DestinationEventHandler {
   bool checkDestinationArrival({
     required LatLng userLocation,
     required LatLng destinationLocation,
+    bool forceDestinationEvent = false,
   }) {
+    if (forceDestinationEvent) {
+      return true;
+    }
     final double distance = Geolocator.distanceBetween(
       userLocation.latitude,
       userLocation.longitude,
