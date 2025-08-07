@@ -10,6 +10,11 @@ class DestinationDialog {
     required BuildContext context,
     required WalkStateManager walkStateManager,
     required String selectedMate,
+    required Function(bool) updateDestinationEventState,
+    String? initialPoseImageUrl,
+    String? initialTakenPhotoPath,
+    required Function(String) onPoseImageGenerated,
+    required Function(String?) onPhotoTaken,
   }) {
     showDialog(
       context: context,
@@ -48,6 +53,11 @@ class DestinationDialog {
                   context: context,
                   walkStateManager: walkStateManager,
                   selectedMate: selectedMate,
+                  updateDestinationEventState: updateDestinationEventState,
+                  initialPoseImageUrl: initialPoseImageUrl,
+                  initialTakenPhotoPath: initialTakenPhotoPath,
+                  onPoseImageGenerated: onPoseImageGenerated,
+                  onPhotoTaken: onPhotoTaken,
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -67,6 +77,11 @@ class DestinationDialog {
     required BuildContext context,
     required WalkStateManager walkStateManager,
     required String selectedMate,
+    required Function(bool) updateDestinationEventState,
+    String? initialPoseImageUrl,
+    String? initialTakenPhotoPath,
+    required Function(String) onPoseImageGenerated,
+    required Function(String?) onPhotoTaken,
   }) async {
     // Firebase Storage에서 랜덤 이미지 URL을 가져오는 비동기 헬퍼 함수
     Future<String?> fetchRandomImageUrl(String mate) async {
@@ -106,9 +121,12 @@ class DestinationDialog {
 
     // 다이얼로그가 처음 열릴 때만 랜덤 이미지 URL을 가져옵니다.
     final String? initialRandomImagePath =
-        await fetchRandomImageUrl(selectedMate);
+        initialPoseImageUrl ?? await fetchRandomImageUrl(selectedMate);
+    if (initialRandomImagePath != null && initialPoseImageUrl == null) {
+      onPoseImageGenerated(initialRandomImagePath);
+    }
 
-    String? _takenPhotoPath; // 찍은 사진 경로를 저장할 변수
+    String? _takenPhotoPath = initialTakenPhotoPath; // 찍은 사진 경로를 저장할 변수
 
     showDialog(
       context: context,
@@ -223,6 +241,7 @@ class DestinationDialog {
                           answer: '',
                           photoPath: photoPath,
                         );
+                        onPhotoTaken(photoPath);
                       }
                       // 다이얼로그를 닫지 않습니다.
                     },
@@ -236,6 +255,7 @@ class DestinationDialog {
                   ElevatedButton(
                     onPressed: () {
                       Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
+                      updateDestinationEventState(true); // <-- 목적지 이벤트 완료 알림
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey,

@@ -11,6 +11,9 @@ class DebugModeButtons extends StatelessWidget {
   final WalkStateManager walkStateManager;
   final String selectedMate;
   final Function(bool, String?) updateWaypointEventState;
+  final Function(bool) updateDestinationEventState;
+  final Function(String) onPoseImageGenerated;
+  final Function(String?) onPhotoTaken;
 
   const DebugModeButtons({
     Key? key,
@@ -19,6 +22,9 @@ class DebugModeButtons extends StatelessWidget {
     required this.walkStateManager,
     required this.selectedMate,
     required this.updateWaypointEventState,
+    required this.updateDestinationEventState,
+    required this.onPoseImageGenerated,
+    required this.onPhotoTaken,
   }) : super(key: key);
 
   @override
@@ -94,6 +100,9 @@ class DebugModeButtons extends StatelessWidget {
                       context: context,
                       walkStateManager: walkStateManager,
                       selectedMate: selectedMate,
+                      updateDestinationEventState: updateDestinationEventState,
+                      onPoseImageGenerated: onPoseImageGenerated,
+                      onPhotoTaken: onPhotoTaken,
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(

@@ -67,9 +67,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// 경유지 이벤트 확인 버튼의 가시성을 제어합니다.
   bool _showWaypointEventButton = false;
+  bool _showDestinationEventButton = false;
 
   /// 마지막으로 발생한 경유지 질문 내용을 저장합니다.
   String? _lastWaypointQuestion;
+  String? _currentDestinationPoseImageUrl;
+  String? _currentDestinationTakenPhotoPath;
 
   @override
   void initState() {
@@ -177,7 +180,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       });
 
       // updateUserLocation이 Future를 반환하므로 .then()으로 결과를 처리합니다.
-      _walkStateManager.updateUserLocation(_currentPosition!).then((eventSignal) {
+      _walkStateManager
+          .updateUserLocation(_currentPosition!)
+          .then((eventSignal) {
         if (!mounted) return; // 결과를 처리하기 전에 위젯이 여전히 마운트 상태인지 확인
 
         if (eventSignal != null) {
@@ -187,6 +192,21 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               context: context,
               walkStateManager: _walkStateManager,
               selectedMate: widget.selectedMate,
+              updateDestinationEventState: (show) {
+                setState(() {
+                  _showDestinationEventButton = show;
+                });
+              },
+              onPoseImageGenerated: (imageUrl) {
+                setState(() {
+                  _currentDestinationPoseImageUrl = imageUrl;
+                });
+              },
+              onPhotoTaken: (photoPath) {
+                setState(() {
+                  _currentDestinationTakenPhotoPath = photoPath;
+                });
+              },
             );
           } else {
             // 앱 상태에 따라 알림 방식 분기
@@ -280,6 +300,41 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 },
               ),
             ),
+          if (_showDestinationEventButton)
+            Container(
+              margin: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.flag, color: Colors.red),
+                onPressed: () {
+                  DestinationDialog.showPoseRecommendationDialog(
+                    context: context,
+                    walkStateManager: _walkStateManager,
+                    selectedMate: widget.selectedMate,
+                    updateDestinationEventState: (show) {
+                      setState(() {
+                        _showDestinationEventButton = show;
+                      });
+                    },
+                    initialPoseImageUrl: _currentDestinationPoseImageUrl,
+                    initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
+                    onPoseImageGenerated: (imageUrl) {
+                      setState(() {
+                        _currentDestinationPoseImageUrl = imageUrl;
+                      });
+                    },
+                    onPhotoTaken: (photoPath) {
+                      setState(() {
+                        _currentDestinationTakenPhotoPath = photoPath;
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
         ],
       ),
       body: Stack(
@@ -305,6 +360,21 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               setState(() {
                 _showWaypointEventButton = show;
                 _lastWaypointQuestion = question;
+              });
+            },
+            updateDestinationEventState: (show) {
+              setState(() {
+                _showDestinationEventButton = show;
+              });
+            },
+            onPoseImageGenerated: (imageUrl) {
+              setState(() {
+                _currentDestinationPoseImageUrl = imageUrl;
+              });
+            },
+            onPhotoTaken: (photoPath) {
+              setState(() {
+                _currentDestinationTakenPhotoPath = photoPath;
               });
             },
           ),
