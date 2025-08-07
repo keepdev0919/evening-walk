@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -19,15 +18,5 @@ class DestinationEventHandler {
     );
 
     return distance <= destinationArrivalRadius;
-  }
-
-  // 포즈 추천 로직 (플레이스홀더 아이콘)
-  List<IconData> getPoseSuggestions() {
-    return [
-      Icons.favorite_border,
-      Icons.camera_alt_outlined,
-      Icons.star_border,
-      Icons.sentiment_very_satisfied_outlined,
-    ];
   }
 }

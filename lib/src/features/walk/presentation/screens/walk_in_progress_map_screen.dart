@@ -71,8 +71,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   /// 마지막으로 발생한 경유지 질문 내용을 저장합니다.
   String? _lastWaypointQuestion;
 
-  
-
   @override
   void initState() {
     super.initState();
@@ -87,13 +85,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         NotificationService(FlutterLocalNotificationsPlugin());
     _notificationService.initialize(context);
 
-    
-
     // 산책 초기화를 시작합니다.
     _initializeWalk();
   }
-
-  
 
   @override
   void dispose() {
@@ -182,36 +176,39 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         );
       });
 
-      final String? eventSignal = _walkStateManager
-          .updateUserLocation(_currentPosition!); // null-safety
-      if (eventSignal != null) {
-        if (eventSignal == "destination_reached") {
-          _positionStreamSubscription?.cancel();
-          DestinationDialog.showDestinationArrivalDialog(
-            context: context,
-            walkStateManager: _walkStateManager,
-            selectedMate: widget.selectedMate,
-          );
-        } else {
-          // 앱 상태에 따라 알림 방식 분기
-          if (_lastLifecycleState == AppLifecycleState.resumed) {
-            // 앱이 포그라운드일 때 스낵바 표시
-            WaypointDialogs.showWaypointArrivalDialog(
+      // updateUserLocation이 Future를 반환하므로 .then()으로 결과를 처리합니다.
+      _walkStateManager.updateUserLocation(_currentPosition!).then((eventSignal) {
+        if (!mounted) return; // 결과를 처리하기 전에 위젯이 여전히 마운트 상태인지 확인
+
+        if (eventSignal != null) {
+          if (eventSignal == "destination_reached") {
+            _positionStreamSubscription?.cancel();
+            DestinationDialog.showDestinationArrivalDialog(
               context: context,
-              questionPayload: eventSignal,
-              updateWaypointEventState: (show, question) {
-                setState(() {
-                  _showWaypointEventButton = show;
-                  _lastWaypointQuestion = question;
-                });
-              },
+              walkStateManager: _walkStateManager,
+              selectedMate: widget.selectedMate,
             );
           } else {
-            // 앱이 백그라운드일 때 시스템 알림 표시
-            _notificationService.showWaypointNotification(eventSignal);
+            // 앱 상태에 따라 알림 방식 분기
+            if (_lastLifecycleState == AppLifecycleState.resumed) {
+              // 앱이 포그라운드일 때 스낵바 표시
+              WaypointDialogs.showWaypointArrivalDialog(
+                context: context,
+                questionPayload: eventSignal,
+                updateWaypointEventState: (show, question) {
+                  setState(() {
+                    _showWaypointEventButton = show;
+                    _lastWaypointQuestion = question;
+                  });
+                },
+              );
+            } else {
+              // 앱이 백그라운드일 때 시스템 알림 표시
+              _notificationService.showWaypointNotification(eventSignal);
+            }
           }
         }
-      }
+      });
     });
   }
 

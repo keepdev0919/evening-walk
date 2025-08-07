@@ -127,62 +127,28 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildMateButton(context, '혼자', () async {
-                  final bool? confirm =
-                      await _showConfirmationDialog(context, '혼자');
-                  if (confirm == true) {
-                    if (!mounted) return; // 추가된 부분
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WalkInProgressMapScreen(
-                          startLocation: widget.startLocation,
-                          destinationLocation: widget.destinationLocation,
-                          selectedMate: '혼자',
-                        ),
-                      ),
-                    );
-                  }
-                }),
-                SizedBox(height: 20),
-                _buildMateButton(context, '연인', () async {
-                  final bool? confirm =
-                      await _showConfirmationDialog(context, '연인');
-                  if (confirm == true) {
-                    if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WalkInProgressMapScreen(
-                          startLocation: widget.startLocation,
-                          destinationLocation: widget.destinationLocation,
-                          selectedMate: '연인',
-                        ),
-                      ),
-                    );
-                  }
-                }),
-                SizedBox(height: 20),
-                _buildMateButton(context, '친구', () async {
-                  final bool? confirm =
-                      await _showConfirmationDialog(context, '친구');
-                  if (confirm == true) {
-                    if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WalkInProgressMapScreen(
-                          startLocation: widget.startLocation,
-                          destinationLocation: widget.destinationLocation,
-                          selectedMate: '친구',
-                        ),
-                      ),
-                    );
-                  }
-                }),
-                SizedBox(height: 40),
-                Padding(
+                ...['혼자', '연인', '친구'].map((mate) => Padding(
+                      padding: const EdgeInsets.only(bottom: 20.0),
+                      child: _buildMateButton(context, mate, () async {
+                        final bool? confirm =
+                            await _showConfirmationDialog(context, mate);
+                        if (confirm == true) {
+                          if (!mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WalkInProgressMapScreen(
+                                startLocation: widget.startLocation,
+                                destinationLocation: widget.destinationLocation,
+                                selectedMate: mate,
+                              ),
+                            ),
+                          );
+                        }
+                      }),
+                    )),
+                const SizedBox(height: 40),
+                const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text(
                     '*산책 메이트에 따라 경유지 이벤트 정보가 달라집니다*',
@@ -196,7 +162,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );

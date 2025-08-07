@@ -1,12 +1,14 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'waypoint_event_handler.dart';
 import 'destination_event_handler.dart';
-import 'package:image_picker/image_picker.dart'; // 위에 추가 필요
+import 'waypoint_questions.dart';
+import 'package:image_picker/image_picker.dart';
 
 class WalkStateManager {
-  // 핸들러 인스턴스
+  // 핸들러 및 프로바이더 인스턴스
   final WaypointEventHandler _waypointHandler = WaypointEventHandler();
   final DestinationEventHandler _destinationHandler = DestinationEventHandler();
+  final WaypointQuestionProvider _questionProvider = WaypointQuestionProvider();
 
   // 산책 상태 변수
   LatLng? _destinationLocation;
@@ -49,23 +51,28 @@ class WalkStateManager {
     print('WalkStateManager: 산책 시작. 경유지: $_waypointLocation');
   }
 
-  // 실시간 위치 업데이트 처리
-  String? updateUserLocation(LatLng userLocation,
-      {bool forceWaypointEvent = false}) {
-    // 경유지 이벤트 확인
-    if (forceWaypointEvent || !_waypointEventOccurred) {
-      final String? question = _waypointHandler.checkWaypointArrival(
+  // 실시간 위치 업데이트 처리 (Future<String?>으로 변경)
+  Future<String?> updateUserLocation(LatLng userLocation,
+      {bool forceWaypointEvent = false}) async {
+    // 경유지 이벤트 확인 (아직 발생하지 않았을 때만)
+    if (!_waypointEventOccurred) {
+      final bool arrived = _waypointHandler.checkWaypointArrival(
         userLocation: userLocation,
         waypointLocation: _waypointLocation,
-        selectedMate: _selectedMate,
-        forceWaypointEvent: forceWaypointEvent, // forceWaypointEvent 전달
+        forceWaypointEvent: forceWaypointEvent,
       );
 
-      if (question != null) {
-        _waypointQuestion = question;
-        _waypointEventOccurred = true;
-        print('WalkStateManager: 경유지 질문 생성 -> "$_waypointQuestion"');
-        return _waypointQuestion;
+      if (arrived) {
+        _waypointEventOccurred = true; // 이벤트 발생 기록
+        // 질문 프로바이더를 통해 질문을 비동기적으로 가져옴
+        final String? question =
+            await _questionProvider.getQuestionForMate(_selectedMate);
+
+        if (question != null) {
+          _waypointQuestion = question;
+          print('WalkStateManager: 경유지 질문 생성 -> "$_waypointQuestion"');
+          return _waypointQuestion;
+        }
       }
     }
 

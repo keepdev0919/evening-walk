@@ -32,12 +32,22 @@ class DebugModeButtons extends StatelessWidget {
           children: [
             // 경유지 도착 버튼
             ElevatedButton(
-              onPressed: () {
+              // 1. 버튼 누름 -> 2. 질문 받아옴 -> 3. 경유지 도착 다이얼로그 띄움
+              // 4. 이벤트 확인 누르면 질문 다이얼로그로 이동 -> 5. 질문받아온거 띄움
+              // 6. 확인버튼 누르면 pop하면서 progress_map 띄움
+
+              onPressed: () async {
+                // onPressed를 비동기로 변경
                 if (currentPosition != null) {
-                  final String? question = walkStateManager.updateUserLocation(
+                  // await를 사용하여 비동기 함수의 결과를 기다림
+                  final String? question =
+                      await walkStateManager.updateUserLocation(
                     currentPosition!,
                     forceWaypointEvent: true,
                   );
+
+                  // 위젯이 여전히 화면에 있는지 확인 (비동기 작업 후)
+                  if (!context.mounted) return;
 
                   if (question != null) {
                     WaypointDialogs.showWaypointArrivalDialog(
