@@ -12,6 +12,7 @@ class PhotoShareService {
   static Future<void> captureAndShareWidget({
     required GlobalKey repaintBoundaryKey,
     String? customMessage,
+    double pixelRatio = 3.0,
   }) async {
     try {
       // RepaintBoundary에서 위젯을 이미지로 캡처
@@ -19,7 +20,7 @@ class PhotoShareService {
           .findRenderObject() as RenderRepaintBoundary;
 
       // 고화질 이미지 생성 (픽셀 비율 적용)
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
 

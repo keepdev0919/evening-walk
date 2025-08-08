@@ -10,6 +10,7 @@ import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart'
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/pose_recommendation_dialog.dart';
+import 'package:walk/src/features/walk/presentation/widgets/walk_diary_dialog.dart';
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.
@@ -208,6 +209,17 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 setState(() {
                   _currentDestinationTakenPhotoPath = photoPath;
                 });
+              },
+            );
+          } else if (eventSignal == "start_returned") {
+            // 출발지 복귀 완료 - 산책 일기 다이얼로그 표시
+            _positionStreamSubscription?.cancel();
+            WalkDiaryDialog.show(
+              context: context,
+              walkStateManager: _walkStateManager,
+              onWalkCompleted: (completed) {
+                // 산책 완료 처리 - 홈으로 이동은 다이얼로그 내에서 처리
+                print('산책이 완전히 완료되었습니다!');
               },
             );
           } else {

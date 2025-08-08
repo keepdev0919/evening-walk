@@ -52,14 +52,17 @@ class PoseRecommendationDialog {
               });
             }
             return AlertDialog(
-              backgroundColor: Colors.black.withOpacity(0.8),
+              backgroundColor: Colors.black.withValues(alpha: 0.8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: const BorderSide(color: Colors.white54, width: 1),
               ),
               content: SizedBox(
                 width: double.maxFinite,
-                height: MediaQuery.of(context).size.height * 0.8,
+                height: _takenPhotoPath != null
+                    ? MediaQuery.of(context).size.height * 0.8 // 사진 찍은 후엔 기존 높이
+                    : MediaQuery.of(context).size.height *
+                        0.63, // 사진 찍기 전엔 더 작게
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -69,7 +72,10 @@ class PoseRecommendationDialog {
                         key: _repaintBoundaryKey,
                         child: Container(
                           width: 360,
-                          height: _takenPhotoPath != null ? 640 : 400, // 조건부 높이
+                          constraints: BoxConstraints(
+                            minHeight: _takenPhotoPath != null ? 640 : 320,
+                            maxHeight: _takenPhotoPath != null ? 640 : 360,
+                          ), // 사진 찍기 전엔 더 컴팩트한 제약
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -81,14 +87,21 @@ class PoseRecommendationDialog {
                             ),
                             borderRadius: BorderRadius.circular(24),
                           ), // 인스타 스타일 배경
-                          padding: const EdgeInsets.only(
+                          padding: EdgeInsets.only(
                             left: 20.0,
                             right: 20.0,
-                            top: 25.0,
-                            bottom: 10.0, // 아래쪽 패딩만 줄여서 해시태그와 버튼 사이 간격 축소
+                            top: _takenPhotoPath != null
+                                ? 25.0
+                                : 15.0, // 사진 찍기 전엔 위쪽 더 줄임
+                            bottom: _takenPhotoPath != null
+                                ? 10.0
+                                : 8.0, // 사진 찍기 전엔 아래쪽도 줄임
                           ),
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: _takenPhotoPath != null
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.center, // 사진 찍기 전엔 가운데 정렬
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -100,17 +113,22 @@ class PoseRecommendationDialog {
                                       color:
                                           Colors.white.withValues(alpha: 0.2)),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '📸 추천 포즈',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 15,
+                                    fontSize: _takenPhotoPath != null
+                                        ? 15
+                                        : 14, // 사진 찍기 전엔 폰트 크기도 줄임
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 15),
+                              SizedBox(
+                                  height: _takenPhotoPath != null
+                                      ? 15
+                                      : 10), // 사진 찍기 전엔 간격 줄임
                               // 추천 포즈 이미지
                               if (_isLoadingImage)
                                 Container(
@@ -222,8 +240,35 @@ class PoseRecommendationDialog {
                                 const SizedBox(height: 15),
                                 GestureDetector(
                                   onTap: () {
-                                    _showFullScreenPhoto(
-                                        context, _takenPhotoPath!);
+                                    // 전체화면 사진 보기 - 간단한 다이얼로그로 대체
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => Dialog(
+                                        backgroundColor: Colors.black,
+                                        insetPadding: EdgeInsets.zero,
+                                        child: Stack(
+                                          children: [
+                                            Positioned.fill(
+                                              child: Image.file(
+                                                File(_takenPhotoPath!),
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              top: 40,
+                                              right: 20,
+                                              child: IconButton(
+                                                icon: const Icon(Icons.close,
+                                                    color: Colors.white,
+                                                    size: 30),
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -400,8 +445,8 @@ class PoseRecommendationDialog {
                               ],
                             ),
                       const SizedBox(height: 16),
-                      Container(
-                        // width: double.infinity,
+                      SizedBox(
+                        width: _takenPhotoPath != null ? double.infinity : 130,
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
@@ -437,38 +482,6 @@ class PoseRecommendationDialog {
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-  static void _showFullScreenPhoto(BuildContext context, String photoPath) {
-    showDialog(
-      context: context,
-      builder: (BuildContext fullScreenDialogContext) {
-        return Dialog(
-          backgroundColor: Colors.black,
-          insetPadding: EdgeInsets.zero,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.file(
-                  File(photoPath),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                  onPressed: () {
-                    Navigator.of(fullScreenDialogContext).pop();
-                  },
-                ),
-              ),
-            ],
-          ),
         );
       },
     );

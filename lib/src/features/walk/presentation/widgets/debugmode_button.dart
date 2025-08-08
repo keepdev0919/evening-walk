@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
+import 'package:walk/src/features/walk/presentation/widgets/walk_diary_dialog.dart';
 
 class DebugModeButtons extends StatelessWidget {
   final bool isLoading;
@@ -124,6 +125,47 @@ class DebugModeButtons extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text('목적지 도착', style: TextStyle(fontSize: 12)),
+            ),
+            const SizedBox(height: 8),
+            // 출발지 복귀 버튼
+            ElevatedButton(
+              onPressed: () async {
+                if (currentPosition != null) {
+                  final result = await walkStateManager.updateUserLocation(
+                    currentPosition!,
+                    forceStartReturnEvent: true,
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (result == 'start_returned') {
+                    WalkDiaryDialog.show(
+                      context: context,
+                      walkStateManager: walkStateManager,
+                      onWalkCompleted: (completed) {
+                        print('디버그: 산책이 완전히 완료되었습니다!');
+                      },
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('출발지 복귀 이벤트 처리에 실패했습니다.'),
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('현재 위치를 알 수 없어 출발지 복귀를 강제할 수 없습니다.'),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.withOpacity(0.8),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
             ),
           ],
         ),
