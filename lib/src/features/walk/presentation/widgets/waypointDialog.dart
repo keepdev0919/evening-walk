@@ -4,7 +4,8 @@ class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
     required BuildContext context,
     required String questionPayload,
-    required Function(bool, String?) updateWaypointEventState,
+    required Function(bool, String?, String?) updateWaypointEventState,
+    String? initialAnswer,
   }) async {
     return showDialog<void>(
       context: context,
@@ -36,9 +37,9 @@ class WaypointDialogs {
               // 버튼
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
-                updateWaypointEventState(true, questionPayload);
+                updateWaypointEventState(true, questionPayload, null);
                 WaypointDialogs.showQuestionDialog(
-                    context, questionPayload); // 질문 다이얼로그 표시
+                    context, questionPayload, updateWaypointEventState, initialAnswer); // 질문 다이얼로그 표시
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue, // 원하는 색상으로 지정
@@ -51,25 +52,62 @@ class WaypointDialogs {
     );
   }
 
-  static void showQuestionDialog(BuildContext context, String question) {
+  static void showQuestionDialog(
+    BuildContext context,
+    String question,
+    Function(bool, String?, String?) updateWaypointEventState,
+    String? initialAnswer,
+  ) {
+    final TextEditingController answerController = TextEditingController(text: initialAnswer);
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.black.withOpacity(0.7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),
           ),
-          content: Text(
-            question,
-            style: const TextStyle(color: Colors.white70),
+          title: const Text(
+            '질문!',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                  question,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: answerController,
+                  decoration: const InputDecoration(
+                    hintText: '답변을 입력하세요...',
+                    hintStyle: TextStyle(color: Colors.white54),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                updateWaypointEventState(true, question, answerController.text);
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue, // 원하는 색상으로 지정
+                backgroundColor: Colors.blue,
               ),
               child: const Text('확인'),
             ),

@@ -1,18 +1,15 @@
 import 'dart:async';
-import 'dart:convert'; // Add this import
-import 'package:flutter/services.dart'; // Add this import
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
-import 'package:walk/src/features/walk/presentation/utils/notification_service.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
+import 'package:walk/src/features/walk/presentation/widgets/pose_recommendation_dialog.dart';
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.
@@ -63,7 +60,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   /// 위치 스트림 구독을 관리하는 객체입니다.
   StreamSubscription<Position>? _positionStreamSubscription;
 
-  late NotificationService _notificationService;
+  // late NotificationService _notificationService;
 
   /// 경유지 이벤트 확인 버튼의 가시성을 제어합니다.
   bool _showWaypointEventButton = false;
@@ -71,8 +68,17 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// 마지막으로 발생한 경유지 질문 내용을 저장합니다.
   String? _lastWaypointQuestion;
+  String? _lastWaypointUserAnswer;
   String? _currentDestinationPoseImageUrl;
   String? _currentDestinationTakenPhotoPath;
+
+  void _handleWaypointEventState(bool show, String? question, String? answer) {
+    setState(() {
+      _showWaypointEventButton = show;
+      _lastWaypointQuestion = question;
+      _lastWaypointUserAnswer = answer;
+    });
+  }
 
   @override
   void initState() {
@@ -83,10 +89,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
     _walkStateManager = WalkStateManager();
-
-    _notificationService =
-        NotificationService(FlutterLocalNotificationsPlugin());
-    _notificationService.initialize(context);
 
     // 산책 초기화를 시작합니다.
     _initializeWalk();
@@ -215,16 +217,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               WaypointDialogs.showWaypointArrivalDialog(
                 context: context,
                 questionPayload: eventSignal,
-                updateWaypointEventState: (show, question) {
-                  setState(() {
-                    _showWaypointEventButton = show;
-                    _lastWaypointQuestion = question;
-                  });
-                },
+                updateWaypointEventState: _handleWaypointEventState,
+                initialAnswer: _lastWaypointUserAnswer,
               );
-            } else {
-              // 앱이 백그라운드일 때 시스템 알림 표시
-              _notificationService.showWaypointNotification(eventSignal);
             }
           }
         }
@@ -255,7 +250,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             : Container(
                 margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -270,7 +265,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 child: const Text(
@@ -287,7 +282,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             Container(
               margin: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -295,7 +290,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 onPressed: () {
                   if (_lastWaypointQuestion != null) {
                     WaypointDialogs.showQuestionDialog(
-                        context, _lastWaypointQuestion!);
+                        context,
+                        _lastWaypointQuestion!,
+                        _handleWaypointEventState,
+                        _lastWaypointUserAnswer);
                   }
                 },
               ),
@@ -304,13 +302,13 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             Container(
               margin: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
                 icon: const Icon(Icons.flag, color: Colors.red),
                 onPressed: () {
-                  DestinationDialog.showPoseRecommendationDialog(
+                  PoseRecommendationDialog.show(
                     context: context,
                     walkStateManager: _walkStateManager,
                     selectedMate: widget.selectedMate,
@@ -356,12 +354,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             currentPosition: _currentPosition,
             walkStateManager: _walkStateManager,
             selectedMate: widget.selectedMate,
-            updateWaypointEventState: (show, question) {
-              setState(() {
-                _showWaypointEventButton = show;
-                _lastWaypointQuestion = question;
-              });
-            },
+            updateWaypointEventState: _handleWaypointEventState,
             updateDestinationEventState: (show) {
               setState(() {
                 _showDestinationEventButton = show;
