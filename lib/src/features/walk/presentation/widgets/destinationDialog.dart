@@ -3,17 +3,10 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 import 'pose_recommendation_dialog.dart';
 
 class DestinationDialog {
-  static void showDestinationArrivalDialog({
+  static Future<bool?> showDestinationArrivalDialog({
     required BuildContext context,
-    required WalkStateManager walkStateManager,
-    required String selectedMate,
-    required Function(bool) updateDestinationEventState,
-    String? initialPoseImageUrl,
-    String? initialTakenPhotoPath,
-    required Function(String) onPoseImageGenerated,
-    required Function(String?) onPhotoTaken,
   }) {
-    showDialog(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
@@ -23,44 +16,35 @@ class DestinationDialog {
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),
           ),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '📍 목적지에 도착했어요!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                '산책을 완료했습니다. 이벤트를 확인하시겠습니까?',
-                style: TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
-            ],
+          title: const Text(
+            '📍 목적지 도착!',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
+          content: const Text(
+            '목적지 이벤트를 확인하시겠어요?',
+            style: TextStyle(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false); // 닫기, false 반환
+              },
+              child: const Text('나중에', style: TextStyle(color: Colors.white70)),
+            ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop();
-                PoseRecommendationDialog.show(
-                  context: context,
-                  walkStateManager: walkStateManager,
-                  selectedMate: selectedMate,
-                  updateDestinationEventState: updateDestinationEventState,
-                  initialPoseImageUrl: initialPoseImageUrl,
-                  initialTakenPhotoPath: initialTakenPhotoPath,
-                  onPoseImageGenerated: onPoseImageGenerated,
-                  onPhotoTaken: onPhotoTaken,
-                );
+                Navigator.of(dialogContext).pop(true); // 확인, true 반환
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               ),
               child: const Text('이벤트 확인'),
             ),

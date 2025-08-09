@@ -61,6 +61,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   /// 위치 스트림 구독을 관리하는 객체입니다.
   StreamSubscription<Position>? _positionStreamSubscription;
 
+  /// 이벤트(경유지, 목적지) 다이얼로그가 활성화 상태인지 확인하는 플래그입니다.
+  bool _isProcessingEvent = false;
+
   // late NotificationService _notificationService;
 
   /// 경유지 이벤트 확인 버튼의 가시성을 제어합니다.
@@ -79,6 +82,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       _lastWaypointQuestion = question;
       _lastWaypointUserAnswer = answer;
     });
+    // 사용자가 경유지 질문에 답변을 제출한 경우, 매니저에 즉시 저장하여 일기에서 보이도록 함
+    if (answer != null && answer.trim().isNotEmpty) {
+      _walkStateManager.saveAnswerAndPhoto(answer: answer.trim());
+    }
   }
 
   @override
@@ -165,15 +172,13 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// 사용자의 위치 추적을 시작합니다.
   /// Geolocator를 사용하여 실시간 위치 업데이트를 받고 지도에 반영합니다.
-  Future<void> _startLocationTracking() async {
-    // ... (Permission checks are correct)
-
+  void _startLocationTracking() {
     _positionStreamSubscription = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
-    )).listen((Position position) {
-      if (!mounted) return;
+    )).listen((Position position) async {
+      if (!mounted || _isProcessingEvent) return;
 
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
@@ -182,60 +187,75 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         );
       });
 
-      // updateUserLocation이 Future를 반환하므로 .then()으로 결과를 처리합니다.
-      _walkStateManager
-          .updateUserLocation(_currentPosition!)
-          .then((eventSignal) {
-        if (!mounted) return; // 결과를 처리하기 전에 위젯이 여전히 마운트 상태인지 확인
+      final eventSignal =
+          await _walkStateManager.updateUserLocation(_currentPosition!);
 
-        if (eventSignal != null) {
-          if (eventSignal == "destination_reached") {
-            _positionStreamSubscription?.cancel();
-            DestinationDialog.showDestinationArrivalDialog(
+      if (!mounted || eventSignal == null) return;
+
+      setState(() {
+        _isProcessingEvent = true;
+      });
+
+      switch (eventSignal) {
+        case "destination_reached":
+          final bool? wantsToSeeEvent =
+              await DestinationDialog.showDestinationArrivalDialog(
+            context: context,
+          );
+
+          if (wantsToSeeEvent == true) {
+            await PoseRecommendationDialog.show(
               context: context,
               walkStateManager: _walkStateManager,
               selectedMate: widget.selectedMate,
-              updateDestinationEventState: (show) {
-                setState(() {
-                  _showDestinationEventButton = show;
-                });
-              },
+              initialPoseImageUrl: _currentDestinationPoseImageUrl,
+              initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
               onPoseImageGenerated: (imageUrl) {
-                setState(() {
-                  _currentDestinationPoseImageUrl = imageUrl;
-                });
+                if (mounted)
+                  setState(() => _currentDestinationPoseImageUrl = imageUrl);
               },
               onPhotoTaken: (photoPath) {
-                setState(() {
-                  _currentDestinationTakenPhotoPath = photoPath;
-                });
+                if (mounted)
+                  setState(() => _currentDestinationTakenPhotoPath = photoPath);
               },
             );
-          } else if (eventSignal == "start_returned") {
-            // 출발지 복귀 완료 - 산책 일기 다이얼로그 표시
-            _positionStreamSubscription?.cancel();
-            WalkDiaryDialog.show(
-              context: context,
-              walkStateManager: _walkStateManager,
-              onWalkCompleted: (completed) {
-                // 산책 완료 처리 - 홈으로 이동은 다이얼로그 내에서 처리
-                print('산책이 완전히 완료되었습니다!');
-              },
-            );
+            _walkStateManager.startReturningHome();
           } else {
-            // 앱 상태에 따라 알림 방식 분기
-            if (_lastLifecycleState == AppLifecycleState.resumed) {
-              // 앱이 포그라운드일 때 스낵바 표시
-              WaypointDialogs.showWaypointArrivalDialog(
-                context: context,
-                questionPayload: eventSignal,
-                updateWaypointEventState: _handleWaypointEventState,
-                initialAnswer: _lastWaypointUserAnswer,
-              );
+            if (mounted) {
+              setState(() {
+                _showDestinationEventButton = true;
+              });
             }
           }
-        }
-      });
+          break;
+
+        case "start_returned":
+          _positionStreamSubscription?.cancel();
+          await WalkDiaryDialog.show(
+            context: context,
+            walkStateManager: _walkStateManager,
+            onWalkCompleted: (completed) {
+              print('산책이 완전히 완료되었습니다!');
+            },
+          );
+          break;
+
+        default: // 경유지 이벤트
+          if (_lastLifecycleState == AppLifecycleState.resumed) {
+            await WaypointDialogs.showWaypointArrivalDialog(
+              context: context,
+              questionPayload: eventSignal,
+              updateWaypointEventState: _handleWaypointEventState,
+            );
+          }
+          break;
+      }
+
+      if (mounted) {
+        setState(() {
+          _isProcessingEvent = false;
+        });
+      }
     });
   }
 
@@ -319,16 +339,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               ),
               child: IconButton(
                 icon: const Icon(Icons.flag, color: Colors.red),
-                onPressed: () {
-                  PoseRecommendationDialog.show(
+                onPressed: () async {
+                  await PoseRecommendationDialog.show(
                     context: context,
                     walkStateManager: _walkStateManager,
                     selectedMate: widget.selectedMate,
-                    updateDestinationEventState: (show) {
-                      setState(() {
-                        _showDestinationEventButton = show;
-                      });
-                    },
                     initialPoseImageUrl: _currentDestinationPoseImageUrl,
                     initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
                     onPoseImageGenerated: (imageUrl) {
@@ -342,6 +357,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                       });
                     },
                   );
+                  // 상단 깃발 아이콘 경로에서도 완료 버튼 이후 복귀 시작
+                  _walkStateManager.startReturningHome();
                 },
               ),
             ),
@@ -382,6 +399,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 _currentDestinationTakenPhotoPath = photoPath;
               });
             },
+            initialPoseImageUrl: _currentDestinationPoseImageUrl,
+            initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
           ),
         ],
       ),

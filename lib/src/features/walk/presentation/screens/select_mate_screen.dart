@@ -71,27 +71,34 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
 
   Widget _buildMateButton(
       BuildContext context, String text, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white.withOpacity(0.2), // 반투명 흰색 배경
-        foregroundColor: Colors.white, // 텍스트 색상
-        padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 18),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30), // 둥근 모서리
-          side: const BorderSide(color: Colors.white54, width: 1), // 얇은 테두리
+    return LayoutBuilder(builder: (context, constraints) {
+      final bool isNarrow = MediaQuery.of(context).size.width < 360;
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white.withOpacity(0.2),
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(
+              horizontal: isNarrow ? 24 : 60,
+              vertical: isNarrow ? 12 : 18,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+              side: const BorderSide(color: Colors.white54, width: 1),
+            ),
+            elevation: 0,
+            textStyle: TextStyle(
+              fontSize: isNarrow ? 16 : 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: isNarrow ? 1.2 : 2,
+            ),
+          ),
+          child: Text(text),
         ),
-        elevation: 0, // 그림자 제거
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 2, // 글자 간격
-        ),
-      ),
-    );
+      );
+    });
   }
 
   @override

@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/domain/models/walk_session.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
 
 /// 산책 세션 관리를 위한 Firebase 연동 서비스
 class WalkSessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final PhotoUploadService _photoUploadService = PhotoUploadService();
 
   /// 산책 세션을 Firebase에 저장
   Future<String?> saveWalkSession({
@@ -32,32 +33,58 @@ class WalkSessionService {
 
       // 고유 ID 생성
       final docRef = _firestore.collection('walk_sessions').doc();
-      
+
+      // 사진이 있으면 Firebase Storage에 업로드
+      String? uploadedPhotoUrl;
+      if (walkStateManager.photoPath != null) {
+        print('WalkSessionService: 사진 업로드 시작');
+        uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
+          filePath: walkStateManager.photoPath!,
+          sessionId: docRef.id,
+        );
+
+        if (uploadedPhotoUrl != null) {
+          print('WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
+        } else {
+          print('WalkSessionService: 사진 업로드 실패');
+        }
+      }
+
       // WalkSession 객체 생성
       final walkSession = WalkSession.fromWalkStateManager(
         id: docRef.id,
         userId: user.uid,
-        startTime: DateTime.now().subtract(const Duration(hours: 1)), // 임시로 1시간 전을 시작 시간으로 설정
+        startTime: walkStateManager.actualStartTime ??
+            DateTime.now().subtract(const Duration(hours: 1)), // 실제 시작 시간 사용
         startLocation: walkStateManager.startLocation!,
-        destinationLocation: walkStateManager.startLocation!, // 임시로 출발지와 동일하게 설정 - 실제로는 destinationLocation을 사용해야 함
+        destinationLocation: walkStateManager
+            .startLocation!, // 임시로 출발지와 동일하게 설정 - 실제로는 destinationLocation을 사용해야 함
         waypointLocation: walkStateManager.waypointLocation!,
         selectedMate: walkStateManager.selectedMate ?? '혼자',
         waypointQuestion: walkStateManager.waypointQuestion,
         waypointAnswer: walkStateManager.userAnswer,
         poseImageUrl: null, // PoseImageService의 URL은 일반적으로 로컬 캐시이므로 저장하지 않음
-        takenPhotoPath: walkStateManager.photoPath,
+        takenPhotoPath: uploadedPhotoUrl, // 업로드된 Storage URL 사용
         walkReflection: walkReflection,
         hashtags: customHashtags ?? ['#저녁산책', '#포즈추천'],
         weatherInfo: weatherInfo,
         locationName: locationName,
+        endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
+        totalDuration: walkStateManager.actualDurationInMinutes, // 실제 소요 시간 설정
       );
 
-      // Firestore에 저장
-      await docRef.set(walkSession.toFirestore());
-      
+      // Firestore에 저장 전 디버깅
+      print('WalkSessionService: 저장할 데이터 확인');
+      print('사용자 ID: ${user.uid}');
+      print('문서 ID: ${docRef.id}');
+
+      final firestoreData = walkSession.toFirestore();
+      print('저장할 데이터: $firestoreData');
+
+      await docRef.set(firestoreData);
+
       print('WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
-      
     } catch (e) {
       print('WalkSessionService: 산책 세션 저장 중 오류 발생: $e');
       return null;
@@ -65,7 +92,11 @@ class WalkSessionService {
   }
 
   /// 사용자의 모든 산책 세션 목록을 최신순으로 가져오기
-  Future<List<WalkSession>> getUserWalkSessions({int limit = 20}) async {
+  ///
+  /// Firebase 인덱스 필요:
+  /// Collection: walk_sessions
+  /// Fields: userId (Ascending), startTime (Descending)
+  Future<List<WalkSession>> getUserWalkSessions({int? limit}) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -73,20 +104,27 @@ class WalkSessionService {
         return [];
       }
 
-      final querySnapshot = await _firestore
+      // Firebase에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
+      Query query = _firestore
           .collection('walk_sessions')
           .where('userId', isEqualTo: user.uid)
-          .orderBy('createdAt', descending: true) // 최신순 정렬
-          .limit(limit)
-          .get();
+          .orderBy('startTime', descending: true); // 최신순 정렬
+
+      // limit이 지정된 경우에만 적용
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+
+      final querySnapshot = await query.get();
 
       final walkSessions = querySnapshot.docs
-          .map((doc) => WalkSession.fromFirestore(doc.data(), doc.id))
+          .map((doc) => WalkSession.fromFirestore(
+              doc.data() as Map<String, dynamic>, doc.id))
           .toList();
 
-      print('WalkSessionService: ${walkSessions.length}개의 산책 세션을 가져왔습니다.');
+      print(
+          'WalkSessionService: ${walkSessions.length}개의 산책 세션을 Firebase에서 최신순으로 가져왔습니다.');
       return walkSessions;
-
     } catch (e) {
       print('WalkSessionService: 산책 세션 목록 가져오기 중 오류 발생: $e');
       return [];
@@ -94,30 +132,38 @@ class WalkSessionService {
   }
 
   /// 실시간 산책 세션 목록 스트림 (홈화면에서 실시간 업데이트용)
-  Stream<List<WalkSession>> getUserWalkSessionsStream({int limit = 10}) {
+  ///
+  /// Firebase 인덱스 필요:
+  /// Collection: walk_sessions
+  /// Fields: userId (Ascending), startTime (Descending)
+  Stream<List<WalkSession>> getUserWalkSessionsStream({int? limit}) {
     final user = _auth.currentUser;
     if (user == null) {
       return Stream.value([]);
     }
 
-    return _firestore
+    // Firebase에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
+    Query query = _firestore
         .collection('walk_sessions')
         .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => WalkSession.fromFirestore(doc.data(), doc.id))
-            .toList());
+        .orderBy('startTime', descending: true); // 최신순 정렬
+
+    // limit이 지정된 경우에만 적용
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => WalkSession.fromFirestore(
+            doc.data() as Map<String, dynamic>, doc.id))
+        .toList());
   }
 
   /// 특정 산책 세션 하나만 가져오기
   Future<WalkSession?> getWalkSession(String sessionId) async {
     try {
-      final doc = await _firestore
-          .collection('walk_sessions')
-          .doc(sessionId)
-          .get();
+      final doc =
+          await _firestore.collection('walk_sessions').doc(sessionId).get();
 
       if (doc.exists && doc.data() != null) {
         return WalkSession.fromFirestore(doc.data()!, doc.id);
@@ -132,13 +178,14 @@ class WalkSessionService {
   }
 
   /// 산책 세션 업데이트 (소감 수정 등)
-  Future<bool> updateWalkSession(String sessionId, Map<String, dynamic> updates) async {
+  Future<bool> updateWalkSession(
+      String sessionId, Map<String, dynamic> updates) async {
     try {
       await _firestore
           .collection('walk_sessions')
           .doc(sessionId)
           .update(updates);
-      
+
       print('WalkSessionService: 세션 $sessionId 업데이트 완료');
       return true;
     } catch (e) {
@@ -150,11 +197,8 @@ class WalkSessionService {
   /// 산책 세션 삭제
   Future<bool> deleteWalkSession(String sessionId) async {
     try {
-      await _firestore
-          .collection('walk_sessions')
-          .doc(sessionId)
-          .delete();
-      
+      await _firestore.collection('walk_sessions').doc(sessionId).delete();
+
       print('WalkSessionService: 세션 $sessionId 삭제 완료');
       return true;
     } catch (e) {
@@ -197,17 +241,62 @@ class WalkSessionService {
     }
   }
 
-  /// 간편한 저장 메서드 (WalkDiaryDialog에서 사용)
-  static Future<void> quickSave({
+  /// 사진 없이 즉시 저장하는 메서드 (빠른 저장용)
+  Future<String?> saveWalkSessionWithoutPhoto({
     required WalkStateManager walkStateManager,
-    String? userReflection,
+    String? walkReflection,
+    List<String>? customHashtags,
+    String? weatherInfo,
+    String? locationName,
   }) async {
-    final service = WalkSessionService();
-    await service.saveWalkSession(
-      walkStateManager: walkStateManager,
-      walkReflection: userReflection,
-      weatherInfo: '맑음', // 임시값, 추후 실제 날씨 API 연동
-      locationName: '서울', // 임시값, 추후 실제 위치명 조회
-    );
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        print('WalkSessionService: 사용자가 로그인되지 않음');
+        return null;
+      }
+
+      if (walkStateManager.startLocation == null ||
+          walkStateManager.waypointLocation == null) {
+        print('WalkSessionService: 필수 위치 정보가 누락됨');
+        return null;
+      }
+
+      // 고유 ID 생성
+      final docRef = _firestore.collection('walk_sessions').doc();
+
+      // WalkSession 객체 생성 (사진 없이)
+      final walkSession = WalkSession.fromWalkStateManager(
+        id: docRef.id,
+        userId: user.uid,
+        startTime: walkStateManager.actualStartTime ??
+            DateTime.now().subtract(const Duration(hours: 1)),
+        startLocation: walkStateManager.startLocation!,
+        destinationLocation:
+            walkStateManager.startLocation!, // 임시로 출발지와 동일하게 설정
+        waypointLocation: walkStateManager.waypointLocation!,
+        selectedMate: walkStateManager.selectedMate ?? '혼자',
+        waypointQuestion: walkStateManager.waypointQuestion,
+        waypointAnswer: walkStateManager.userAnswer,
+        poseImageUrl: null,
+        takenPhotoPath: null, // 사진은 나중에 업데이트
+        walkReflection: walkReflection,
+        hashtags: customHashtags ?? ['#저녁산책', '#포즈추천'],
+        weatherInfo: weatherInfo,
+        locationName: locationName,
+        endTime: walkStateManager.actualEndTime,
+        totalDuration: walkStateManager.actualDurationInMinutes,
+      );
+
+      // Firestore에 즉시 저장
+      final firestoreData = walkSession.toFirestore();
+      await docRef.set(firestoreData);
+
+      print('WalkSessionService: 산책 세션 즉시 저장 완료 - ID: ${docRef.id}');
+      return docRef.id;
+    } catch (e) {
+      print('WalkSessionService: 산책 세션 즉시 저장 중 오류 발생: $e');
+      return null;
+    }
   }
 }

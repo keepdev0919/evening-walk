@@ -70,12 +70,14 @@ class WalkSession {
     List<String>? hashtags,
     String? weatherInfo,
     String? locationName,
+    DateTime? endTime,
+    int? totalDuration,
   }) {
     return WalkSession(
       id: id,
       userId: userId,
       startTime: startTime,
-      endTime: DateTime.now(), // 세션 생성 시점을 완료 시간으로
+      endTime: endTime, // 전달받은 종료 시간 사용
       selectedMate: selectedMate,
       startLocation: startLocation,
       destinationLocation: destinationLocation,
@@ -86,6 +88,7 @@ class WalkSession {
       takenPhotoPath: takenPhotoPath,
       walkReflection: walkReflection,
       hashtags: hashtags ?? ['#저녁산책', '#포즈추천'],
+      totalDuration: totalDuration, // 전달받은 총 소요 시간 사용
       weatherInfo: weatherInfo,
       locationName: locationName,
     );

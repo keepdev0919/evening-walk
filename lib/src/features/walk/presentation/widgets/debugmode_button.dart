@@ -5,6 +5,7 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/walk_diary_dialog.dart';
+import 'package:walk/src/features/walk/presentation/widgets/pose_recommendation_dialog.dart';
 
 class DebugModeButtons extends StatelessWidget {
   final bool isLoading;
@@ -15,6 +16,8 @@ class DebugModeButtons extends StatelessWidget {
   final Function(bool) updateDestinationEventState;
   final Function(String) onPoseImageGenerated;
   final Function(String?) onPhotoTaken;
+  final String? initialPoseImageUrl;
+  final String? initialTakenPhotoPath;
 
   const DebugModeButtons({
     Key? key,
@@ -26,6 +29,8 @@ class DebugModeButtons extends StatelessWidget {
     required this.updateDestinationEventState,
     required this.onPoseImageGenerated,
     required this.onPhotoTaken,
+    required this.initialPoseImageUrl,
+    required this.initialTakenPhotoPath,
   }) : super(key: key);
 
   @override
@@ -97,14 +102,49 @@ class DebugModeButtons extends StatelessWidget {
                   if (!context.mounted) return;
 
                   if (result == 'destination_reached') {
-                    DestinationDialog.showDestinationArrivalDialog(
+                    // 상단바 목적지 아이콘 표시(유지)
+                    updateDestinationEventState(true);
+                    final bool? wantsToSeeEvent =
+                        await DestinationDialog.showDestinationArrivalDialog(
                       context: context,
-                      walkStateManager: walkStateManager,
-                      selectedMate: selectedMate,
-                      updateDestinationEventState: updateDestinationEventState,
-                      onPoseImageGenerated: onPoseImageGenerated,
-                      onPhotoTaken: onPhotoTaken,
                     );
+
+                    if (wantsToSeeEvent == true) {
+                      await PoseRecommendationDialog.show(
+                        context: context,
+                        walkStateManager: walkStateManager,
+                        selectedMate: selectedMate,
+                        initialPoseImageUrl: initialPoseImageUrl,
+                        initialTakenPhotoPath: initialTakenPhotoPath,
+                        onPoseImageGenerated: onPoseImageGenerated,
+                        onPhotoTaken: onPhotoTaken,
+                      );
+                      // 완료 버튼 이후에만 출발지 복귀 시작
+                      walkStateManager.startReturningHome();
+                      
+                      // 디버그 모드에서는 3초 후 자동으로 출발지 복귀 완료 처리
+                      Future.delayed(const Duration(seconds: 3), () async {
+                        if (currentPosition != null && context.mounted) {
+                          final result = await walkStateManager.updateUserLocation(
+                            currentPosition!,
+                            forceStartReturnEvent: true,
+                          );
+                          
+                          if (result == 'start_returned' && context.mounted) {
+                            WalkDiaryDialog.show(
+                              context: context,
+                              walkStateManager: walkStateManager,
+                              onWalkCompleted: (completed) {
+                                print('디버그: 산책이 완전히 완료되었습니다!');
+                              },
+                            );
+                          }
+                        }
+                      });
+                    } else {
+                      // 나중에 보기 → 상단 깃발 아이콘만 유지
+                      updateDestinationEventState(true);
+                    }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

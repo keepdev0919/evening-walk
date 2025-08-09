@@ -4,10 +4,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
+import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 
 // 상태 구분용 enum
@@ -21,73 +20,106 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Firebase
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  User? _user;
-  Future<DocumentSnapshot>? _userFuture;
-
   // 날씨 및 위치
   String _location = '';
   String _weather = '';
-  final String _apiKey = dotenv.env['OPENWEATHER_API_KEY']!;
+
+  final String _apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   InfoStatus _locationStatus = InfoStatus.loading;
   InfoStatus _weatherStatus = InfoStatus.loading;
 
   @override
   void initState() {
     super.initState();
-    _user = _auth.currentUser;
-    if (_user != null) {
-      _userFuture = _firestore.collection('users').doc(_user!.uid).get();
-    }
     _determinePosition();
+  }
+
+  // 위치 정보 재시도 메서드
+  Future<void> _retryLocationRequest() async {
+    setState(() {
+      _locationStatus = InfoStatus.loading;
+      _weatherStatus = InfoStatus.loading;
+    });
+    await _determinePosition();
   }
 
   // 위치 권한 및 날씨 정보 가져오기
   Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    try {
+      print('HomeScreen: 위치 권한 확인 시작');
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() {
-        _location = '위치 서비스가 꺼져 있어요';
-        _locationStatus = InfoStatus.error;
-      });
-      return;
-    }
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      print('HomeScreen: 위치 서비스 활성화 상태: $serviceEnabled');
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+      if (!serviceEnabled) {
+        print('HomeScreen: 위치 서비스가 비활성화됨');
         setState(() {
-          _location = '위치 권한이 거부되었어요';
+          _location = '위치 서비스 꺼짐';
           _locationStatus = InfoStatus.error;
         });
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      print('HomeScreen: 현재 위치 권한 상태: $permission');
+
+      if (permission == LocationPermission.denied) {
+        print('HomeScreen: 위치 권한 요청 중...');
+        permission = await Geolocator.requestPermission();
+        print('HomeScreen: 위치 권한 요청 결과: $permission');
+
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _location = '위치 권한 거부됨';
+            _locationStatus = InfoStatus.error;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('HomeScreen: 위치 권한이 영구적으로 거부됨');
+        setState(() {
+          _location = '위치 권한 영구 거부';
+          _locationStatus = InfoStatus.error;
+        });
+        return;
+      }
+    } catch (e) {
+      print('HomeScreen: 위치 권한 확인 중 오류 발생: $e');
       setState(() {
-        _location = '위치 권한이 영구적으로 거부되었어요';
+        _location = '권한 확인 오류';
         _locationStatus = InfoStatus.error;
       });
       return;
     }
 
     try {
-      Position position = await Geolocator.getCurrentPosition();
-      await _getAddressFromLatLng(position);
-      await _getWeather(position.latitude, position.longitude);
+      print('HomeScreen: GPS 위치 요청 시작');
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium, // 정확도 조정으로 속도 향상
+        timeLimit: const Duration(seconds: 15), // GPS 타임아웃 설정
+      );
+
+      print(
+          'HomeScreen: GPS 위치 획득 완료 - lat: ${position.latitude}, lon: ${position.longitude}');
+
+      // 위치 정보와 날씨 정보를 병렬로 처리 (더 빠른 로딩)
+      await Future.wait([
+        _getAddressFromLatLng(position),
+        _getWeather(position.latitude, position.longitude),
+      ]);
     } catch (e) {
+      print('HomeScreen: 위치/날씨 정보 가져오기 실패 - $e');
       setState(() {
-        _location = '위치를 가져오는 중 오류가 발생했어요';
-        _locationStatus = InfoStatus.error;
-        _weather = '날씨 정보를 불러올 수 없어요';
-        _weatherStatus = InfoStatus.error;
+        if (_locationStatus == InfoStatus.loading) {
+          _location = '위치 정보 오류';
+          _locationStatus = InfoStatus.error;
+        }
+        if (_weatherStatus == InfoStatus.loading) {
+          _weather = '🌤️ 날씨 정보 오류';
+          _weatherStatus = InfoStatus.error;
+        }
       });
     }
   }
@@ -95,17 +127,68 @@ class _HomeScreenState extends State<HomeScreen> {
   // 위도경도로 주소 가져오기
   Future<void> _getAddressFromLatLng(Position position) async {
     try {
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
+      print(
+          'HomeScreen: 위치 정보 요청 시작 - lat: ${position.latitude}, lon: ${position.longitude}');
 
-      Placemark place = placemarks[0];
-      setState(() {
-        _location = "📍 ${place.locality} ${place.thoroughfare}";
-        _locationStatus = InfoStatus.success;
-      });
+      // Timeout 설정으로 무한 대기 방지
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('HomeScreen: Geocoding API 타임아웃');
+          throw Exception('위치 정보 요청 시간 초과');
+        },
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        print(
+            'HomeScreen: 위치 정보 성공 - locality: ${place.locality}, subLocality: ${place.subLocality}');
+
+        // locality와 subLocality 조합으로 더 구체적인 위치 정보 제공
+        List<String> locationParts = [];
+
+        // locality 먼저 추가 (시/구 - 예: 수원시)
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          locationParts.add(place.locality!);
+        }
+
+        // subLocality 나중에 추가 (더 구체적인 지역 - 예: 영통구)
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          locationParts.add(place.subLocality!);
+        }
+
+        // 둘 다 없으면 상위 행정구역 사용
+        if (locationParts.isEmpty) {
+          if (place.subAdministrativeArea != null &&
+              place.subAdministrativeArea!.isNotEmpty) {
+            locationParts.add(place.subAdministrativeArea!);
+          } else if (place.administrativeArea != null &&
+              place.administrativeArea!.isNotEmpty) {
+            locationParts.add(place.administrativeArea!);
+          }
+        }
+
+        String locationText =
+            locationParts.isNotEmpty ? locationParts.join(' ') : '위치 정보';
+
+        setState(() {
+          _location = locationText;
+          _locationStatus = InfoStatus.success;
+        });
+      } else {
+        print('HomeScreen: Geocoding 결과가 비어있음');
+        setState(() {
+          _location = '위치 정보 없음';
+          _locationStatus = InfoStatus.error;
+        });
+      }
     } catch (e) {
+      print('HomeScreen: 위치 정보 가져오기 실패 - $e');
       setState(() {
-        _location = "📍 주소를 불러올 수 없어요";
+        _location = '위치 정보 오류';
         _locationStatus = InfoStatus.error;
       });
     }
@@ -114,23 +197,67 @@ class _HomeScreenState extends State<HomeScreen> {
   // 날씨 API 호출
   Future<void> _getWeather(double lat, double lon) async {
     try {
-      final response = await http.get(Uri.parse(
-          'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$_apiKey&units=metric&lang=kr'));
+      print('HomeScreen: 날씨 API 호출 시작 - lat: $lat, lon: $lon');
+      print('HomeScreen: API Key 존재 여부: ${_apiKey.isNotEmpty}');
+
+      if (_apiKey.isEmpty) {
+        print('HomeScreen: OpenWeather API 키가 설정되지 않음');
+        setState(() {
+          _weather = '🌤️ API 키 없음';
+          _weatherStatus = InfoStatus.error;
+        });
+        return;
+      }
+
+      final response = await http
+          .get(Uri.parse(
+              'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$_apiKey&units=metric&lang=kr'))
+          .timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('HomeScreen: 날씨 API 타임아웃');
+          throw Exception('날씨 API 요청 시간 초과');
+        },
+      );
+
+      print('HomeScreen: 날씨 API 응답 상태 코드: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          _weather = '🌤 ${data['main']['temp']}°C';
-          _weatherStatus = InfoStatus.success;
-        });
+        print('HomeScreen: 날씨 API 응답 성공');
+
+        if (data['weather'] != null &&
+            data['weather'].isNotEmpty &&
+            data['main'] != null) {
+          final weatherMain = data['weather'][0]['main']; // 날씨 상태
+          final temperature = data['main']['temp'].round(); // 온도
+
+          print(
+              'HomeScreen: 날씨 정보 파싱 성공 - 상태: $weatherMain, 온도: ${temperature}°C');
+
+          setState(() {
+            _weather = '${_getWeatherEmoji(weatherMain)} ${temperature}°C';
+            _weatherStatus = InfoStatus.success;
+          });
+        } else {
+          print('HomeScreen: 날씨 API 응답 데이터 형식 오류');
+          setState(() {
+            _weather = '🌤️ 날씨 데이터 오류';
+            _weatherStatus = InfoStatus.error;
+          });
+        }
       } else {
+        print(
+            'HomeScreen: 날씨 API HTTP 오류 - 상태 코드: ${response.statusCode}, 응답: ${response.body}');
         setState(() {
-          _weather = '🌤 날씨 정보를 불러올 수 없어요';
+          _weather = '🌤️ API 오류';
           _weatherStatus = InfoStatus.error;
         });
       }
     } catch (e) {
+      print('HomeScreen: 날씨 정보 가져오기 실패 - $e');
       setState(() {
-        _weather = '🌤 날씨 정보를 가져오는 중 오류 발생';
+        _weather = '🌤️ 날씨 오류';
         _weatherStatus = InfoStatus.error;
       });
     }
@@ -148,11 +275,46 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 날씨 상태에 따른 이모지 반환
+  String _getWeatherEmoji(String weatherCondition) {
+    switch (weatherCondition.toLowerCase()) {
+      case 'clear':
+        return '☀️'; // 맑음
+      case 'clouds':
+        return '☁️'; // 흐림
+      case 'few clouds':
+      case 'scattered clouds':
+        return '⛅'; // 구름 조금
+      case 'broken clouds':
+      case 'overcast clouds':
+        return '☁️'; // 흐림
+      case 'rain':
+      case 'light rain':
+      case 'moderate rain':
+        return '🌧️'; // 비
+      case 'heavy rain':
+      case 'extreme rain':
+        return '🌧️'; // 폭우
+      case 'drizzle':
+        return '🌦️'; // 이슬비
+      case 'thunderstorm':
+        return '⛈️'; // 천둥번개
+      case 'snow':
+        return '❄️'; // 눈
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return '🌫️'; // 안개
+      default:
+        return '🌤️'; // 기본값
+    }
+  }
+
   // 날씨 텍스트 상태별 분기
   String getWeatherText() {
     switch (_weatherStatus) {
       case InfoStatus.loading:
-        return '🌤 날씨 확인 중...';
+        return '🌤️ 날씨 확인 중...';
       case InfoStatus.success:
         return _weather;
       case InfoStatus.error:
@@ -168,20 +330,38 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, // 배경색 투명
         elevation: 0, // 그림자 제거
+        leadingWidth: 140, // leading 영역 너비 증가 (subLocality + locality 표시용)
         leading: Padding(
           padding: const EdgeInsets.only(left: 15.0),
-          child: _buildProfileCircle(),
+          child: GestureDetector(
+            onTap: () {
+              // 위치 정보가 오류 상태일 때만 재시도
+              if (_locationStatus == InfoStatus.error ||
+                  _weatherStatus == InfoStatus.error) {
+                _retryLocationRequest();
+              }
+            },
+            child: _buildLocationWeatherInfo(),
+          ),
         ),
-        title: const Text(
+        title: Text(
           '저녁산책',
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.8,
             shadows: [
               Shadow(
-                blurRadius: 4.0,
-                color: Colors.black54,
-                offset: Offset(1.0, 1.0),
+                color: Colors.black.withOpacity(0.8),
+                blurRadius: 6,
+                offset: const Offset(1, 1),
+              ),
+              Shadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 3,
+                offset: const Offset(0.5, 0.5),
               ),
             ],
           ),
@@ -194,179 +374,269 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const Profile()),
-              ).then((_) {
-                // 프로필 화면에서 돌아왔을 때 상태 갱신
-                setState(() {
-                  if (_user != null) {
-                    _userFuture =
-                        _firestore.collection('users').doc(_user!.uid).get();
-                  }
-                });
-              });
+              );
             },
           ),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 배경 이미지
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/nature_walk.jpg'),
-                fit: BoxFit.cover,
+      body: RefreshIndicator(
+        onRefresh: _refreshLocationAndWeather,
+        color: Colors.white,
+        backgroundColor: Colors.blue.withOpacity(0.8),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 배경 이미지
+            Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/nature_walk.jpg'),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
 
-          // 콘텐츠
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 10), // AppBar 공간 확보
+            // 콘텐츠를 스크롤 가능하게 만들기 (RefreshIndicator 작동을 위해)
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(), // 항상 스크롤 가능
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      MediaQuery.of(context).size.height - 100, // 충분한 높이 확보
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 10), // AppBar 공간 확보
 
-                  // 위치 및 날씨 정보
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildInfoText(getLocationText()),
-                      const SizedBox(width: 16),
-                      _buildInfoText(getWeatherText()),
-                    ],
-                  ),
-
-                  const Spacer(),
-
-                  // 중앙 문구
-                  const Text(
-                    '오늘 하루도 수고했어요\n가볍게 걸어볼까요?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 4.0,
-                          color: Colors.black87,
-                          offset: Offset(1.0, 1.0),
+                        // 중앙 문구 - 감성적인 폰트와 그림자 효과
+                        Text(
+                          '저녁 공기를 마시며,\n가볍게 걸어볼까요?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                            height: 1.3,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.8),
+                                blurRadius: 8,
+                                offset: const Offset(2, 2),
+                              ),
+                              Shadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 4,
+                                offset: const Offset(1, 1),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(height: 40), // AppBar 공간 확보
+
+                        // 버튼 영역
+                        Column(
+                          children: [
+                            // 산책하기 버튼 - 반투명 스타일
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const WalkStartMapScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 60,
+                                  vertical: 18,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Text(
+                                  '산책 하기',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // 산책 기록 버튼 - 반투명 스타일
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const WalkHistoryScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 60,
+                                  vertical: 18,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Text(
+                                  '산책 기록',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 60),
-
-                  // 산책하기 버튼
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const WalkStartMapScreen()),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 60,
-                        vertical: 18,
-                      ),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text(
-                      '산책하기',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// 프로필 사진 CircleAvatar를 빌드하는 위젯
-  Widget _buildProfileCircle() {
-    // 로그인하지 않은 사용자를 위한 기본 아이콘
-    if (_user == null) {
-      return const CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.white54,
-        child: Icon(Icons.person, size: 28, color: Colors.black87),
-      );
-    }
-
-    return FutureBuilder<DocumentSnapshot>(
-      future: _userFuture,
-      builder: (context, snapshot) {
-        // 로딩 중일 때
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.white54,
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.black87),
+  // 위치와 날씨 정보를 2열로 표시하는 위젯
+  Widget _buildLocationWeatherInfo() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 1열: 위치 정보
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on,
+              size: 14,
+              color: Colors.white70,
             ),
-          );
-        }
-        // 에러가 있거나 데이터가 없을 때
-        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-          return const CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.white54,
-            child: Icon(Icons.person, size: 28, color: Colors.black87),
-          );
-        }
-
-        // 데이터가 성공적으로 로드되었을 때
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final imageUrl = userData['profileImageUrl'];
-
-        return CircleAvatar(
-          radius: 22,
-          backgroundColor: Colors.white,
-          backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-          child: imageUrl == null
-              ? const Icon(Icons.person, size: 28, color: Colors.black87)
-              : null,
-        );
-      },
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                _getLocationDisplayText(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2.0,
+                      color: Colors.black54,
+                      offset: Offset(1.0, 1.0),
+                    ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 1),
+        // 2열: 날씨 정보
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                _getWeatherDisplayText(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2.0,
+                      color: Colors.black54,
+                      offset: Offset(1.0, 1.0),
+                    ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  /// 위치/날씨 정보 텍스트 스타일을 적용하는 위젯
-  Widget _buildInfoText(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-        shadows: [
-          Shadow(
-            blurRadius: 4.0,
-            color: Colors.black54,
-            offset: Offset(1.0, 1.0),
-          ),
-        ],
-      ),
-    );
+  // 위치 정보 간단 표시용 (AppBar용)
+  String _getLocationDisplayText() {
+    switch (_locationStatus) {
+      case InfoStatus.loading:
+        return '확인 중...';
+      case InfoStatus.success:
+        // 너무 길면 적절히 자르기 (subLocality + locality 조합 고려)
+        if (_location.length > 12) {
+          return _location.substring(0, 12);
+        }
+        return _location;
+      case InfoStatus.error:
+        return '오류';
+    }
+  }
+
+  // 날씨 정보 간단 표시용 (AppBar용)
+  String _getWeatherDisplayText() {
+    switch (_weatherStatus) {
+      case InfoStatus.loading:
+        return '🌤️ 확인 중...';
+      case InfoStatus.success:
+        return _weather;
+      case InfoStatus.error:
+        return '🌤️ 오류';
+    }
+  }
+
+  // Pull-to-Refresh 기능 - 위치와 날씨 정보 새로고침
+  Future<void> _refreshLocationAndWeather() async {
+    print('HomeScreen: Pull-to-refresh 시작');
+
+    setState(() {
+      _locationStatus = InfoStatus.loading;
+      _weatherStatus = InfoStatus.loading;
+    });
+
+    try {
+      await _determinePosition();
+      print('HomeScreen: Pull-to-refresh 완료');
+    } catch (e) {
+      print('HomeScreen: Pull-to-refresh 실패 - $e');
+    }
   }
 }

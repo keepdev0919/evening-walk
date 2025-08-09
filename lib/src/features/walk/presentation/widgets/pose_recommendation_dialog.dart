@@ -6,48 +6,49 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 
 class PoseRecommendationDialog {
-  static Future<void> show({
+  static Future<bool?> show({
     required BuildContext context,
     required WalkStateManager walkStateManager,
     required String selectedMate,
-    required Function(bool) updateDestinationEventState,
     String? initialPoseImageUrl,
     String? initialTakenPhotoPath,
     required Function(String) onPoseImageGenerated,
     required Function(String?) onPhotoTaken,
   }) async {
-    // 다이얼로그가 처음 열릴 때만 랜덤 이미지 URL을 가져옵니다.
     final String? initialRandomImagePath = initialPoseImageUrl ??
         await PoseImageService.fetchRandomImageUrl(selectedMate);
     if (initialRandomImagePath != null && initialPoseImageUrl == null) {
       onPoseImageGenerated(initialRandomImagePath);
     }
 
-    String? _takenPhotoPath = initialTakenPhotoPath; // 찍은 사진 경로를 저장할 변수
-    bool _isLoadingImage = initialPoseImageUrl == null; // 초기 로딩 상태 설정
-    String? _currentDisplayedImageUrl = initialPoseImageUrl; // 현재 표시될 이미지 URL
-    final GlobalKey _repaintBoundaryKey = GlobalKey(); // RepaintBoundary를 위한 키
+    String? _takenPhotoPath = initialTakenPhotoPath;
+    bool _isLoadingImage = initialPoseImageUrl == null;
+    String? _currentDisplayedImageUrl = initialPoseImageUrl;
+    final GlobalKey _repaintBoundaryKey = GlobalKey();
 
-    showDialog(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-            // 이미지가 로드되지 않았고, 이전에 로딩 중이 아니었다면 이미지 로딩 시작
             if (_isLoadingImage && _currentDisplayedImageUrl == null) {
               PoseImageService.fetchRandomImageUrl(selectedMate)
                   .then((imageUrl) {
                 if (imageUrl != null) {
                   onPoseImageGenerated(imageUrl);
-                  setState(() {
-                    _currentDisplayedImageUrl = imageUrl;
-                    _isLoadingImage = false;
-                  });
+                  if (context.mounted) {
+                    setState(() {
+                      _currentDisplayedImageUrl = imageUrl;
+                      _isLoadingImage = false;
+                    });
+                  }
                 } else {
-                  setState(() {
-                    _isLoadingImage = false;
-                  });
+                  if (context.mounted) {
+                    setState(() {
+                      _isLoadingImage = false;
+                    });
+                  }
                 }
               });
             }
@@ -60,14 +61,12 @@ class PoseRecommendationDialog {
               content: SizedBox(
                 width: double.maxFinite,
                 height: _takenPhotoPath != null
-                    ? MediaQuery.of(context).size.height * 0.8 // 사진 찍은 후엔 기존 높이
-                    : MediaQuery.of(context).size.height *
-                        0.63, // 사진 찍기 전엔 더 작게
+                    ? MediaQuery.of(context).size.height * 0.8
+                    : MediaQuery.of(context).size.height * 0.63,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // RepaintBoundary로 공유할 영역을 감싸기
                       RepaintBoundary(
                         key: _repaintBoundaryKey,
                         child: Container(
@@ -75,7 +74,7 @@ class PoseRecommendationDialog {
                           constraints: BoxConstraints(
                             minHeight: _takenPhotoPath != null ? 640 : 320,
                             maxHeight: _takenPhotoPath != null ? 640 : 360,
-                          ), // 사진 찍기 전엔 더 컴팩트한 제약
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -86,22 +85,18 @@ class PoseRecommendationDialog {
                               ],
                             ),
                             borderRadius: BorderRadius.circular(24),
-                          ), // 인스타 스타일 배경
+                          ),
                           padding: EdgeInsets.only(
                             left: 20.0,
                             right: 20.0,
-                            top: _takenPhotoPath != null
-                                ? 25.0
-                                : 15.0, // 사진 찍기 전엔 위쪽 더 줄임
-                            bottom: _takenPhotoPath != null
-                                ? 10.0
-                                : 8.0, // 사진 찍기 전엔 아래쪽도 줄임
+                            top: _takenPhotoPath != null ? 25.0 : 15.0,
+                            bottom: _takenPhotoPath != null ? 10.0 : 8.0,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: _takenPhotoPath != null
                                 ? MainAxisAlignment.start
-                                : MainAxisAlignment.center, // 사진 찍기 전엔 가운데 정렬
+                                : MainAxisAlignment.center,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -117,19 +112,14 @@ class PoseRecommendationDialog {
                                   '📸 추천 포즈',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: _takenPhotoPath != null
-                                        ? 15
-                                        : 14, // 사진 찍기 전엔 폰트 크기도 줄임
+                                    fontSize: _takenPhotoPath != null ? 15 : 14,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
                               ),
                               SizedBox(
-                                  height: _takenPhotoPath != null
-                                      ? 15
-                                      : 10), // 사진 찍기 전엔 간격 줄임
-                              // 추천 포즈 이미지
+                                  height: _takenPhotoPath != null ? 15 : 10),
                               if (_isLoadingImage)
                                 Container(
                                   width: 280,
@@ -145,56 +135,71 @@ class PoseRecommendationDialog {
                                     child: CircularProgressIndicator(
                                         color: Colors.white),
                                   ),
-                                ) // 로딩 중일 때 표시
+                                )
                               else if (_currentDisplayedImageUrl != null)
-                                Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: CachedNetworkImage(
-                                        imageUrl: _currentDisplayedImageUrl!,
-                                        width: 280,
-                                        height: 210,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            Container(
-                                          width: 280,
-                                          height: 210,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            border: Border.all(
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final double maxW = constraints.maxWidth;
+                                    final double targetW =
+                                        maxW.clamp(220.0, 320.0);
+                                    final double targetH =
+                                        (targetW / 4 * 3).clamp(180.0, 240.0);
+                                    return Column(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          child: CachedNetworkImage(
+                                            imageUrl:
+                                                _currentDisplayedImageUrl!,
+                                            width: targetW,
+                                            height: targetH,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                Container(
+                                              width: targetW,
+                                              height: targetH,
+                                              decoration: BoxDecoration(
                                                 color: Colors.white
-                                                    .withValues(alpha: 0.2)),
-                                          ),
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                                color: Colors.white),
+                                                    .withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                    color: Colors.white
+                                                        .withValues(
+                                                            alpha: 0.2)),
+                                              ),
+                                              child: const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        color: Colors.white),
+                                              ),
+                                            ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Container(
+                                              width: targetW,
+                                              height: targetH,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                border: Border.all(
+                                                    color: Colors.white
+                                                        .withValues(
+                                                            alpha: 0.2)),
+                                              ),
+                                              child: const Center(
+                                                child: Icon(Icons.error,
+                                                    color: Colors.white),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                          width: 280,
-                                          height: 210,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            border: Border.all(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.2)),
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.error,
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                      ],
+                                    );
+                                  },
                                 )
                               else
                                 Container(
@@ -219,12 +224,9 @@ class PoseRecommendationDialog {
                                     ),
                                   ),
                                 ),
-
-                              // 찍은 사진이 있으면 표시
                               if (_takenPhotoPath != null) ...[
                                 const SizedBox(height: 15),
                                 Container(
-                                  //포즈추천, 찍은사진 경계선
                                   width: 120,
                                   height: 1,
                                   decoration: BoxDecoration(
@@ -240,7 +242,6 @@ class PoseRecommendationDialog {
                                 const SizedBox(height: 15),
                                 GestureDetector(
                                   onTap: () {
-                                    // 전체화면 사진 보기 - 간단한 다이얼로그로 대체
                                     showDialog(
                                       context: context,
                                       builder: (ctx) => Dialog(
@@ -316,8 +317,6 @@ class PoseRecommendationDialog {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // 사진이 찍히지 않았을 때는 사진 찍기 버튼만 중앙에 표시
-                      // 사진이 찍힌 후에는 사진 찍기와 공유 버튼을 나란히 표시
                       _takenPhotoPath == null
                           ? Center(
                               child: ElevatedButton.icon(
@@ -331,11 +330,13 @@ class PoseRecommendationDialog {
                                   final photoPath =
                                       await walkStateManager.takePhoto();
                                   if (photoPath != null) {
-                                    setState(() {
-                                      _takenPhotoPath = photoPath;
-                                    });
+                                    if (context.mounted) {
+                                      setState(() {
+                                        _takenPhotoPath = photoPath;
+                                      });
+                                    }
                                     walkStateManager.saveAnswerAndPhoto(
-                                      answer: '',
+                                      answer: walkStateManager.userAnswer,
                                       photoPath: photoPath,
                                     );
                                     onPhotoTaken(photoPath);
@@ -370,11 +371,13 @@ class PoseRecommendationDialog {
                                     final photoPath =
                                         await walkStateManager.takePhoto();
                                     if (photoPath != null) {
-                                      setState(() {
-                                        _takenPhotoPath = photoPath;
-                                      });
+                                      if (context.mounted) {
+                                        setState(() {
+                                          _takenPhotoPath = photoPath;
+                                        });
+                                      }
                                       walkStateManager.saveAnswerAndPhoto(
-                                        answer: '',
+                                        answer: walkStateManager.userAnswer,
                                         photoPath: photoPath,
                                       );
                                       onPhotoTaken(photoPath);
@@ -449,9 +452,7 @@ class PoseRecommendationDialog {
                         width: _takenPhotoPath != null ? double.infinity : 130,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
-                            updateDestinationEventState(
-                                true); // <-- 목적지 이벤트 완료 알림
+                            Navigator.of(dialogContext).pop(true);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor:

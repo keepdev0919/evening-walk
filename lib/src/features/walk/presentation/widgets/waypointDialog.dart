@@ -5,11 +5,10 @@ class WaypointDialogs {
     required BuildContext context,
     required String questionPayload,
     required Function(bool, String?, String?) updateWaypointEventState,
-    String? initialAnswer,
   }) async {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // 사용자가 다이얼로그 바깥을 탭하여 닫을 수 없게 함
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.black.withOpacity(0.7), // 배경색
@@ -26,23 +25,39 @@ class WaypointDialogs {
             child: ListBody(
               children: <Widget>[
                 Text(
-                  '경유지에 도착했습니다. 이벤트를 확인하시겠습니까?', // 내용
+                  '경유지에 도착했습니다. 이벤트를 확인하시겠습니까?',
                   style: TextStyle(color: Colors.white70),
                 ),
               ],
             ),
           ),
           actions: <Widget>[
-            ElevatedButton(
-              // 버튼
+            TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // 다이얼로그 닫기
+                Navigator.of(dialogContext).pop();
+                updateWaypointEventState(true, questionPayload, null);
+              },
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                minimumSize: const Size(0, 40),
+                visualDensity: VisualDensity.compact,
+              ),
+              child: const Text('나중에', style: TextStyle(color: Colors.white70)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
                 updateWaypointEventState(true, questionPayload, null);
                 WaypointDialogs.showQuestionDialog(
-                    context, questionPayload, updateWaypointEventState, initialAnswer); // 질문 다이얼로그 표시
+                    context, questionPayload, updateWaypointEventState, null);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue, // 원하는 색상으로 지정
+                backgroundColor: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                minimumSize: const Size(0, 44),
+                visualDensity: VisualDensity.compact,
               ),
               child: const Text('이벤트 확인'),
             ),
@@ -58,7 +73,8 @@ class WaypointDialogs {
     Function(bool, String?, String?) updateWaypointEventState,
     String? initialAnswer,
   ) {
-    final TextEditingController answerController = TextEditingController(text: initialAnswer);
+    final TextEditingController answerController =
+        TextEditingController(text: initialAnswer);
 
     showDialog(
       context: context,

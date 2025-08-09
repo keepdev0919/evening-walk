@@ -3,14 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
 import 'src/features/auth/presentation/screens/login_page_screen.dart';
 import 'src/features/home/presentation/screens/home_screen.dart';
+import 'src/shared/providers/upload_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: 'assets/config/.env');
   await Firebase.initializeApp();
+
+  // 한국어 로케일 데이터 초기화
+  await initializeDateFormatting('ko_KR', null);
 
   // // Firebase App Check 초기화 (디버그 공급자 사용)
   // await FirebaseAppCheck.instance.activate(
@@ -43,30 +49,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        title: '산책 앱',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
-          useMaterial3: false,
-        ),
-        home: FutureBuilder(
-          future: authCheck(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                  body: Center(child: CircularProgressIndicator())); // 로딩 중일 때
-            } else if (snapshot.hasData) {
-              return snapshot.data!;
-              // 로그인 상태에 따라 MainLogin 또는 HomeScreen 반환
-              // if 조건에서 무조건 존재하기때문에 snapshot.data는 nullable이였는데 절대 null이 아님을 의미하는 !를 붙여 dart에게 확신줌.
-            } else {
-              return const Scaffold(
-                  body: Center(child: Text("문제가 발생했습니다."))); // 에러 발생 시
-            }
-          },
-        ),
-        routes: {
-          '/homescreen': (context) => const HomeScreen(),
-        });
+    return ChangeNotifierProvider(
+      create: (context) => UploadProvider(),
+      child: MaterialApp(
+          title: '산책 앱',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+            useMaterial3: false,
+            fontFamily: 'Cafe24Oneprettynight',
+          ),
+          home: FutureBuilder(
+            future: authCheck(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                    body:
+                        Center(child: CircularProgressIndicator())); // 로딩 중일 때
+              } else if (snapshot.hasData) {
+                return snapshot.data!;
+                // 로그인 상태에 따라 MainLogin 또는 HomeScreen 반환
+                // if 조건에서 무조건 존재하기때문에 snapshot.data는 nullable이였는데 절대 null이 아님을 의미하는 !를 붙여 dart에게 확신줌.
+              } else {
+                return const Scaffold(
+                    body: Center(child: Text("문제가 발생했습니다."))); // 에러 발생 시
+              }
+            },
+          ),
+          routes: {
+            '/homescreen': (context) => const HomeScreen(),
+          }),
+    );
   }
 }
