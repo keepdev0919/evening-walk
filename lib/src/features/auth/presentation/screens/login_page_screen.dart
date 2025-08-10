@@ -30,7 +30,10 @@ class LoginPage extends StatelessWidget {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인에 실패했습니다.')),
+        SnackBar(
+          content: const Text('로그인에 실패했습니다.'),
+          backgroundColor: Colors.black.withOpacity(0.6),
+        ),
       );
     }
   }

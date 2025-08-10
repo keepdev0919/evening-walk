@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:walk/src/features/walk/domain/models/walk_session.dart';
 import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
 import 'package:walk/src/features/walk/presentation/widgets/walk_history_item_widget.dart';
-import 'package:walk/src/features/walk/presentation/widgets/walk_diary_dialog.dart';
+import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 
 /// 산책 기록 목록을 보여주는 화면
@@ -313,8 +313,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                     : Colors.black.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color:
-                      isSelected ? Colors.blue : Colors.white54,
+                  color: isSelected ? Colors.blue : Colors.white54,
                   width: 1.5,
                 ),
                 boxShadow: isSelected
@@ -475,21 +474,42 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
     final walkStateManager = WalkStateManager();
 
     // 세션 데이터를 WalkStateManager에 설정
+    // 좌표 복원: 저장된 경로가 그대로 보이도록 주입
+    walkStateManager.setLocationsForRestore(
+      start: session.startLocation,
+      waypoint: session.waypointLocation,
+      destination: session.destinationLocation,
+    );
+    // 목적지 표시명 복원 (있을 경우 주소보다 우선 표시)
+    if (session.locationName != null && session.locationName!.isNotEmpty) {
+      walkStateManager.setDestinationBuildingName(session.locationName);
+    }
     walkStateManager.setWaypointQuestion(session.waypointQuestion);
     walkStateManager.saveAnswerAndPhoto(
       answer: session.waypointAnswer,
       photoPath: session.takenPhotoPath,
     );
     walkStateManager.saveReflection(session.walkReflection);
+    // 세션에 저장된 추천 포즈 URL도 매니저에 주입하여 기록 보기에서 동일 이미지를 표시
+    walkStateManager.savePoseImageUrl(session.poseImageUrl);
 
-    // 읽기 전용 모드로 다이얼로그 표시
-    WalkDiaryDialog.show(
-      context: context,
-      walkStateManager: walkStateManager,
-      isViewMode: true, // 읽기 전용 모드
-      onWalkCompleted: (completed) {
-        // 상세보기에서는 아무 작업 하지 않음
-      },
+    // 편집 가능 모드로 페이지 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WalkDiaryScreen(
+          walkStateManager: walkStateManager,
+          isViewMode: false, // 편집 가능 모드로 변경
+          sessionId: session.id, // 업로드 상태 연동
+          selectedMate: session.selectedMate, // 추천 포즈 로딩용
+          onWalkCompleted: (completed) {
+            // 수정 완료 후 목록 새로고침
+            if (completed) {
+              _loadWalkSessions();
+            }
+          },
+        ),
+      ),
     );
   }
 
@@ -516,24 +536,14 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
-                children: [
-                  const Text('✅', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '산책 기록이 삭제되었습니다.',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                children: const [
+                  Text('✅', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 8),
+                  Text('산책 기록이 삭제되었습니다.'),
                 ],
               ),
-              backgroundColor: Colors.green.withOpacity(0.8),
+              backgroundColor: Colors.black.withOpacity(0.6),
               duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
             ),
           );
         }
@@ -547,24 +557,14 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
-                children: [
-                  const Text('❌', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '삭제에 실패했습니다. 다시 시도해주세요.',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                children: const [
+                  Text('❌', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('삭제에 실패했습니다. 다시 시도해주세요.')),
                 ],
               ),
-              backgroundColor: Colors.red.withOpacity(0.8),
+              backgroundColor: Colors.black.withOpacity(0.6),
               duration: const Duration(seconds: 3),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
             ),
           );
         }
@@ -582,22 +582,12 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                 const Text('⚠️', style: TextStyle(fontSize: 16)),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    '삭제 중 오류가 발생했습니다: ${e.toString()}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: Text('삭제 중 오류가 발생했습니다: ${e.toString()}'),
                 ),
               ],
             ),
-            backgroundColor: Colors.orange.withOpacity(0.8),
+            backgroundColor: Colors.black.withOpacity(0.6),
             duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
           ),
         );
       }

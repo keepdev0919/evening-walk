@@ -177,4 +177,106 @@ class MapMarkerCreator {
 
     return BitmapDescriptor.fromBytes(uint8List);
   }
+
+  /// UI용 PNG 바이트로 경유지(선물상자) 마커 아이콘을 생성합니다.
+  /// 리스트/일기 화면 등 지도 외 위젯에서 이미지로 사용합니다.
+  static Future<Uint8List> createGiftBoxMarkerPng({
+    double pinSize = 60.0,
+    double iconSize = 24.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final Paint pinPaint = Paint()..color = Colors.orange;
+    final Path pinPath = Path();
+    pinPath.moveTo(pinSize / 2, pinSize);
+    pinPath.quadraticBezierTo(0, pinSize * 0.6, pinSize / 2, pinSize * 0.2);
+    pinPath.quadraticBezierTo(pinSize, pinSize * 0.6, pinSize / 2, pinSize);
+    canvas.drawPath(pinPath, pinPaint);
+
+    final Paint circlePaint = Paint()..color = Colors.black;
+    canvas.drawCircle(
+      Offset(pinSize / 2, pinSize / 2.5),
+      (iconSize / 1.2) + 4,
+      circlePaint,
+    );
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: TextSpan(
+        text: String.fromCharCode(Icons.card_giftcard.codePoint),
+        style: TextStyle(
+          fontSize: iconSize,
+          fontFamily: Icons.card_giftcard.fontFamily,
+          color: Colors.orange,
+        ),
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (pinSize - textPainter.width) / 2,
+        (pinSize / 2.5) - (textPainter.height / 2),
+      ),
+    );
+
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(pinSize.toInt(), pinSize.toInt());
+    final ByteData? byteData =
+        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
+
+  /// UI용 PNG 바이트로 목적지(깃발) 마커 아이콘을 생성합니다.
+  /// 리스트/일기 화면 등 지도 외 위젯에서 이미지로 사용합니다.
+  static Future<Uint8List> createDestinationMarkerPng({
+    double pinSize = 60.0,
+    double iconSize = 24.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final Paint pinPaint = Paint()..color = Colors.red;
+    final Path pinPath = Path();
+    pinPath.moveTo(pinSize / 2, pinSize);
+    pinPath.quadraticBezierTo(0, pinSize * 0.6, pinSize / 2, pinSize * 0.2);
+    pinPath.quadraticBezierTo(pinSize, pinSize * 0.6, pinSize / 2, pinSize);
+    canvas.drawPath(pinPath, pinPaint);
+
+    final Paint circlePaint = Paint()..color = Colors.black;
+    canvas.drawCircle(
+      Offset(pinSize / 2, pinSize / 2.5),
+      (iconSize / 1.2) + 4,
+      circlePaint,
+    );
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: TextSpan(
+        text: String.fromCharCode(Icons.flag.codePoint),
+        style: TextStyle(
+          fontSize: iconSize,
+          fontFamily: Icons.flag.fontFamily,
+          color: Colors.red,
+        ),
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (pinSize - textPainter.width) / 2,
+        (pinSize / 2.5) - (textPainter.height / 2),
+      ),
+    );
+
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(pinSize.toInt(), pinSize.toInt());
+    final ByteData? byteData =
+        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
 }

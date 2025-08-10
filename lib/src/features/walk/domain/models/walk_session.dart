@@ -1,4 +1,5 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 산책 세션 데이터 모델
 /// 하나의 완전한 산책 경험(출발지 → 경유지 → 목적지 → 출발지)을 저장
@@ -8,30 +9,30 @@ class WalkSession {
   final DateTime startTime; // 산책 시작 시간
   final DateTime? endTime; // 산책 완료 시간
   final String selectedMate; // 선택한 동반자 ('혼자', '연인', '친구')
-  
+
   // 위치 정보
   final LatLng startLocation; // 출발지
   final LatLng destinationLocation; // 목적지
   final LatLng waypointLocation; // 경유지
-  
+
   // 경유지 경험
   final String? waypointQuestion; // 경유지에서 받은 질문
   final String? waypointAnswer; // 사용자의 답변
-  
+
   // 목적지 경험
   final String? poseImageUrl; // 추천받은 포즈 이미지 URL
   final String? takenPhotoPath; // 찍은 사진 경로
-  
+
   // 일기 정보
   final String? walkReflection; // 산책 후 소감 (일기 다이얼로그에서 입력)
   final List<String> hashtags; // 해시태그
-  
+
   // 메타 정보
   final double? totalDistance; // 총 이동 거리 (km)
   final int? totalDuration; // 총 소요 시간 (분)
   final String? weatherInfo; // 날씨 정보
   final String? locationName; // 위치명 (예: "서울 강남구")
-  
+
   WalkSession({
     required this.id,
     required this.userId,
@@ -96,36 +97,82 @@ class WalkSession {
 
   /// Firebase Firestore에서 읽어온 데이터로부터 WalkSession 생성
   factory WalkSession.fromFirestore(Map<String, dynamic> data, String docId) {
+    DateTime _parseToDateTime(dynamic value) {
+      if (value == null) return DateTime.fromMillisecondsSinceEpoch(0);
+      if (value is int) {
+        // millisecondsSinceEpoch
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      }
+      if (value is Timestamp) {
+        return value.toDate();
+      }
+      if (value is String) {
+        // 문자열 날짜(ISO) 또는 숫자 문자열 모두 처리
+        final trimmed = value.trim();
+        final asInt = int.tryParse(trimmed);
+        if (asInt != null) {
+          return DateTime.fromMillisecondsSinceEpoch(asInt);
+        }
+        try {
+          return DateTime.parse(trimmed);
+        } catch (_) {
+          // 파싱 실패 시 epoch로 폴백
+          return DateTime.fromMillisecondsSinceEpoch(0);
+        }
+      }
+      // 알 수 없는 타입 → epoch 폴백
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    LatLng _parseToLatLng(dynamic value) {
+      if (value == null) return const LatLng(0.0, 0.0);
+      if (value is Map<String, dynamic>) {
+        final lat = (value['latitude'] as num?)?.toDouble() ?? 0.0;
+        final lng = (value['longitude'] as num?)?.toDouble() ?? 0.0;
+        return LatLng(lat, lng);
+      }
+      if (value is GeoPoint) {
+        return LatLng(value.latitude, value.longitude);
+      }
+      return const LatLng(0.0, 0.0);
+    }
+
+    List<String> _parseHashtags(dynamic value) {
+      if (value == null) return ['#저녁산책'];
+      if (value is List) {
+        return value.map((e) => e.toString()).toList();
+      }
+      // 단일 문자열로 저장된 경우 분리 시도
+      if (value is String) {
+        return value.split(RegExp(r'[ ,]')).where((e) => e.isNotEmpty).toList();
+      }
+      return ['#저녁산책'];
+    }
+
     return WalkSession(
       id: docId,
-      userId: data['userId'] ?? '',
-      startTime: DateTime.fromMillisecondsSinceEpoch(data['startTime'] ?? 0),
-      endTime: data['endTime'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(data['endTime'])
-          : null,
-      selectedMate: data['selectedMate'] ?? '혼자',
-      startLocation: LatLng(
-        data['startLocation']['latitude'] ?? 0.0,
-        data['startLocation']['longitude'] ?? 0.0,
-      ),
-      destinationLocation: LatLng(
-        data['destinationLocation']['latitude'] ?? 0.0,
-        data['destinationLocation']['longitude'] ?? 0.0,
-      ),
-      waypointLocation: LatLng(
-        data['waypointLocation']['latitude'] ?? 0.0,
-        data['waypointLocation']['longitude'] ?? 0.0,
-      ),
-      waypointQuestion: data['waypointQuestion'],
-      waypointAnswer: data['waypointAnswer'],
-      poseImageUrl: data['poseImageUrl'],
-      takenPhotoPath: data['takenPhotoPath'],
-      walkReflection: data['walkReflection'],
-      hashtags: List<String>.from(data['hashtags'] ?? ['#저녁산책']),
-      totalDistance: data['totalDistance']?.toDouble(),
-      totalDuration: data['totalDuration'],
-      weatherInfo: data['weatherInfo'],
-      locationName: data['locationName'],
+      userId: data['userId']?.toString() ?? '',
+      startTime: _parseToDateTime(data['startTime']),
+      endTime:
+          data['endTime'] != null ? _parseToDateTime(data['endTime']) : null,
+      selectedMate: data['selectedMate']?.toString() ?? '혼자',
+      startLocation: _parseToLatLng(data['startLocation']),
+      destinationLocation: _parseToLatLng(data['destinationLocation']),
+      waypointLocation: _parseToLatLng(data['waypointLocation']),
+      waypointQuestion: data['waypointQuestion']?.toString(),
+      waypointAnswer: data['waypointAnswer']?.toString(),
+      poseImageUrl: data['poseImageUrl']?.toString(),
+      takenPhotoPath: data['takenPhotoPath']?.toString(),
+      walkReflection: data['walkReflection']?.toString(),
+      hashtags: _parseHashtags(data['hashtags']),
+      totalDistance: (data['totalDistance'] is num)
+          ? (data['totalDistance'] as num).toDouble()
+          : double.tryParse(data['totalDistance']?.toString() ?? ''),
+      totalDuration: (data['totalDuration'] is num)
+          ? (data['totalDuration'] as num).toInt()
+          : int.tryParse(data['totalDuration']?.toString() ?? ''),
+      weatherInfo: data['weatherInfo']?.toString(),
+      locationName: data['locationName']?.toString(),
     );
   }
 

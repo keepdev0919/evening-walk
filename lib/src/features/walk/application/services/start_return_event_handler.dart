@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// 사용자의 위치가 출발지에 복귀했는지 여부를 확인하는 역할을 담당하는 클래스.
 class StartReturnEventHandler {
-  // 출발지 복귀 도착 반경 설정 (20m)
+  // 출발지 복귀 도착 반경 설정
   static const double startReturnArrivalRadius = 20.0;
 
   /// 사용자 위치가 출발지 도착 반경 내에 있는지 확인합니다.

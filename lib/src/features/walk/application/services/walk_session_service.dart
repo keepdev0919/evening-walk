@@ -34,21 +34,21 @@ class WalkSessionService {
       // 고유 ID 생성
       final docRef = _firestore.collection('walk_sessions').doc();
 
-      // 사진이 있으면 Firebase Storage에 업로드
-      String? uploadedPhotoUrl;
-      if (walkStateManager.photoPath != null) {
-        print('WalkSessionService: 사진 업로드 시작');
-        uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
-          filePath: walkStateManager.photoPath!,
-          sessionId: docRef.id,
-        );
+      // // 사진이 있으면 Firebase Storage에 업로드
+      // String? uploadedPhotoUrl;
+      // if (walkStateManager.photoPath != null) {
+      //   print('WalkSessionService: 사진 업로드 시작');
+      //   uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
+      //     filePath: walkStateManager.photoPath!,
+      //     sessionId: docRef.id,
+      //   );
 
-        if (uploadedPhotoUrl != null) {
-          print('WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
-        } else {
-          print('WalkSessionService: 사진 업로드 실패');
-        }
-      }
+      //   if (uploadedPhotoUrl != null) {
+      //     print('WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
+      //   } else {
+      //     print('WalkSessionService: 사진 업로드 실패');
+      //   }
+      // }
 
       // WalkSession 객체 생성
       final walkSession = WalkSession.fromWalkStateManager(
@@ -57,16 +57,15 @@ class WalkSessionService {
         startTime: walkStateManager.actualStartTime ??
             DateTime.now().subtract(const Duration(hours: 1)), // 실제 시작 시간 사용
         startLocation: walkStateManager.startLocation!,
-        destinationLocation: walkStateManager
-            .startLocation!, // 임시로 출발지와 동일하게 설정 - 실제로는 destinationLocation을 사용해야 함
+        // 목적지 좌표는 실제 목적지로 저장
+        destinationLocation: walkStateManager.destinationLocation!,
         waypointLocation: walkStateManager.waypointLocation!,
         selectedMate: walkStateManager.selectedMate ?? '혼자',
         waypointQuestion: walkStateManager.waypointQuestion,
         waypointAnswer: walkStateManager.userAnswer,
-        poseImageUrl: null, // PoseImageService의 URL은 일반적으로 로컬 캐시이므로 저장하지 않음
-        takenPhotoPath: uploadedPhotoUrl, // 업로드된 Storage URL 사용
+        poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
+        takenPhotoPath: walkStateManager.photoPath, // 업로드된 Storage URL 사용
         walkReflection: walkReflection,
-        hashtags: customHashtags ?? ['#저녁산책', '#포즈추천'],
         weatherInfo: weatherInfo,
         locationName: locationName,
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
@@ -272,14 +271,14 @@ class WalkSessionService {
         startTime: walkStateManager.actualStartTime ??
             DateTime.now().subtract(const Duration(hours: 1)),
         startLocation: walkStateManager.startLocation!,
-        destinationLocation:
-            walkStateManager.startLocation!, // 임시로 출발지와 동일하게 설정
+        // 목적지 좌표는 실제 목적지로 저장
+        destinationLocation: walkStateManager.destinationLocation!,
         waypointLocation: walkStateManager.waypointLocation!,
         selectedMate: walkStateManager.selectedMate ?? '혼자',
         waypointQuestion: walkStateManager.waypointQuestion,
         waypointAnswer: walkStateManager.userAnswer,
-        poseImageUrl: null,
-        takenPhotoPath: null, // 사진은 나중에 업데이트
+        poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
+        takenPhotoPath: walkStateManager.photoPath, // 사진 경로 포함
         walkReflection: walkReflection,
         hashtags: customHashtags ?? ['#저녁산책', '#포즈추천'],
         weatherInfo: weatherInfo,

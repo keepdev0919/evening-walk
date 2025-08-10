@@ -187,7 +187,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   void _onMapTap(LatLng position) async {
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.')),
+        SnackBar(
+          content: const Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.'),
+          backgroundColor: Colors.black.withOpacity(0.6),
+        ),
       );
       return;
     }
@@ -203,24 +206,40 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
     if (distance > allowedRadius) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('목적지는 최대 빨간원까지만 설정할 수 있습니다.'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: const Text('목적지는 최대 빨간원까지만 설정할 수 있습니다.'),
+          backgroundColor: Colors.black.withOpacity(0.6),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
     }
 
-    final address = await _getAddressFromLatLng(position);
+    // Places API로 근처 건물 검색
+    final placeDetails = await _validatePlaceNearby(position);
+    String displayName;
+    LatLng finalPosition;
+
+    if (placeDetails != null) {
+      // 건물이 발견된 경우
+      displayName = placeDetails['name'];
+      finalPosition = placeDetails['location'];
+      print('건물 발견: $displayName');
+    } else {
+      // 건물이 없는 경우 주소 사용
+      displayName = await _getAddressFromLatLng(position);
+      finalPosition = position;
+      print('건물 없음, 주소 사용: $displayName');
+    }
 
     setState(() {
       _destinationMarker = Marker(
         markerId: const MarkerId('destination'),
-        position: position,
-        infoWindow: InfoWindow(title: address),
+        position: finalPosition,
+        infoWindow: InfoWindow(title: displayName),
       );
-      _selectedDestination = position;
-      _selectedAddress = address;
+      _selectedDestination = finalPosition;
+      _selectedAddress = displayName;
     });
 
     _showDestinationBottomSheet();
@@ -260,13 +279,25 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _selectedAddress,
-                style: const TextStyle(
-                  fontSize: 18, // 폰트 크기
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white, // 텍스트 색상
-                ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _selectedAddress,
+                      style: const TextStyle(
+                        fontSize: 18, // 폰트 크기
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // 텍스트 색상
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -277,21 +308,18 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                     _confirmDestination();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey, // 스낵바와 유사한 배경색
+                    backgroundColor:
+                        const Color(0xFF4A90E2).withOpacity(0.8), // 부드러운 블루
                     foregroundColor: Colors.white, // 텍스트 색상
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20), // 둥근 모서리
+                      borderRadius: BorderRadius.circular(25), // 둥근 모서리
                       side: const BorderSide(
                           color: Colors.white54, width: 0.5), // 얇은 테두리
                     ),
                     elevation: 0, // 그림자 제거
-                    padding: const EdgeInsets.symmetric(vertical: 12), // 패딩
-                    textStyle: const TextStyle(
-                      fontSize: 18, // 폰트 크기
-                      fontWeight: FontWeight.bold,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14), // 패딩
                   ),
-                  child: const Text('목적지로 설정하기'),
+                  child: const Text('이곳으로 산책 떠나기'),
                 ),
               ),
             ],
@@ -338,6 +366,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             builder: (context) => SelectMateScreen(
               startLocation: _currentPosition!,
               destinationLocation: _selectedDestination!,
+              destinationBuildingName: _selectedAddress, // 건물명 또는 주소 전달
             ),
           ),
         );
@@ -364,9 +393,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.explore_outlined,
-                    color: Colors.white70, size: 40),
-                const SizedBox(height: 16),
+                // const Icon(Icons.favorite_outline,
+                //     color: Colors.white70, size: 40),
+                // const SizedBox(height: 16),
                 const Text(
                   '어떤 산책을 원하세요?',
                   style: TextStyle(
@@ -381,15 +410,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   icon: const Icon(Icons.directions_walk),
                   label: const Text('가볍게 15분'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[400],
+                    backgroundColor: const Color(0xFF87CEEB).withOpacity(0.9),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -402,15 +429,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   icon: const Icon(Icons.timer_outlined),
                   label: const Text('여유롭게 30분'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: const Color(0xFFFF6B9D).withOpacity(0.8),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -420,7 +445,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   child: const Text('다음에 할게요',
-                      style: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: Colors.white70, fontSize: 18)),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -448,7 +473,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
           color: Colors.white,
         ),
       ),
-      backgroundColor: Colors.blue,
+      backgroundColor: Colors.black.withOpacity(0.6),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 3),
     );
@@ -492,7 +517,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.redAccent, // 실패 메시지이므로 빨간색 계열로
+        backgroundColor: Colors.black.withOpacity(0.6),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
@@ -568,8 +593,19 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             : Container(
                 margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withOpacity(0.4),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -587,7 +623,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 child: const Text(
-                  '목적지를 설정해주세요',
+                  '어디로 산책을 떠날까요?',
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -610,23 +646,25 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   ),
                   onTap: _onMapTap, // 지도를 탭했을 때 호출될 콜백 함수
                   circles: {
-                    // 15분 산책 반경을 나타내는 파란색 원
+                    // 15분 산책 반경을 나타내는 파스텔 블루 원
                     Circle(
                       circleId: const CircleId('walk_radius_15min'),
                       center: _currentPosition!,
                       radius: 850, // 850미터 반경
-                      fillColor: Colors.blue.withOpacity(0.1), // 채우기 색상
-                      strokeColor: Colors.blue, // 테두리 색상
-                      strokeWidth: 2, // 테두리 두께
+                      fillColor: const Color(0xFF87CEEB)
+                          .withOpacity(0.15), // 스카이 블루 채우기
+                      strokeColor: const Color(0xFF4A90E2), // 부드러운 파란색 테두리
+                      strokeWidth: 3, // 테두리 두께 약간 증가
                     ),
-                    // 30분 산책 반경을 나타내는 빨간색 원
+                    // 30분 산책 반경을 나타내는 파스텔 핑크 원
                     Circle(
                       circleId: const CircleId('walk_radius_30min'),
                       center: _currentPosition!,
                       radius: 1700, // 1700미터 반경
-                      fillColor: Colors.red.withOpacity(0.1),
-                      strokeColor: Colors.red,
-                      strokeWidth: 2,
+                      fillColor: const Color(0xFFFFB6C1)
+                          .withOpacity(0.15), // 라이트 핑크 채우기
+                      strokeColor: const Color(0xFFFF6B9D), // 부드러운 핑크 테두리
+                      strokeWidth: 3,
                     ),
                   },
                   markers: allMarkers, // 지도에 표시될 모든 마커
@@ -634,6 +672,26 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                       top: MediaQuery.of(context).padding.top +
                           kToolbarHeight), // 상단 패딩
                 ),
+          // 감성적인 그라디언트 오버레이 추가 (터치 이벤트는 지도로 통과하도록 처리)
+          if (!_isLoading)
+            IgnorePointer(
+              ignoring: true,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.15), // 상단 은은한 오버레이
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.1), // 하단 은은한 오버레이
+                    ],
+                    stops: const [0.0, 0.2, 0.8, 1.0],
+                  ),
+                ),
+              ),
+            ),
           // 로딩이 완료되면 "이 원은 뭔가요?" 텍스트를 표시합니다.
           if (!_isLoading)
             Positioned(
@@ -651,7 +709,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
-                          '파란 원은 보통 도보로 15분, 빨간 원은 30분 정도 걸리는 거리에요. 참고해서 목적지를 정해보세요!',
+                          '파란 원은 15분, 빨간 원은 30분 정도의 여유로운 산책거리에요.',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -667,13 +725,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.explore_outlined,
+                      const Icon(Icons.help_outline_rounded,
                           size: 20, color: Colors.white),
                       const SizedBox(width: 8),
                       const Text(
-                        '이 원은 뭔가요?',
+                        '이 원들은 뭐예요?',
                         style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             color: Colors.white,
                             fontWeight: FontWeight.bold),
                       ),
@@ -700,14 +758,20 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   child: const Text(
                     '어디 갈지 고민된다면?',
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
                   ),
                 ),
                 const SizedBox(width: 8),
                 FloatingActionButton(
                   onPressed: _showRandomDestinationDialog,
+                  backgroundColor: const Color(0xFF4A90E2).withOpacity(0.9),
                   tooltip: '랜덤 목적지',
-                  child: const Icon(Icons.shuffle),
+                  child: const Icon(
+                    Icons.explore,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),

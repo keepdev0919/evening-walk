@@ -105,8 +105,12 @@ class _ProfileState extends State<Profile> {
       _image = null; // 로컬 이미지 선택 초기화
     });
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('프로필이 업데이트되었습니다.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('프로필이 업데이트되었습니다.'),
+        backgroundColor: Colors.black.withOpacity(0.6),
+      ),
+    );
   }
 
   @override

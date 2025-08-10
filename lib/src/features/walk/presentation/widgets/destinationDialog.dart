@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'pose_recommendation_dialog.dart';
 
 class DestinationDialog {
   static Future<bool?> showDestinationArrivalDialog({
@@ -53,5 +51,4 @@ class DestinationDialog {
       },
     );
   }
-
 }

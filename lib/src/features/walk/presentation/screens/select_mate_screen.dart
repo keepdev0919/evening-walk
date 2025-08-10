@@ -5,11 +5,13 @@ import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map
 class SelectMateScreen extends StatefulWidget {
   final LatLng startLocation;
   final LatLng destinationLocation;
+  final String? destinationBuildingName;
 
   const SelectMateScreen({
     Key? key,
     required this.startLocation,
     required this.destinationLocation,
+    this.destinationBuildingName,
   }) : super(key: key);
 
   @override
@@ -34,7 +36,10 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
           ),
           content: Text(
             '산책 메이트를 \'$mate\'로 확정하시겠습니까?',
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           actions: <Widget>[
             ElevatedButton(
@@ -48,7 +53,10 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 ),
                 elevation: 0,
               ),
-              child: Text('취소'),
+              child: const Text(
+                '취소',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true), // 확정
@@ -61,7 +69,10 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 ),
                 elevation: 0,
               ),
-              child: const Text('확정'),
+              child: const Text(
+                '확정',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -78,7 +89,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: Colors.black.withOpacity(0.4),
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(
               horizontal: isNarrow ? 24 : 60,
@@ -86,16 +97,14 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
-              side: const BorderSide(color: Colors.white54, width: 1),
+              side: const BorderSide(color: Colors.white, width: 1.5),
             ),
             elevation: 0,
-            textStyle: TextStyle(
-              fontSize: isNarrow ? 16 : 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: isNarrow ? 1.2 : 2,
-            ),
           ),
-          child: Text(text),
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 18),
+          ),
         ),
       );
     });
@@ -105,7 +114,8 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('산책 메이트 선택'),
+        title: const Text('산책 메이트 선택',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,12 +134,6 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
               ),
             ),
           ),
-
-          // ✅ 반투명 오버레이 (텍스트 및 버튼 가독성용)
-          Container(
-            color: Colors.black.withOpacity(0.4),
-          ),
-
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -148,6 +152,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                                 startLocation: widget.startLocation,
                                 destinationLocation: widget.destinationLocation,
                                 selectedMate: mate,
+                                destinationBuildingName: widget.destinationBuildingName,
                               ),
                             ),
                           );
@@ -158,12 +163,20 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text(
-                    '*산책 메이트에 따라 경유지 이벤트 정보가 달라집니다*',
+                    '산책 메이트에 따라 경유지 이벤트 \n정보가 달라집니다',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
+                      color: Colors.white,
                       fontStyle: FontStyle.italic,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 1),
+                          blurRadius: 4,
+                          color: Colors.black54,
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -57,6 +57,31 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
             useMaterial3: false,
             fontFamily: 'Cafe24Oneprettynight',
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                // 전역 버튼 폰트/크기/굵기 설정
+                textStyle: const TextStyle(
+                  fontFamily: 'Cafe24Oneprettynight',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            snackBarTheme: SnackBarThemeData(
+              backgroundColor: Colors.black.withOpacity(0.6),
+              behavior: SnackBarBehavior.floating,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: const BorderSide(color: Colors.white, width: 1.5),
+              ),
+              contentTextStyle: const TextStyle(
+                fontFamily: 'Cafe24Oneprettynight',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
           home: FutureBuilder(
             future: authCheck(),
