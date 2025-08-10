@@ -283,27 +283,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 공유용 제목 섹션
-  Widget _buildShareTitle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-      ),
-      child: const Text(
-        AppConstants.shareDefaultMessage,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
   /// 산책 정보 섹션 (출발지, 목적지)
   Widget _buildWalkInfoSection() {
     return Container(
@@ -316,19 +295,27 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('🗺️', style: TextStyle(fontSize: 18)),
-              SizedBox(width: 6),
-              Text(
-                '산책 경로',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
+              // 왼쪽: 산책 경로 제목
+              const Row(
+                children: [
+                  Text('🗺️', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 6),
+                  Text(
+                    '산책 경로',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
+              // 오른쪽: 시간/거리 정보
+              _buildTimeDistanceInfo(),
             ],
           ),
           const SizedBox(height: 12),
@@ -471,23 +458,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
-          if (widget.walkStateManager.userAnswer != null)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.walkStateManager.userAnswer!,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -547,12 +517,83 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
+  /// 시간/거리 정보 표시
+  Widget _buildTimeDistanceInfo() {
+    final duration = widget.walkStateManager.actualDurationInMinutes;
+    final distance = widget.walkStateManager.walkDistance;
+
+    // 둘 다 null이면 빈 위젯 반환
+    if (duration == null && distance == null) {
+      return const SizedBox.shrink();
+    }
+
+    List<Widget> infoWidgets = [];
+
+    // 시간 정보 추가
+    if (duration != null) {
+      String durationText;
+      if (duration <= 0) {
+        durationText = '1분 미만';
+      } else {
+        durationText = '${duration}분';
+      }
+
+      infoWidgets.addAll([
+        const Icon(Icons.access_time, color: Colors.white70, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          durationText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]);
+    }
+
+    // 거리 정보 추가
+    if (distance != null) {
+      if (infoWidgets.isNotEmpty) {
+        infoWidgets.addAll([
+          const SizedBox(width: 12),
+          Text(
+            '•',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(width: 12),
+        ]);
+      }
+
+      infoWidgets.addAll([
+        const Icon(Icons.straighten, color: Colors.white70, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          '${distance.round()}m',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]);
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: infoWidgets,
+    );
+  }
+
   /// 해시태그 섹션
   Widget _buildHashtagSection() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.7),
+        color: Colors.black.withOpacity(0.6),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
       ),

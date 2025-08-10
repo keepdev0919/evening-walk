@@ -1,4 +1,5 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
 import 'destination_event_handler.dart';
 import 'start_return_event_handler.dart';
@@ -58,6 +59,17 @@ class WalkStateManager {
   int? get actualDurationInMinutes {
     if (_actualStartTime == null || _actualEndTime == null) return null;
     return _actualEndTime!.difference(_actualStartTime!).inMinutes;
+  }
+
+  // 출발지-목적지 직선거리 계산 (미터 단위)
+  double? get walkDistance {
+    if (_startLocation == null || _destinationLocation == null) return null;
+    return Geolocator.distanceBetween(
+      _startLocation!.latitude,
+      _startLocation!.longitude,
+      _destinationLocation!.latitude,
+      _destinationLocation!.longitude,
+    );
   }
 
   /// 답변 및 사진 저장 메소드
