@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart' as lottie;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
+import '../../../../shared/widgets/black_cat_widget.dart';
 
 class SelectMateScreen extends StatefulWidget {
   final LatLng startLocation;
@@ -153,25 +153,11 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                       child: Transform.translate(
                         // 말풍선을 고양이 머리쪽으로 조금 더 우측 이동
                         offset: Offset(-screenWidth * 0.15, 0),
-                        child: SizedBox(
+                        child: BlackCatWidget(
                           width: catWidth,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // 말풍선 (반응형 너비: 고양이 너비의 90%)
-                              _MateBubble(
-                                text: '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~',
-                                maxWidth: catWidth * 0.8,
-                              ),
-                              const SizedBox(height: 2),
-                              lottie.Lottie.asset(
-                                'assets/animations/blackCat.json',
-                                repeat: true,
-                                animate: true,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
-                          ),
+                          bubbleText: '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~',
+                          bubbleMaxWidth: catWidth * 0.8,
+                          ignorePointer: true, // 터치 이벤트 무시
                         ),
                       ),
                     ),
@@ -245,68 +231,3 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
   }
 }
 
-// SelectMate 전용 간단 말풍선 위젯
-class _MateBubble extends StatelessWidget {
-  final String text;
-  final double maxWidth;
-  const _MateBubble({required this.text, required this.maxWidth});
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white, width: 1.5),
-            ),
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 0),
-          // 말풍선 꼬리
-          CustomPaint(
-            size: const Size(18, 7),
-            painter: _MateBubbleTailPainter(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MateBubbleTailPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final fill = Paint()..color = Colors.black.withOpacity(0.4);
-    final border = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path()
-      ..moveTo(size.width * 0.6, size.height)
-      ..lineTo(size.width * 0.35, 0)
-      ..lineTo(size.width * 0.65, 0)
-      ..close();
-
-    canvas.drawPath(path, fill);
-    canvas.drawPath(path, border);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

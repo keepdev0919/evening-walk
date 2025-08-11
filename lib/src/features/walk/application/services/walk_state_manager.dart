@@ -13,6 +13,7 @@ import '../../../../core/services/log_service.dart';
 enum SpeechBubbleState {
   toWaypoint("산책 가보자고 ~"), // 출발지~경유지절반
   almostWaypoint("선물.. 선물.. 선물.. "), // 경유지 도착 절반 전
+  waypointEventCompleted("뚜비두밥~♪"), // 경유지 이벤트 확인 후
   almostDestination("고지가 코앞이다 !!"), // 목적지 도착 절반 전
   returning("이제 집가자 ~"), // 목적지→출발지 복귀 시작
   almostHome("거의 다왔다 !!"); // 출발지 도착 절반 전
@@ -464,9 +465,14 @@ class WalkStateManager {
       return SpeechBubbleState.almostDestination; // "고지가 코앞이다!!"
     }
 
+    // 경유지 이벤트가 완료되었다면 해당 상태 유지 (목적지 근처가 아닌 한)
+    if (_currentSpeechBubbleState == SpeechBubbleState.waypointEventCompleted) {
+      return SpeechBubbleState.waypointEventCompleted; // "뚜비두밥~♪"
+    }
+
     // 경유지 근처인 경우
     if (distanceToWaypoint <= halfStartToWaypoint) {
-      return SpeechBubbleState.almostWaypoint; // "선물 내놔~"
+      return SpeechBubbleState.almostWaypoint; // "선물.. 선물.. 선물.. "
     }
 
     // 기본 상태: 출발지에서 경유지로 향하는 중
@@ -484,5 +490,13 @@ class WalkStateManager {
   /// 말풍선 표시 여부를 설정합니다.
   void setSpeechBubbleVisible(bool visible) {
     _speechBubbleVisible = visible;
+  }
+
+  /// 경유지 이벤트 확인 후 말풍선 상태를 변경합니다.
+  void completeWaypointEvent() {
+    if (_currentSpeechBubbleState == SpeechBubbleState.almostWaypoint) {
+      _currentSpeechBubbleState = SpeechBubbleState.waypointEventCompleted;
+      LogService.info('SpeechBubble', '경유지 이벤트 완료 - 말풍선: ${_currentSpeechBubbleState?.message}');
+    }
   }
 }

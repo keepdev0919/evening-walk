@@ -121,6 +121,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (answer != null && answer.trim().isNotEmpty) {
       _walkStateManager.saveAnswerAndPhoto(answer: answer.trim());
     }
+    
+    // 경유지 이벤트가 시작되면 (나중에 버튼이든 이벤트 확인이든) 말풍선 상태 변경
+    if (show) {
+      _walkStateManager.completeWaypointEvent();
+    }
   }
 
   @override

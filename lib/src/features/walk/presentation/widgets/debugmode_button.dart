@@ -368,6 +368,8 @@ class DebugModeButtons extends StatelessWidget {
         return Colors.blue.withOpacity(0.8);
       case SpeechBubbleState.almostWaypoint:
         return Colors.orange.withOpacity(0.8);
+      case SpeechBubbleState.waypointEventCompleted:
+        return Colors.yellow.withOpacity(0.8); // 경유지 이벤트 완료 후 노란색
       case SpeechBubbleState.almostDestination:
         return Colors.red.withOpacity(0.8);
       case SpeechBubbleState.returning:
