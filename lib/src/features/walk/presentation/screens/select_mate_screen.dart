@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart' as lottie;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
 
@@ -134,6 +135,51 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
               ),
             ),
           ),
+          // 하단 Lottie 애니메이션 (홈의 blackCat과 동일한 반응형 규칙)
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double screenWidth = constraints.maxWidth;
+                final double screenHeight = constraints.maxHeight;
+                // 홈 화면 규칙과 동일한 비율/오프셋
+                final double catWidth = screenWidth * 0.28 * 2;
+                final double bottomPadding = screenHeight * 0.03;
+                return IgnorePointer(
+                  ignoring: true,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottomPadding),
+                      child: Transform.translate(
+                        // 말풍선을 고양이 머리쪽으로 조금 더 우측 이동
+                        offset: Offset(-screenWidth * 0.15, 0),
+                        child: SizedBox(
+                          width: catWidth,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 말풍선 (반응형 너비: 고양이 너비의 90%)
+                              _MateBubble(
+                                text: '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~',
+                                maxWidth: catWidth * 0.8,
+                              ),
+                              const SizedBox(height: 2),
+                              lottie.Lottie.asset(
+                                'assets/animations/blackCat.json',
+                                repeat: true,
+                                animate: true,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -161,35 +207,35 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                       }),
                     )),
                 const SizedBox(height: 40),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text.rich(
-                    TextSpan(
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontStyle: FontStyle.italic,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        shadows: <Shadow>[
-                          Shadow(
-                            offset: Offset(0, 1),
-                            blurRadius: 4,
-                            color: Colors.black54,
-                          ),
-                        ],
-                      ),
-                      children: <TextSpan>[
-                        TextSpan(text: '산책 메이트에 따라 '),
-                        TextSpan(
-                          text: '경유지 이벤트 ',
-                          style: TextStyle(color: Colors.orangeAccent),
-                        ),
-                        TextSpan(text: '\n정보가 달라집니다'),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                // const Padding(
+                //   padding: EdgeInsets.symmetric(horizontal: 20.0),
+                //   child: Text.rich(
+                //     TextSpan(
+                //       style: TextStyle(
+                //         color: Colors.white,
+                //         fontStyle: FontStyle.italic,
+                //         fontSize: 20,
+                //         fontWeight: FontWeight.bold,
+                //         shadows: <Shadow>[
+                //           Shadow(
+                //             offset: Offset(0, 1),
+                //             blurRadius: 4,
+                //             color: Colors.black54,
+                //           ),
+                //         ],
+                //       ),
+                //       children: <TextSpan>[
+                //         TextSpan(text: '산책 메이트에 따라 '),
+                //         TextSpan(
+                //           text: '경유지 이벤트 ',
+                //           style: TextStyle(color: Colors.orangeAccent),
+                //         ),
+                //         TextSpan(text: '\n정보가 달라집니다'),
+                //       ],
+                //     ),
+                //     textAlign: TextAlign.center,
+                //   ),
+                // ),
               ],
             ),
           )
@@ -197,4 +243,70 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
       ),
     );
   }
+}
+
+// SelectMate 전용 간단 말풍선 위젯
+class _MateBubble extends StatelessWidget {
+  final String text;
+  final double maxWidth;
+  const _MateBubble({required this.text, required this.maxWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 0),
+          // 말풍선 꼬리
+          CustomPaint(
+            size: const Size(18, 7),
+            painter: _MateBubbleTailPainter(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MateBubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fill = Paint()..color = Colors.black.withOpacity(0.4);
+    final border = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final path = Path()
+      ..moveTo(size.width * 0.6, size.height)
+      ..lineTo(size.width * 0.35, 0)
+      ..lineTo(size.width * 0.65, 0)
+      ..close();
+
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
