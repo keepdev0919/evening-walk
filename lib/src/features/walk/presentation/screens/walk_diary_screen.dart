@@ -15,6 +15,7 @@ class WalkDiaryScreen extends StatefulWidget {
   final bool isViewMode;
   final String? sessionId;
   final String? selectedMate;
+  final String? returnRoute; // 저장 후 돌아갈 화면 지정
 
   const WalkDiaryScreen({
     Key? key,
@@ -23,6 +24,7 @@ class WalkDiaryScreen extends StatefulWidget {
     this.isViewMode = false,
     this.sessionId,
     this.selectedMate,
+    this.returnRoute,
   }) : super(key: key);
 
   @override
@@ -473,9 +475,12 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           );
         }
         if (snapshot.hasData && snapshot.data != null) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _buildImageWidget(snapshot.data!),
+          return GestureDetector(
+            onTap: () => _showFullScreenPhoto(context, snapshot.data!),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildImageWidget(snapshot.data!),
+            ),
           );
         }
         return Container(
@@ -848,135 +853,117 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        // 저장하기 버튼
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text(
-              '산책 저장',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            onPressed: () async {
-              try {
-                final walkSessionService = WalkSessionService();
-
-                // 기존 저장된 세션이 있으면 소감만 업데이트, 없으면 새로 저장
-                if (widget.sessionId != null) {
-                  // 기존 세션에 소감 업데이트
-                  final success = await walkSessionService.updateWalkSession(
-                    widget.sessionId!,
-                    {
-                      'walkReflection': reflectionController.text.trim().isEmpty
-                          ? null
-                          : reflectionController.text.trim(),
-                      'updatedAt': DateTime.now().toIso8601String(),
-                    },
-                  );
-
-                  if (success) {
-                    Navigator.of(context).pop();
-                    widget.onWalkCompleted(true);
-
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/',
-                      (route) => false,
-                    );
-
-                    ToastService.showSuccess('산책 일기가 업데이트되었습니다!');
-                  } else {
-                    ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
-                  }
-                } else {
-                  // 세션 ID가 없으면 새로 저장 (기존 로직 유지 - 산책 기록 목록에서 접근한 경우)
-                  final uploadProvider =
-                      Provider.of<UploadProvider>(context, listen: false);
-
-                  final sessionId =
-                      await walkSessionService.saveWalkSessionWithoutPhoto(
-                    walkStateManager: widget.walkStateManager,
-                    walkReflection: reflectionController.text.trim().isEmpty
-                        ? null
-                        : reflectionController.text.trim(),
-                    weatherInfo: '맑음',
-                    locationName:
-                        widget.walkStateManager.destinationBuildingName,
-                  );
-
-                  if (sessionId != null) {
-                    Navigator.of(context).pop();
-                    widget.onWalkCompleted(true);
-
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/',
-                      (route) => false,
-                    );
-
-                    ToastService.showSuccess('일기가 저장되었습니다!');
-
-                    if (widget.walkStateManager.photoPath != null) {
-                      uploadProvider.startBackgroundUpload(
-                        sessionId,
-                        widget.walkStateManager.photoPath!,
-                      );
-                    }
-                  } else {
-                    ToastService.showError('저장에 실패했습니다. 다시 시도해주세요.');
-                  }
-                }
-              } catch (e) {
-                ToastService.showError('저장 중 오류가 발생했습니다: ${e.toString()}');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withValues(alpha: 0.8),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
-              ),
-            ),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.save, color: Colors.white),
+        label: const Text(
+          '산책 저장',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
           ),
         ),
+        onPressed: () async {
+          try {
+            final walkSessionService = WalkSessionService();
 
-        const SizedBox(width: 12),
-
-        // 공유하기 버튼 (나중에 구현)
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.share, color: Colors.white),
-            label: const Text(
-              '공유하기',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('공유 기능은 곧 추가될 예정입니다!'),
-                  backgroundColor: Colors.green,
-                ),
+            // 기존 저장된 세션이 있으면 소감만 업데이트, 없으면 새로 저장
+            if (widget.sessionId != null) {
+              // 기존 세션에 소감/경유지 답변 업데이트
+              final success = await walkSessionService.updateWalkSession(
+                widget.sessionId!,
+                {
+                  'walkReflection': reflectionController.text.trim().isEmpty
+                      ? null
+                      : reflectionController.text.trim(),
+                  'waypointAnswer': answerEditController.text.trim().isEmpty
+                      ? null
+                      : answerEditController.text.trim(),
+                  'updatedAt': DateTime.now().toIso8601String(),
+                },
               );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withValues(alpha: 0.8),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
-              ),
-            ),
+
+              if (success) {
+                Navigator.of(context).pop();
+                widget.onWalkCompleted(true);
+
+                // returnRoute가 지정되어 있으면 해당 화면으로, 없으면 홈화면으로
+                if (widget.returnRoute != null) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    widget.returnRoute!,
+                    (route) => false,
+                  );
+                } else {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                }
+
+                ToastService.showSuccess('산책 일기가 업데이트되었습니다!');
+              } else {
+                ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
+              }
+            } else {
+              // 세션 ID가 없으면 새로 저장 (기존 로직 유지 - 산책 기록 목록에서 접근한 경우)
+              final uploadProvider =
+                  Provider.of<UploadProvider>(context, listen: false);
+
+              final sessionId =
+                  await walkSessionService.saveWalkSessionWithoutPhoto(
+                walkStateManager: widget.walkStateManager,
+                walkReflection: reflectionController.text.trim().isEmpty
+                    ? null
+                    : reflectionController.text.trim(),
+                weatherInfo: '맑음',
+                locationName:
+                    widget.walkStateManager.destinationBuildingName,
+              );
+
+              if (sessionId != null) {
+                Navigator.of(context).pop();
+                widget.onWalkCompleted(true);
+
+                // returnRoute가 지정되어 있으면 해당 화면으로, 없으면 홈화면으로
+                if (widget.returnRoute != null) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    widget.returnRoute!,
+                    (route) => false,
+                  );
+                } else {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                }
+
+                ToastService.showSuccess('일기가 저장되었습니다!');
+
+                if (widget.walkStateManager.photoPath != null) {
+                  uploadProvider.startBackgroundUpload(
+                    sessionId,
+                    widget.walkStateManager.photoPath!,
+                  );
+                }
+              } else {
+                ToastService.showError('저장에 실패했습니다. 다시 시도해주세요.');
+              }
+            }
+          } catch (e) {
+            ToastService.showError('저장 중 오류가 발생했습니다: ${e.toString()}');
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue.withValues(alpha: 0.8),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
           ),
         ),
-      ],
+      ),
     );
   }
 

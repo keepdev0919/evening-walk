@@ -8,7 +8,9 @@ import 'package:intl/date_symbol_data_local.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
 import 'src/features/auth/presentation/screens/login_page_screen.dart';
 import 'src/features/home/presentation/screens/home_screen.dart';
+import 'src/features/walk/presentation/screens/walk_history_screen.dart';
 import 'src/shared/providers/upload_provider.dart';
+import 'src/shared/services/toast_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +55,7 @@ class MyApp extends StatelessWidget {
       create: (context) => UploadProvider(),
       child: MaterialApp(
           title: '산책 앱',
+          scaffoldMessengerKey: ToastService.scaffoldMessengerKey,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
             useMaterial3: false,
@@ -102,6 +105,7 @@ class MyApp extends StatelessWidget {
           ),
           routes: {
             '/homescreen': (context) => const HomeScreen(),
+            '/walk_history': (context) => const WalkHistoryScreen(),
           }),
     );
   }

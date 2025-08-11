@@ -162,7 +162,10 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
             ),
           ],
         ),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        ),
       ),
       actions: [
         IconButton(
@@ -502,6 +505,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           isViewMode: false, // 편집 가능 모드로 변경
           sessionId: session.id, // 업로드 상태 연동
           selectedMate: session.selectedMate, // 추천 포즈 로딩용
+          returnRoute: '/walk_history', // 산책 기록 화면으로 돌아가도록 설정
           onWalkCompleted: (completed) {
             // 수정 완료 후 목록 새로고침
             if (completed) {

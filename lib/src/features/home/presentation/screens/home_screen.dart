@@ -25,6 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _location = '';
   String _weather = '';
 
+  // 고양이 말풍선 텍스트 상태
+  String _catBubbleText = '같이 산책가는거냥?';
+
   final String _apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   InfoStatus _locationStatus = InfoStatus.loading;
   InfoStatus _weatherStatus = InfoStatus.loading;
@@ -397,42 +400,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // 하단 Lottie 애니메이션 (디바이스 크기 비율 기반 위치/크기)
-            Positioned.fill(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final double screenWidth = constraints.maxWidth;
-                  final double screenHeight = constraints.maxHeight;
-                  // 크기 15% 증가
-                  final double catWidth =
-                      screenWidth * 0.28 * 2; // 화면 너비의 28% * 1.15
-                  final double bottomPadding = screenHeight * 0.06; // 화면 높이의 6%
-                  return IgnorePointer(
-                    ignoring: true,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: bottomPadding),
-                        child: Transform.translate(
-                          // 위치를 화면 너비의 15%만큼 왼쪽으로 이동
-                          offset: Offset(-screenWidth * 0.23, 0),
-                          child: SizedBox(
-                            width: catWidth,
-                            child: lottie.Lottie.asset(
-                              'assets/animations/blackCat.json',
-                              repeat: true,
-                              animate: true,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
             // 콘텐츠를 스크롤 가능하게 만들기 (RefreshIndicator 작동을 위해)
             SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(), // 항상 스크롤 가능
@@ -558,6 +525,69 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
+            // 하단 Lottie 애니메이션과 말풍선 (디바이스 크기 비율 기반 위치/크기)
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double screenWidth = constraints.maxWidth;
+                  final double screenHeight = constraints.maxHeight;
+                  // 크기 15% 증가
+                  final double catWidth =
+                      screenWidth * 0.28 * 2; // 화면 너비의 28% * 1.15
+                  final double bottomPadding = screenHeight * 0.06; // 화면 높이의 6%
+                  return Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottomPadding),
+                      child: Transform.translate(
+                        // 위치를 화면 너비의 15%만큼 왼쪽으로 이동
+                        offset: Offset(-screenWidth * 0.23, 0),
+                        child: SizedBox(
+                          width: catWidth,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 말풍선 (반응형 너비: 고양이 너비의 80%)
+                              _HomeCatBubble(
+                                text: _catBubbleText,
+                                maxWidth: catWidth * 0.8,
+                              ),
+                              const SizedBox(height: 2),
+                              // 클릭 가능한 고양이 애니메이션
+                              GestureDetector(
+                                onTap: () {
+                                  print('고양이 클릭됨! 현재 텍스트: $_catBubbleText');
+                                  setState(() {
+                                    _catBubbleText = '간지럽다냥..';
+                                  });
+                                  print('텍스트 변경됨: $_catBubbleText');
+                                  // 2초 후 원래 텍스트로 복원
+                                  Future.delayed(const Duration(seconds: 2), () {
+                                    if (mounted) {
+                                      setState(() {
+                                        _catBubbleText = '같이 산책가는거냥?';
+                                      });
+                                      print('텍스트 복원됨: $_catBubbleText');
+                                    }
+                                  });
+                                },
+                                child: lottie.Lottie.asset(
+                                  'assets/animations/blackCat.json',
+                                  repeat: true,
+                                  animate: true,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -676,4 +706,70 @@ class _HomeScreenState extends State<HomeScreen> {
       print('HomeScreen: Pull-to-refresh 실패 - $e');
     }
   }
+}
+
+// 홈 화면 고양이 전용 말풍선 위젯
+class _HomeCatBubble extends StatelessWidget {
+  final String text;
+  final double maxWidth;
+  const _HomeCatBubble({required this.text, required this.maxWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 0),
+          // 말풍선 꼬리
+          CustomPaint(
+            size: const Size(18, 7),
+            painter: _HomeCatBubbleTailPainter(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeCatBubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fill = Paint()..color = Colors.black.withOpacity(0.4);
+    final border = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final path = Path()
+      ..moveTo(size.width * 0.6, size.height)
+      ..lineTo(size.width * 0.35, 0)
+      ..lineTo(size.width * 0.65, 0)
+      ..close();
+
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
