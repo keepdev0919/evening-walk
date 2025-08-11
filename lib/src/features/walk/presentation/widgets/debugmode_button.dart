@@ -279,11 +279,101 @@ class DebugModeButtons extends StatelessWidget {
               ),
               child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
             ),
+            const SizedBox(height: 8),
+            // 말풍선 테스트 버튼
+            ElevatedButton(
+              onPressed: () {
+                _showSpeechBubbleTestDialog(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple.withOpacity(0.8),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text('말풍선 테스트', style: TextStyle(fontSize: 12)),
+            ),
           ],
         ),
       );
     } else {
       return const SizedBox.shrink(); // 디버그 모드가 아니면 아무것도 표시하지 않음
+    }
+  }
+
+  /// 말풍선 테스트 다이얼로그를 표시합니다.
+  void _showSpeechBubbleTestDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('말풍선 상태 테스트'),
+          backgroundColor: Colors.black.withOpacity(0.9),
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: SpeechBubbleState.values.map((state) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      walkStateManager.setDebugSpeechBubbleState(state);
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('말풍선 설정: ${state.message}'),
+                          backgroundColor: Colors.purple.withOpacity(0.8),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _getButtonColor(state),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(
+                      '${state.name}: ${state.message}',
+                      style: const TextStyle(fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 말풍선 상태별로 버튼 색상을 반환합니다.
+  Color _getButtonColor(SpeechBubbleState state) {
+    switch (state) {
+      case SpeechBubbleState.toWaypoint:
+        return Colors.blue.withOpacity(0.8);
+      case SpeechBubbleState.almostWaypoint:
+        return Colors.orange.withOpacity(0.8);
+      case SpeechBubbleState.almostDestination:
+        return Colors.red.withOpacity(0.8);
+      case SpeechBubbleState.returning:
+        return Colors.green.withOpacity(0.8);
+      case SpeechBubbleState.almostHome:
+        return Colors.purple.withOpacity(0.8);
     }
   }
 }

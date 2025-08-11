@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
@@ -7,6 +8,18 @@ import 'waypoint_questions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../../../core/services/log_service.dart';
+
+/// 말풍선 상태를 나타내는 enum
+enum SpeechBubbleState {
+  toWaypoint("산책 가보자고 ~"), // 출발지~경유지절반
+  almostWaypoint("선물 내놔 ~"), // 경유지 도착 절반 전
+  almostDestination("고지가 코앞이다 !!"), // 목적지 도착 절반 전
+  returning("이제 집가자 ~"), // 목적지→출발지 복귀 시작
+  almostHome("거의 다왔다 !!"); // 출발지 도착 절반 전
+
+  const SpeechBubbleState(this.message);
+  final String message;
+}
 
 class WalkStateManager {
   // 핸들러 및 프로바이더 인스턴스
@@ -40,6 +53,10 @@ class WalkStateManager {
   // 저장된 세션 ID (1차 저장 후 업데이트용)
   String? _savedSessionId;
 
+  // 말풍선 상태 관리 변수
+  SpeechBubbleState? _currentSpeechBubbleState;
+  bool _speechBubbleVisible = true;
+
   // --- Public Getters ---
   LatLng? get startLocation => _startLocation;
   LatLng? get waypointLocation => _waypointLocation;
@@ -54,6 +71,10 @@ class WalkStateManager {
   DateTime? get actualStartTime => _actualStartTime;
   DateTime? get actualEndTime => _actualEndTime;
   String? get savedSessionId => _savedSessionId;
+
+  // 말풍선 관련 getters
+  SpeechBubbleState? get currentSpeechBubbleState => _currentSpeechBubbleState;
+  bool get speechBubbleVisible => _speechBubbleVisible;
 
   // 실제 산책 소요 시간 계산 (분 단위)
   int? get actualDurationInMinutes {
@@ -150,6 +171,10 @@ class WalkStateManager {
     _waypointQuestion = null;
     _userAnswer = null;
     _photoPath = null;
+
+    // 말풍선 초기화 - 산책 시작 시 첫 번째 상태
+    _currentSpeechBubbleState = SpeechBubbleState.toWaypoint;
+    _speechBubbleVisible = true;
     _userReflection = null;
     _poseImageUrl = null;
     _savedSessionId = null;
@@ -166,7 +191,10 @@ class WalkStateManager {
   // 목적지에서 출발지로 돌아가기 시작
   void startReturningHome() {
     _isReturningHome = true;
+    _currentSpeechBubbleState = SpeechBubbleState.returning; // "이제 집가자~"
     LogService.walkState(' 이제 출발지로 돌아갑니다.');
+    LogService.info('SpeechBubble',
+        '출발지 복귀 시작 - 말풍선: ${_currentSpeechBubbleState?.message}');
   }
 
   // 실시간 위치 업데이트 처리 (Future<String?>으로 변경)
@@ -176,6 +204,8 @@ class WalkStateManager {
     bool forceDestinationEvent = false,
     bool forceStartReturnEvent = false,
   }) async {
+    // 말풍선 상태 업데이트
+    updateSpeechBubbleState(userLocation);
     // 경유지 이벤트 확인 (아직 발생하지 않았을 때만)
     if (!_waypointEventOccurred) {
       final bool arrived = _waypointHandler.checkWaypointArrival(
@@ -342,5 +372,117 @@ class WalkStateManager {
 
     // 건물명이 없으면 주소로 fallback
     return await _convertCoordinateToAddress(_destinationLocation!);
+  }
+
+  // --- 말풍선 관련 메서드들 ---
+
+  /// 현재 위치를 기반으로 말풍선 상태를 업데이트합니다.
+  void updateSpeechBubbleState(LatLng currentPosition) {
+    if (_startLocation == null ||
+        _destinationLocation == null ||
+        _waypointLocation == null) return;
+
+    final SpeechBubbleState? newState =
+        _calculateSpeechBubbleState(currentPosition);
+
+    if (newState != null && newState != _currentSpeechBubbleState) {
+      _currentSpeechBubbleState = newState;
+      LogService.info('SpeechBubble', '말풍선 상태 변경: ${newState.message}');
+    }
+  }
+
+  /// 현재 위치를 기반으로 적절한 말풍선 상태를 계산합니다.
+  SpeechBubbleState? _calculateSpeechBubbleState(LatLng currentPosition) {
+    if (_startLocation == null ||
+        _destinationLocation == null ||
+        _waypointLocation == null) return null;
+
+    final double distanceToStart = Geolocator.distanceBetween(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      _startLocation!.latitude,
+      _startLocation!.longitude,
+    );
+
+    final double distanceToWaypoint = Geolocator.distanceBetween(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      _waypointLocation!.latitude,
+      _waypointLocation!.longitude,
+    );
+
+    final double distanceToDestination = Geolocator.distanceBetween(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      _destinationLocation!.latitude,
+      _destinationLocation!.longitude,
+    );
+
+    // 전체 구간별 거리 계산
+    final double startToWaypointDistance = Geolocator.distanceBetween(
+      _startLocation!.latitude,
+      _startLocation!.longitude,
+      _waypointLocation!.latitude,
+      _waypointLocation!.longitude,
+    );
+
+    final double waypointToDestinationDistance = Geolocator.distanceBetween(
+      _waypointLocation!.latitude,
+      _waypointLocation!.longitude,
+      _destinationLocation!.latitude,
+      _destinationLocation!.longitude,
+    );
+
+    final double destinationToStartDistance = Geolocator.distanceBetween(
+      _destinationLocation!.latitude,
+      _destinationLocation!.longitude,
+      _startLocation!.latitude,
+      _startLocation!.longitude,
+    );
+
+    // 각 구간별 절반 지점 계산
+    final double halfStartToWaypoint = startToWaypointDistance / 2;
+    final double halfWaypointToDestination = waypointToDestinationDistance / 2;
+    final double halfDestinationToStart = destinationToStartDistance / 2;
+
+    // 출발지 복귀 중인 경우
+    if (_isReturningHome) {
+      if (distanceToStart <= halfDestinationToStart) {
+        return SpeechBubbleState.almostHome; // "거의 다왔다!!"
+      } else {
+        return SpeechBubbleState.returning; // "이제 집가자~"
+      }
+    }
+
+    // 목적지 도달 후 아직 복귀하지 않은 경우 (포즈 촬영 중 등)
+    if (_destinationEventOccurred && !_isReturningHome) {
+      return SpeechBubbleState.returning; // "이제 집가자~"
+    }
+
+    // 목적지 근처인 경우
+    if (distanceToDestination <= halfWaypointToDestination) {
+      return SpeechBubbleState.almostDestination; // "고지가 코앞이다!!"
+    }
+
+    // 경유지 근처인 경우
+    if (distanceToWaypoint <= halfStartToWaypoint) {
+      return SpeechBubbleState.almostWaypoint; // "선물 내놔~"
+    }
+
+    // 기본 상태: 출발지에서 경유지로 향하는 중
+    return SpeechBubbleState.toWaypoint; // "산책 가보자고~"
+  }
+
+  /// 개발자 전용: 말풍선 상태를 강제로 설정합니다. (디버그 모드에서만 작동)
+  void setDebugSpeechBubbleState(SpeechBubbleState state) {
+    if (kDebugMode) {
+      _currentSpeechBubbleState = state;
+      LogService.debug('SpeechBubble', 'DEBUG: 말풍선 상태 강제 설정: ${state.message}');
+    }
+  }
+
+  /// 말풍선 표시 여부를 설정합니다.
+  void setSpeechBubbleVisible(bool visible) {
+    _speechBubbleVisible = visible;
   }
 }

@@ -10,6 +10,7 @@ import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
+import 'package:walk/src/features/walk/presentation/widgets/speech_bubble_widget.dart';
 import 'package:walk/src/features/walk/presentation/screens/pose_recommendation_screen.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
 import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
@@ -383,7 +384,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 child: const Text(
-                  '산책 중',
+                  '산책 중 ...',
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -494,6 +495,20 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     alignment: Alignment.bottomCenter,
                     fit: BoxFit.contain,
                   ),
+                ),
+              ),
+            ),
+          // 현재 위치 말풍선 오버레이
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left:
+                  _userOverlayOffset!.dx - 60, // 말풍선 중앙 정렬 (말풍선 최대 너비 200의 절반)
+              top: _userOverlayOffset!.dy - _overlayHeight - 20, // 애니메이션 위쪽에 표시
+              child: IgnorePointer(
+                ignoring: true,
+                child: SpeechBubbleWidget(
+                  speechBubbleState: _walkStateManager.currentSpeechBubbleState,
+                  visible: _walkStateManager.speechBubbleVisible,
                 ),
               ),
             ),
