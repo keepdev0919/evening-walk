@@ -7,12 +7,14 @@ class WalkMapView extends StatelessWidget {
   final CameraPosition initialCameraPosition;
   final Set<Marker> markers;
   final MapCreatedCallback onMapCreated;
+  final CameraPositionCallback? onCameraMove;
 
   const WalkMapView({
     Key? key,
     required this.initialCameraPosition,
     required this.markers,
     required this.onMapCreated,
+    this.onCameraMove,
   }) : super(key: key);
 
   @override
@@ -21,6 +23,7 @@ class WalkMapView extends StatelessWidget {
       onMapCreated: onMapCreated,
       initialCameraPosition: initialCameraPosition,
       markers: markers,
+      onCameraMove: onCameraMove,
       myLocationButtonEnabled: false, // 현재 위치 버튼 비활성화
       zoomControlsEnabled: false, // 줌 컨트롤 비활성화
     );

@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
+// import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
+import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
@@ -61,7 +62,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   late WalkStateManager _walkStateManager;
 
   /// 현재 로그인한 Firebase 사용자 정보입니다.
-  User? _user;
+  // User? _user; // Lottie로 대체되어 현재 미사용
 
   /// 위치 스트림 구독을 관리하는 객체입니다.
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -80,6 +81,34 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   String? _lastWaypointUserAnswer;
   String? _currentDestinationPoseImageUrl;
   String? _currentDestinationTakenPhotoPath;
+  // 목적지/경유지 Lottie 오버레이 좌표 및 크기
+  Offset? _destinationOverlayOffset;
+  Offset? _waypointOverlayOffset;
+  static const double _destinationOverlayWidth = 50;
+  static const double _destinationOverlayHeight = 50;
+  static const double _overlayBottomTrim = 12.0; // Lottie 하단 여백 보정
+  // 경유지 표시: 출발지/목적지와 동일하게 width/height로만 제어
+  static const double _waypointOverlayWidth = 50;
+  static const double _waypointOverlayHeight = 50;
+
+  /// 현재 위치 Lottie 오버레이 좌표 및 크기
+  Offset? _userOverlayOffset;
+  static const double _overlayWidth = 80;
+  static const double _overlayHeight = 80;
+
+  Future<void> _updateOverlayPosition() async {
+    if (_currentPosition == null) return;
+    try {
+      final screen = await mapController.getScreenCoordinate(_currentPosition!);
+      final dpr = MediaQuery.of(context).devicePixelRatio;
+      setState(() {
+        _userOverlayOffset = Offset(
+          screen.x.toDouble() / dpr,
+          screen.y.toDouble() / dpr,
+        );
+      });
+    } catch (_) {}
+  }
 
   void _handleWaypointEventState(bool show, String? question, String? answer) {
     setState(() {
@@ -99,7 +128,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     WidgetsBinding.instance.addObserver(this); // 옵저버 등록
     _lastLifecycleState = WidgetsBinding.instance.lifecycleState; // 초기 상태 설정
     // 현재 사용자 정보를 가져옵니다.
-    _user = FirebaseAuth.instance.currentUser;
+    // _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
     _walkStateManager = WalkStateManager();
 
@@ -127,15 +156,46 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   /// GoogleMapController를 초기화합니다.
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    _updateOverlayPosition();
+    _updateOverlayPositions();
+  }
+
+  Future<void> _updateOverlayPositions() async {
+    if (!mounted) return;
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    try {
+      final destScreen =
+          await mapController.getScreenCoordinate(widget.destinationLocation);
+      setState(() {
+        _destinationOverlayOffset = Offset(
+          destScreen.x.toDouble() / dpr,
+          destScreen.y.toDouble() / dpr,
+        );
+      });
+    } catch (_) {}
+
+    try {
+      final waypoint = _walkStateManager.waypointLocation;
+      if (waypoint != null) {
+        final wpScreen = await mapController.getScreenCoordinate(waypoint);
+        setState(() {
+          _waypointOverlayOffset = Offset(
+            wpScreen.x.toDouble() / dpr,
+            wpScreen.y.toDouble() / dpr,
+          );
+        });
+      } else {
+        setState(() {
+          _waypointOverlayOffset = null;
+        });
+      }
+    } catch (_) {}
   }
 
   /// 산책 관련 데이터를 초기화하고 지도에 마커를 설정합니다.
   /// 사용자 프로필, 선물 상자, 깃발 마커를 생성하고 위치 추적을 시작합니다.
   Future<void> _initializeWalk() async {
-    final profileMarker =
-        await MapMarkerCreator.createCustomProfileMarkerBitmap(_user);
-    final giftBoxMarker = await MapMarkerCreator.createGiftBoxMarkerBitmap();
-    final flagMarker = await MapMarkerCreator.createDestinationMarkerBitmap();
+    // 프로필/경유지/목적지 마커는 사용하지 않고, 오버레이 Lottie로 대체합니다.
 
     _walkStateManager.startWalk(
       start: widget.startLocation,
@@ -148,37 +208,22 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       _walkStateManager
           .setDestinationBuildingName(widget.destinationBuildingName);
     }
-    final LatLng? waypoint = _walkStateManager.waypointLocation;
+    // final LatLng? waypoint = _walkStateManager.waypointLocation;
 
     setState(() {
       _currentPosition = widget.startLocation;
-      _currentLocationMarker = Marker(
-        markerId: const MarkerId('current_position'),
-        position: _currentPosition!,
-        infoWindow: const InfoWindow(title: '현재 위치'),
-        icon: profileMarker,
-        anchor: const Offset(0.5, 1.0),
-      );
-      _destinationMarker = Marker(
-        markerId: const MarkerId('destination'),
-        position: widget.destinationLocation,
-        infoWindow: const InfoWindow(title: '목적지'),
-        icon: flagMarker,
-        anchor: const Offset(0.5, 1.0),
-      );
-      if (waypoint != null) {
-        _waypointMarker = Marker(
-          markerId: const MarkerId('waypoint'),
-          position: waypoint,
-          infoWindow: const InfoWindow(title: '경유지'),
-          icon: giftBoxMarker,
-          anchor: const Offset(0.5, 1.0),
-        );
-      }
+      _currentLocationMarker = null; // Lottie로 대체
+      _destinationMarker = null; // Lottie로 대체
+      _waypointMarker = null; // Lottie로 대체
       _isLoading = false; // 로딩 완료
     });
 
     _startLocationTracking();
+    // 초기 오버레이 위치 계산
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateOverlayPosition();
+      _updateOverlayPositions();
+    });
   }
 
   /// 사용자의 위치 추적을 시작합니다.
@@ -193,10 +238,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
-        _currentLocationMarker = _currentLocationMarker?.copyWith(
-          positionParam: _currentPosition,
-        );
       });
+      await _updateOverlayPosition();
+      await _updateOverlayPositions();
 
       final eventSignal =
           await _walkStateManager.updateUserLocation(_currentPosition!);
@@ -226,7 +270,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           } else {
             // 나중에 버튼 선택 시에도 출발지 복귀 감지 시작
             _walkStateManager.startReturningHome();
-            
+
             if (mounted) {
               setState(() {
                 _showDestinationEventButton = true;
@@ -343,7 +387,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16),
+                      fontSize: 20),
                 ),
               ),
         centerTitle: true,
@@ -403,6 +447,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     zoom: 15.0,
                   ),
                   markers: allMarkers,
+                  onCameraMove: (_) {
+                    _updateOverlayPosition();
+                    _updateOverlayPositions();
+                  },
                 ),
           // 디버그 모드일 때만 경유지/목적지 도착 버튼을 표시합니다. 로딩 중에는 표시하지 않습니다.
           DebugModeButtons(
@@ -429,6 +477,71 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             initialPoseImageUrl: _currentDestinationPoseImageUrl,
             initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
           ),
+          // 현재 위치에 붙는 Lottie 애니메이션 오버레이
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left: _userOverlayOffset!.dx - (_overlayWidth / 2),
+              top: _userOverlayOffset!.dy - _overlayHeight + _overlayBottomTrim,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _overlayWidth,
+                  height: _overlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/start.json',
+                    repeat: true,
+                    animate: true,
+                    alignment: Alignment.bottomCenter,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          // 목적지 Lottie 애니메이션 오버레이
+          if (!_isLoading && _destinationOverlayOffset != null)
+            Positioned(
+              left: _destinationOverlayOffset!.dx -
+                  (_destinationOverlayWidth / 2),
+              top: _destinationOverlayOffset!.dy -
+                  _destinationOverlayHeight +
+                  _overlayBottomTrim,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _destinationOverlayWidth,
+                  height: _destinationOverlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/destination.json',
+                    repeat: true,
+                    animate: true,
+                    alignment: Alignment.bottomCenter,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          // 경유지 Lottie 애니메이션 오버레이 (width/height로만 제어)
+          if (!_isLoading && _waypointOverlayOffset != null)
+            Positioned(
+              left: _waypointOverlayOffset!.dx - (_waypointOverlayWidth / 2),
+              top: _waypointOverlayOffset!.dy -
+                  _waypointOverlayHeight +
+                  _overlayBottomTrim,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _waypointOverlayWidth,
+                  height: _waypointOverlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/waypoint.json',
+                    repeat: true,
+                    animate: true,
+                    alignment: Alignment.bottomCenter,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

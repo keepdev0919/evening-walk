@@ -35,7 +35,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
-            '산책 메이트를 \'$mate\'로 확정하시겠습니까?',
+            '산책 메이트를 \'$mate\'로 \n확정하시겠습니까?',
             style: const TextStyle(
               color: Colors.white70,
               fontWeight: FontWeight.bold,
@@ -152,7 +152,8 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                                 startLocation: widget.startLocation,
                                 destinationLocation: widget.destinationLocation,
                                 selectedMate: mate,
-                                destinationBuildingName: widget.destinationBuildingName,
+                                destinationBuildingName:
+                                    widget.destinationBuildingName,
                               ),
                             ),
                           );
@@ -162,22 +163,31 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 const SizedBox(height: 40),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    '산책 메이트에 따라 경유지 이벤트 \n정보가 달라집니다',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontStyle: FontStyle.italic,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 4,
-                          color: Colors.black54,
+                  child: Text.rich(
+                    TextSpan(
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: <Shadow>[
+                          Shadow(
+                            offset: Offset(0, 1),
+                            blurRadius: 4,
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                      children: <TextSpan>[
+                        TextSpan(text: '산책 메이트에 따라 '),
+                        TextSpan(
+                          text: '경유지 이벤트 ',
+                          style: TextStyle(color: Colors.orangeAccent),
                         ),
+                        TextSpan(text: '\n정보가 달라집니다'),
                       ],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

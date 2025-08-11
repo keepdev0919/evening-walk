@@ -4,14 +4,15 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -52,7 +53,15 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
   // --- Firebase 및 API 관련 변수 ---
   /// 현재 로그인한 Firebase 사용자 정보입니다.
-  User? _user;
+  // User? _user; // 현재 사용 안 함
+
+  /// 현재 위치 Lottie 오버레이 좌표 및 크기
+  Offset? _userOverlayOffset;
+  static const double _overlayWidth = 84;
+  static const double _overlayHeight = 84;
+
+  /// Google 지도 컨트롤러 (오버레이 위치 계산용)
+  GoogleMapController? _googleMapController;
 
   /// Google Maps API 키입니다. .env 파일에서 로드됩니다.
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
@@ -61,15 +70,20 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   void initState() {
     super.initState();
     // 현재 사용자 정보를 가져옵니다.
-    _user = FirebaseAuth.instance.currentUser;
+    // _user = FirebaseAuth.instance.currentUser;
     // 현재 위치를 결정하고 지도를 초기화합니다.
     _determinePosition();
   }
 
   /// 지도가 생성될 때 호출되는 콜백 함수입니다.
-  /// GoogleMapController를 초기화합니다.
+  /// GoogleMapController를 초기화하고 오버레이 위치를 업데이트합니다.
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    _googleMapController = controller;
+    // 초기 오버레이 위치 계산
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _updateOverlayPosition();
+    });
   }
 
   /// 사용자의 현재 위치를 비동기적으로 결정합니다.
@@ -85,100 +99,28 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       );
       _isLoading = false; // 로딩 완료
     });
-    // 프로필 이미지를 사용하여 현재 위치 마커를 업데이트합니다.
-    _updateMarkerWithProfileImage();
+    // Lottie 오버레이 위치 계산
+    _updateOverlayPosition();
   }
 
-  /// 사용자 프로필 이미지를 사용하여 현재 위치 마커를 업데이트합니다.
-  /// Firebase에서 프로필 이미지 URL을 가져와 마커 아이콘으로 사용합니다.
-  Future<void> _updateMarkerWithProfileImage() async {
-    String? imageUrl;
-    if (_user != null) {
-      try {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_user!.uid)
-            .get();
-        if (userDoc.exists) {
-          imageUrl = userDoc.data()?['profileImageUrl'];
-        }
-      } catch (e) {
-        print("Failed to fetch user data for marker: $e");
+  /// 현재 위치 Lottie 오버레이 위치를 업데이트합니다.
+  Future<void> _updateOverlayPosition() async {
+    if (_currentPosition != null && _googleMapController != null) {
+      final ScreenCoordinate screenCoordinate =
+          await _googleMapController!.getScreenCoordinate(_currentPosition!);
+
+      if (mounted) {
+        setState(() {
+          final dpr = MediaQuery.of(context).devicePixelRatio;
+          _userOverlayOffset = Offset(
+            screenCoordinate.x.toDouble() / dpr,
+            screenCoordinate.y.toDouble() / dpr,
+          );
+          // 마커는 null로 설정하여 Lottie로 대체
+          _currentLocationMarker = null;
+        });
       }
     }
-
-    final BitmapDescriptor customMarker =
-        await _createCustomMarkerBitmap(imageUrl);
-
-    if (mounted) {
-      setState(() {
-        _currentLocationMarker = Marker(
-          markerId: const MarkerId('current_position'),
-          position: _currentPosition!,
-          infoWindow: const InfoWindow(title: '현재 위치'),
-          icon: customMarker,
-          anchor: const Offset(0.5, 1.0),
-        );
-      });
-    }
-  }
-
-  /// 주어진 이미지 URL을 사용하여 사용자 정의 마커 비트맵을 생성합니다.
-  /// 프로필 이미지가 없으면 기본 회색 원을 표시합니다.
-  Future<BitmapDescriptor> _createCustomMarkerBitmap(String? imageUrl) async {
-    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-    final Canvas canvas = Canvas(pictureRecorder);
-    const double pinSize = 150.0;
-    const double avatarRadius = 50.0;
-
-    final Paint pinPaint = Paint()..color = Colors.blue;
-    final Path pinPath = Path();
-    pinPath.moveTo(pinSize / 2, pinSize);
-    pinPath.quadraticBezierTo(0, pinSize * 0.6, pinSize / 2, pinSize * 0.2);
-    pinPath.quadraticBezierTo(pinSize, pinSize * 0.6, pinSize / 2, pinSize);
-    canvas.drawPath(pinPath, pinPaint);
-
-    final Paint circlePaint = Paint()..color = Colors.black;
-    canvas.drawCircle(
-        const Offset(pinSize / 2, pinSize / 2), avatarRadius + 5, circlePaint);
-
-    ui.Image? avatarImage;
-    if (imageUrl != null) {
-      try {
-        final Uint8List bytes = (await http.get(Uri.parse(imageUrl))).bodyBytes;
-        final ui.Codec codec = await ui.instantiateImageCodec(bytes,
-            targetWidth: avatarRadius.toInt() * 2);
-        final ui.FrameInfo frameInfo = await codec.getNextFrame();
-        avatarImage = frameInfo.image;
-      } catch (e) {
-        print('Error loading profile image for marker: $e');
-      }
-    }
-
-    final Rect avatarRect = Rect.fromCircle(
-        center: const Offset(pinSize / 2, pinSize / 2), radius: avatarRadius);
-    final Path clipPath = Path()..addOval(avatarRect);
-    canvas.clipPath(clipPath);
-
-    if (avatarImage != null) {
-      paintImage(
-          canvas: canvas,
-          rect: avatarRect,
-          image: avatarImage,
-          fit: BoxFit.cover);
-    } else {
-      final Paint placeholderPaint = Paint()..color = Colors.grey[300]!;
-      canvas.drawCircle(avatarRect.center, avatarRadius, placeholderPaint);
-    }
-
-    final ui.Image markerAsImage = await pictureRecorder
-        .endRecording()
-        .toImage(pinSize.toInt(), pinSize.toInt());
-    final ByteData? byteData =
-        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
-    final Uint8List uint8List = byteData!.buffer.asUint8List();
-
-    return BitmapDescriptor.fromBytes(uint8List);
   }
 
   /// 목적지 마커로 사용할 깃발 아이콘 비트맵을 생성합니다.
@@ -429,7 +371,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   color: Colors.white,
                 ),
               ),
-              backgroundColor: Colors.blue,
+              backgroundColor: Colors.black,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
             ),
@@ -730,6 +672,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                     zoom: 14.5, // 초기 줌 레벨
                   ),
                   onTap: _onMapTap, // 지도를 탭했을 때 호출될 콜백 함수
+                  onCameraMove: (CameraPosition position) {
+                    // 카메라 이동 시 오버레이 위치 업데이트
+                    _updateOverlayPosition();
+                  },
                   circles: {
                     // 15분 산책 반경을 나타내는 파스텔 블루 원
                     Circle(
@@ -843,6 +789,25 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                             TextSpan(text: '?'),
                           ])),
                     ],
+                  ),
+                ),
+              ),
+            ),
+          // 현재 위치에 붙는 Lottie 애니메이션 오버레이
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left: _userOverlayOffset!.dx - (_overlayWidth / 2),
+              top: _userOverlayOffset!.dy - _overlayHeight,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _overlayWidth,
+                  height: _overlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/start.json',
+                    repeat: true,
+                    animate: true,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),
