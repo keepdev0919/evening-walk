@@ -95,18 +95,18 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
             ),
           ),
           // 어두운 오버레이 (가독성을 위해)
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3), // 상단은 조금 어둡게
-                  Colors.black.withOpacity(0.6), // 하단은 더 어둡게
-                ],
-              ),
-            ),
-          ),
+          // Container(
+          //   decoration: BoxDecoration(
+          //     gradient: LinearGradient(
+          //       begin: Alignment.topCenter,
+          //       end: Alignment.bottomCenter,
+          //       colors: [
+          //         Colors.black.withOpacity(0.3), // 상단은 조금 어둡게
+          //         Colors.black.withOpacity(0.6), // 하단은 더 어둡게
+          //       ],
+          //     ),
+          //   ),
+          // ),
           // 콘텐츠
           Scaffold(
             backgroundColor: Colors.transparent,
@@ -196,7 +196,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5), // 다이얼로그 스타일 참고한 반투명 검정 배경
+        color: Colors.black.withOpacity(0.3), // 다이얼로그 스타일 참고한 반투명 검정 배경
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white54,
@@ -204,7 +204,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -248,7 +248,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             shadows: [
               Shadow(
                 blurRadius: 2.0,
@@ -262,8 +262,8 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           label,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
             shadows: [
               Shadow(
                 blurRadius: 2.0,
@@ -423,8 +423,8 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           children: [
             const Icon(
               Icons.directions_walk_outlined,
-              color: Colors.white54,
-              size: 64,
+              color: Colors.white,
+              size: 80,
             ),
             const SizedBox(height: 16),
             Text(
@@ -432,17 +432,17 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                   ? '아직 산책 기록이 없습니다'
                   : '해당 필터의 산책 기록이 없습니다',
               style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
               '첫 산책을 시작해보세요!',
               style: TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
-              ),
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),

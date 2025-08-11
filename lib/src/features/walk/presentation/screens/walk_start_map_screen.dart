@@ -181,6 +181,66 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     return BitmapDescriptor.fromBytes(uint8List);
   }
 
+  /// 목적지 마커로 사용할 깃발 아이콘 비트맵을 생성합니다.
+  /// 외부 에셋 없이 Canvas로 그려서 즉시 사용 가능합니다.
+  Future<BitmapDescriptor> _createFlagMarkerBitmap({
+    Color poleColor = Colors.black87,
+    Color flagColor = Colors.redAccent,
+    double size = 120.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    // 배경을 투명으로 유지
+    final Paint transparentPaint = Paint()..color = Colors.transparent;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size, size), transparentPaint);
+
+    // 폴(막대)
+    final double poleWidth = size * 0.06;
+    final double poleHeight = size * 0.78;
+    final double poleLeft = size * 0.48;
+    final double poleTop = size * 0.12;
+    final RRect poleRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(poleLeft, poleTop, poleWidth, poleHeight),
+      Radius.circular(poleWidth / 2),
+    );
+    final Paint polePaint = Paint()
+      ..color = poleColor
+      ..isAntiAlias = true;
+    canvas.drawRRect(poleRect, polePaint);
+
+    // 깃발 (삼각형)
+    final double flagStartX = poleLeft + poleWidth; // 막대 오른쪽에서 시작
+    final double flagStartY = poleTop + poleWidth; // 상단에서 약간 아래
+    final double flagWidth = size * 0.36;
+    final double flagHeight = size * 0.22;
+    final Path flagPath = Path()
+      ..moveTo(flagStartX, flagStartY)
+      ..lineTo(flagStartX + flagWidth, flagStartY + flagHeight * 0.2)
+      ..lineTo(flagStartX, flagStartY + flagHeight)
+      ..close();
+    final Paint flagPaint = Paint()
+      ..color = flagColor
+      ..isAntiAlias = true;
+    canvas.drawPath(flagPath, flagPaint);
+
+    // 바닥 그림자(말풍선 핀 느낌의 기준점 강조)
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.15)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 4);
+    canvas.drawCircle(
+        Offset(size * 0.5, size * 0.98), size * 0.06, shadowPaint);
+
+    final ui.Image image = await pictureRecorder.endRecording().toImage(
+          size.toInt(),
+          size.toInt(),
+        );
+    final ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List uint8List = byteData!.buffer.asUint8List();
+    return BitmapDescriptor.fromBytes(uint8List);
+  }
+
   /// 지도를 탭했을 때 호출되는 함수입니다.
   /// 탭한 위치를 목적지로 설정하고, 현재 위치와의 거리를 계산하여 유효성을 검사합니다.
   /// 유효한 목적지인 경우 하단 시트를 표시합니다.
@@ -207,9 +267,18 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
     if (distance > allowedRadius) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('목적지는 최대 빨간원까지만 설정할 수 있습니다.'),
+          content: Text.rich(
+            TextSpan(
+              style: TextStyle(color: Colors.white),
+              children: [
+                TextSpan(text: '목적지는 최대 '),
+                TextSpan(text: '빨간원', style: TextStyle(color: Colors.red)),
+                TextSpan(text: '까지만 설정할 수 있습니다.'),
+              ],
+            ),
+          ),
           backgroundColor: Colors.black.withOpacity(0.6),
-          duration: const Duration(seconds: 3),
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -232,11 +301,15 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       print('건물 없음, 주소 사용: $displayName');
     }
 
+    final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
+
     setState(() {
       _destinationMarker = Marker(
         markerId: const MarkerId('destination'),
         position: finalPosition,
         infoWindow: InfoWindow(title: displayName),
+        icon: flagIcon,
+        anchor: const Offset(0.5, 1.0),
       );
       _selectedDestination = finalPosition;
       _selectedAddress = displayName;
@@ -282,8 +355,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
               Row(
                 children: [
                   const Icon(
-                    Icons.location_on,
-                    color: Colors.white70,
+                    Icons.flag,
+                    color: Colors.redAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -332,13 +405,17 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   /// 선택된 목적지를 최종 확인하고 다음 화면으로 전환합니다.
   void _confirmDestination() async {
     if (_selectedDestination != null) {
+      final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap(
+        flagColor: Colors.greenAccent,
+        poleColor: Colors.black87,
+      );
       setState(() {
         _destinationMarker = Marker(
           markerId: const MarkerId('destination'),
           position: _selectedDestination!,
           infoWindow: InfoWindow(title: _selectedAddress),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: flagIcon,
+          anchor: const Offset(0.5, 1.0),
         );
       });
       ScaffoldMessenger.of(context)
@@ -386,16 +463,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
           child: Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.8),
+              color: Colors.black.withOpacity(0.5),
               borderRadius: BorderRadius.circular(20.0),
               border: Border.all(color: Colors.white24, width: 1.5),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // const Icon(Icons.favorite_outline,
-                //     color: Colors.white70, size: 40),
-                // const SizedBox(height: 16),
                 const Text(
                   '어떤 산책을 원하세요?',
                   style: TextStyle(
@@ -408,7 +482,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 // 15분 산책 버튼
                 ElevatedButton.icon(
                   icon: const Icon(Icons.directions_walk),
-                  label: const Text('가볍게 15분'),
+                  label: const Text('가볍게 15분',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF87CEEB).withOpacity(0.9),
                     foregroundColor: Colors.white,
@@ -427,7 +503,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 // 30분 산책 버튼
                 ElevatedButton.icon(
                   icon: const Icon(Icons.timer_outlined),
-                  label: const Text('여유롭게 30분'),
+                  label: const Text('여유롭게 30분',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF6B9D).withOpacity(0.8),
                     foregroundColor: Colors.white,
@@ -445,7 +523,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   child: const Text('다음에 할게요',
-                      style: TextStyle(color: Colors.white70, fontSize: 18)),
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -490,11 +571,15 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         final placeName = placeDetails['name'];
         final placeLocation = placeDetails['location'];
 
+        final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
+
         setState(() {
           _destinationMarker = Marker(
             markerId: const MarkerId('destination'),
             position: placeLocation,
             infoWindow: InfoWindow(title: placeName),
+            icon: flagIcon,
+            anchor: const Offset(0.5, 1.0),
           );
           _selectedDestination = placeLocation;
           _selectedAddress = placeName;
@@ -627,7 +712,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16),
+                      fontSize: 20),
                 ),
               ),
         centerTitle: true, // 제목을 중앙에 정렬합니다.
@@ -708,17 +793,31 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text(
-                          '파란 원은 15분, 빨간 원은 30분 정도의 여유로운 산책거리에요.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        content: Text.rich(
+                          TextSpan(
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            children: [
+                              TextSpan(
+                                  text: '파란 원',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                  )),
+                              TextSpan(text: '은 보통 15분, '),
+                              TextSpan(
+                                  text: '빨간 원',
+                                  style: TextStyle(color: Colors.red)),
+                              TextSpan(text: '은 보통 30분 정도의 산책거리에요'),
+                            ],
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Colors.black.withOpacity(0.8),
                         behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 5),
+                        duration: Duration(seconds: 5),
                       ),
                     );
                   },
@@ -728,13 +827,21 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                       const Icon(Icons.help_outline_rounded,
                           size: 20, color: Colors.white),
                       const SizedBox(width: 8),
-                      const Text(
-                        '이 원들은 뭐예요?',
-                        style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold),
-                      ),
+                      const Text.rich(TextSpan(
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                          children: [
+                            TextSpan(
+                                text: '파란원',
+                                style: TextStyle(color: Colors.blue)),
+                            TextSpan(text: '? '),
+                            TextSpan(
+                                text: '빨간원',
+                                style: TextStyle(color: Colors.red)),
+                            TextSpan(text: '?'),
+                          ])),
                     ],
                   ),
                 ),
