@@ -14,8 +14,6 @@ class WalkSessionService {
   Future<String?> saveWalkSession({
     required WalkStateManager walkStateManager,
     String? walkReflection,
-    List<String>? customHashtags,
-    String? weatherInfo,
     String? locationName,
   }) async {
     try {
@@ -66,7 +64,6 @@ class WalkSessionService {
         poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
         takenPhotoPath: walkStateManager.photoPath, // 업로드된 Storage URL 사용
         walkReflection: walkReflection,
-        weatherInfo: weatherInfo,
         locationName: locationName,
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
         totalDuration: walkStateManager.actualDurationInMinutes, // 실제 소요 시간 설정
@@ -244,8 +241,6 @@ class WalkSessionService {
   Future<String?> saveWalkSessionWithoutPhoto({
     required WalkStateManager walkStateManager,
     String? walkReflection,
-    List<String>? customHashtags,
-    String? weatherInfo,
     String? locationName,
   }) async {
     try {
@@ -280,8 +275,6 @@ class WalkSessionService {
         poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
         takenPhotoPath: walkStateManager.photoPath, // 사진 경로 포함
         walkReflection: walkReflection,
-        hashtags: customHashtags ?? ['#저녁산책', '#포즈추천'],
-        weatherInfo: weatherInfo,
         locationName: locationName,
         endTime: walkStateManager.actualEndTime,
         totalDuration: walkStateManager.actualDurationInMinutes,

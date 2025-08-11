@@ -916,7 +916,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 walkReflection: reflectionController.text.trim().isEmpty
                     ? null
                     : reflectionController.text.trim(),
-                weatherInfo: '맑음',
                 locationName:
                     widget.walkStateManager.destinationBuildingName,
               );

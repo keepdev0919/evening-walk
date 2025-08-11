@@ -25,12 +25,9 @@ class WalkSession {
 
   // 일기 정보
   final String? walkReflection; // 산책 후 소감 (일기 다이얼로그에서 입력)
-  final List<String> hashtags; // 해시태그
 
   // 메타 정보
-  final double? totalDistance; // 총 이동 거리 (km)
   final int? totalDuration; // 총 소요 시간 (분)
-  final String? weatherInfo; // 날씨 정보
   final String? locationName; // 위치명 (예: "서울 강남구")
 
   WalkSession({
@@ -47,10 +44,7 @@ class WalkSession {
     this.poseImageUrl,
     this.takenPhotoPath,
     this.walkReflection,
-    this.hashtags = const ['#저녁산책'],
-    this.totalDistance,
     this.totalDuration,
-    this.weatherInfo,
     this.locationName,
   });
 
@@ -68,8 +62,6 @@ class WalkSession {
     String? poseImageUrl,
     String? takenPhotoPath,
     String? walkReflection,
-    List<String>? hashtags,
-    String? weatherInfo,
     String? locationName,
     DateTime? endTime,
     int? totalDuration,
@@ -88,9 +80,7 @@ class WalkSession {
       poseImageUrl: poseImageUrl,
       takenPhotoPath: takenPhotoPath,
       walkReflection: walkReflection,
-      hashtags: hashtags ?? ['#저녁산책', '#포즈추천'],
       totalDuration: totalDuration, // 전달받은 총 소요 시간 사용
-      weatherInfo: weatherInfo,
       locationName: locationName,
     );
   }
@@ -137,17 +127,6 @@ class WalkSession {
       return const LatLng(0.0, 0.0);
     }
 
-    List<String> _parseHashtags(dynamic value) {
-      if (value == null) return ['#저녁산책'];
-      if (value is List) {
-        return value.map((e) => e.toString()).toList();
-      }
-      // 단일 문자열로 저장된 경우 분리 시도
-      if (value is String) {
-        return value.split(RegExp(r'[ ,]')).where((e) => e.isNotEmpty).toList();
-      }
-      return ['#저녁산책'];
-    }
 
     return WalkSession(
       id: docId,
@@ -164,14 +143,9 @@ class WalkSession {
       poseImageUrl: data['poseImageUrl']?.toString(),
       takenPhotoPath: data['takenPhotoPath']?.toString(),
       walkReflection: data['walkReflection']?.toString(),
-      hashtags: _parseHashtags(data['hashtags']),
-      totalDistance: (data['totalDistance'] is num)
-          ? (data['totalDistance'] as num).toDouble()
-          : double.tryParse(data['totalDistance']?.toString() ?? ''),
       totalDuration: (data['totalDuration'] is num)
           ? (data['totalDuration'] as num).toInt()
           : int.tryParse(data['totalDuration']?.toString() ?? ''),
-      weatherInfo: data['weatherInfo']?.toString(),
       locationName: data['locationName']?.toString(),
     );
   }
@@ -200,12 +174,8 @@ class WalkSession {
       'poseImageUrl': poseImageUrl,
       'takenPhotoPath': takenPhotoPath,
       'walkReflection': walkReflection,
-      'hashtags': hashtags,
-      'totalDistance': totalDistance,
       'totalDuration': totalDuration,
-      'weatherInfo': weatherInfo,
       'locationName': locationName,
-      'createdAt': DateTime.now().millisecondsSinceEpoch, // 생성 시간 추가
     };
   }
 
@@ -217,6 +187,9 @@ class WalkSession {
     if (endTime == null) return null;
     return endTime!.difference(startTime).inMinutes;
   }
+
+  /// 총 거리 (사용하지 않는 필드이지만 UI 호환성을 위해 0 반환)
+  double? get totalDistance => 0.0;
 
   /// 동반자 이름을 표시용으로 변환
   String get mateDisplayName {
@@ -254,10 +227,7 @@ class WalkSession {
     String? poseImageUrl,
     String? takenPhotoPath,
     String? walkReflection,
-    List<String>? hashtags,
-    double? totalDistance,
     int? totalDuration,
-    String? weatherInfo,
     String? locationName,
   }) {
     return WalkSession(
@@ -274,10 +244,7 @@ class WalkSession {
       poseImageUrl: poseImageUrl ?? this.poseImageUrl,
       takenPhotoPath: takenPhotoPath ?? this.takenPhotoPath,
       walkReflection: walkReflection ?? this.walkReflection,
-      hashtags: hashtags ?? this.hashtags,
-      totalDistance: totalDistance ?? this.totalDistance,
       totalDuration: totalDuration ?? this.totalDuration,
-      weatherInfo: weatherInfo ?? this.weatherInfo,
       locationName: locationName ?? this.locationName,
     );
   }

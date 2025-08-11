@@ -128,7 +128,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       final sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
         walkStateManager: widget.walkStateManager,
         walkReflection: null, // 소감은 나중에 작성
-        weatherInfo: AppConstants.defaultWeather, // 기본값
         locationName: widget.walkStateManager
             .destinationBuildingName, // WalkStateManager에서 가져오기
       );
