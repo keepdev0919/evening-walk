@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import 'package:lottie/lottie.dart' as lottie;
 
 // 상태 구분용 enum
 enum InfoStatus { loading, success, error }
@@ -396,6 +397,42 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // 하단 Lottie 애니메이션 (디바이스 크기 비율 기반 위치/크기)
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double screenWidth = constraints.maxWidth;
+                  final double screenHeight = constraints.maxHeight;
+                  // 크기 15% 증가
+                  final double catWidth =
+                      screenWidth * 0.28 * 2; // 화면 너비의 28% * 1.15
+                  final double bottomPadding = screenHeight * 0.06; // 화면 높이의 6%
+                  return IgnorePointer(
+                    ignoring: true,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: bottomPadding),
+                        child: Transform.translate(
+                          // 위치를 화면 너비의 15%만큼 왼쪽으로 이동
+                          offset: Offset(-screenWidth * 0.23, 0),
+                          child: SizedBox(
+                            width: catWidth,
+                            child: lottie.Lottie.asset(
+                              'assets/animations/blackCat.json',
+                              repeat: true,
+                              animate: true,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
             // 콘텐츠를 스크롤 가능하게 만들기 (RefreshIndicator 작동을 위해)
             SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(), // 항상 스크롤 가능
@@ -541,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(
               Icons.location_on,
               size: 14,
-              color: Colors.white70,
+              color: Colors.red,
             ),
             const SizedBox(width: 3),
             Flexible(

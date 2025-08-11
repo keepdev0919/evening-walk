@@ -14,6 +14,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
+// 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
 /// 현재 위치를 기반으로 지도를 표시하고, 사용자가 지도를 탭하여 목적지를 선택하거나
@@ -59,6 +60,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   Offset? _userOverlayOffset;
   static const double _overlayWidth = 84;
   static const double _overlayHeight = 84;
+  static const double _bubbleWidth = 200;
+  static const double _bubbleOffsetY = 56; // 현재 위치 아이콘 위로 띄우는 거리
 
   /// Google 지도 컨트롤러 (오버레이 위치 계산용)
   GoogleMapController? _googleMapController;
@@ -812,6 +815,21 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                 ),
               ),
             ),
+          // 현재 위치에 붙는 말풍선 오버레이 (시작 화면 전용 텍스트)
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left: _userOverlayOffset!.dx - (_bubbleWidth / 2),
+              top:
+                  _userOverlayOffset!.dy - _overlayHeight - _bubbleOffsetY + 20,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _bubbleWidth,
+                  child: _StartBubble(text: '헛둘.. 헛둘..'),
+                ),
+              ),
+            ),
+          // 진행 화면 의존 위젯 제거 (독립 텍스트 말풍선만 사용)
         ],
       ),
       // 플로팅 액션 버튼: 로딩 중에는 표시하지 않습니다.
@@ -849,4 +867,69 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             ),
     );
   }
+}
+
+// 시작 화면 전용 간단 말풍선 위젯 (문자열만 받아 표시)
+class _StartBubble extends StatelessWidget {
+  final String text;
+  const _StartBubble({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                offset: const Offset(0, 2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              height: 0.8,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        CustomPaint(
+            size: const Size(20, 10), painter: _StartBubbleTailPainter()),
+      ],
+    );
+  }
+}
+
+class _StartBubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fill = Paint()..color = Colors.white;
+    final border = Paint()
+      ..color = Colors.grey.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final path = Path()
+      ..moveTo(size.width * 0.5, size.height)
+      ..lineTo(size.width * 0.3, 0)
+      ..lineTo(size.width * 0.7, 0)
+      ..close();
+
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

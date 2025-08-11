@@ -12,7 +12,7 @@ import '../../../../core/services/log_service.dart';
 /// 말풍선 상태를 나타내는 enum
 enum SpeechBubbleState {
   toWaypoint("산책 가보자고 ~"), // 출발지~경유지절반
-  almostWaypoint("선물 내놔 ~"), // 경유지 도착 절반 전
+  almostWaypoint("선물.. 선물.. 선물.. "), // 경유지 도착 절반 전
   almostDestination("고지가 코앞이다 !!"), // 목적지 도착 절반 전
   returning("이제 집가자 ~"), // 목적지→출발지 복귀 시작
   almostHome("거의 다왔다 !!"); // 출발지 도착 절반 전
