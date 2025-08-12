@@ -16,6 +16,9 @@ import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.da
 import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
 import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
+import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
+import 'dart:typed_data';
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.
@@ -111,6 +114,34 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           screen.y.toDouble() / dpr,
         );
       });
+    } catch (_) {}
+  }
+
+  /// 출발지-경유지-목적지 정적 지도 이미지를 생성하여 저장합니다.
+  Future<void> _generateAndSaveRouteSnapshot() async {
+    try {
+      final start = _walkStateManager.startLocation;
+      final waypoint = _walkStateManager.waypointLocation;
+      final dest = _walkStateManager.destinationLocation;
+      if (start == null || dest == null) return;
+      // 1) In-app 캡처 우선 시도
+      Uint8List? png = await InAppMapSnapshotService.captureRouteSnapshot(
+        context: context,
+        start: start,
+        waypoint: waypoint,
+        destination: dest,
+        width: 600,
+        height: 400,
+      );
+      // 2) 실패 시 Static Maps fallback
+      png ??= await RouteSnapshotService.generateRouteSnapshot(
+        start: start,
+        waypoint: waypoint,
+        destination: dest,
+        width: 600,
+        height: 400,
+      );
+      _walkStateManager.saveRouteSnapshot(png);
     } catch (_) {}
   }
 
@@ -279,6 +310,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 _showDestinationTeaseBubble = false; // 확인 시 숨김
               });
             }
+            await _generateAndSaveRouteSnapshot();
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -297,6 +329,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 _showDestinationTeaseBubble = false; // 나중에 시 숨김
               });
             }
+            await _generateAndSaveRouteSnapshot();
           }
           break;
 

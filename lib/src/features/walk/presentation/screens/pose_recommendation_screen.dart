@@ -178,6 +178,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   /// 직접 공유하기
   Future<void> _captureAndShareDirectly() async {
     try {
+      // 로딩 다이얼로그 표시: 공유 준비 중
+      _showBlockingLoadingDialog('공유 준비 중...');
+
       // 임시 RepaintBoundary를 사용하여 오프스크린 캡처
       final shareWidget = _buildShareContent();
 
@@ -213,7 +216,51 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     } catch (e) {
       _showErrorSnackBar('공유 중 오류가 발생했습니다: $e');
       LogService.error('PoseRecommendation', '공유 오류', e);
+    } finally {
+      // 로딩 다이얼로그 닫기
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
     }
+  }
+
+  /// 공유 준비/진행 동안 사용자 혼란을 막기 위한 블로킹 로딩 다이얼로그 표시
+  void _showBlockingLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            backgroundColor: Colors.black.withOpacity(0.85),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.white54, width: 1),
+            ),
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  message,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// 공유용 콘텐츠 위젯
@@ -592,7 +639,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.6),
+        color: Colors.black.withOpacity(0.3),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
       ),
@@ -1126,8 +1173,16 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.withOpacity(0.8),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.black.withOpacity(0.6),
+        behavior: SnackBarBehavior.floating,
         duration: AppConstants.snackBarDuration,
       ),
     );

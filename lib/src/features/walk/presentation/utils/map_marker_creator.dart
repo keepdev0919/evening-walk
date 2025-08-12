@@ -178,6 +178,53 @@ class MapMarkerCreator {
     return BitmapDescriptor.fromBytes(uint8List);
   }
 
+  /// 집(홈) 아이콘의 마커 비트맵을 생성합니다. 출발지 마커로 사용됩니다.
+  static Future<BitmapDescriptor> createHomeMarkerBitmap() async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    const double pinSize = 150.0;
+    const double iconSize = 60.0;
+
+    final Paint pinPaint = Paint()..color = Colors.blue;
+    final Path pinPath = Path();
+    pinPath.moveTo(pinSize / 2, pinSize);
+    pinPath.quadraticBezierTo(0, pinSize * 0.6, pinSize / 2, pinSize * 0.2);
+    pinPath.quadraticBezierTo(pinSize, pinSize * 0.6, pinSize / 2, pinSize);
+    canvas.drawPath(pinPath, pinPaint);
+
+    final Paint circlePaint = Paint()..color = Colors.black;
+    canvas.drawCircle(const Offset(pinSize / 2, pinSize / 2.5),
+        (iconSize / 1.2) + 5, circlePaint);
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: TextSpan(
+        text: String.fromCharCode(Icons.home.codePoint),
+        style: TextStyle(
+          fontSize: iconSize,
+          fontFamily: Icons.home.fontFamily,
+          color: Colors.blue,
+        ),
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas,
+        Offset(
+          (pinSize - textPainter.width) / 2,
+          (pinSize / 2.5) - (textPainter.height / 2),
+        ));
+
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(pinSize.toInt(), pinSize.toInt());
+    final ByteData? byteData =
+        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List uint8List = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.fromBytes(uint8List);
+  }
+
   /// UI용 PNG 바이트로 경유지(선물상자) 마커 아이콘을 생성합니다.
   /// 리스트/일기 화면 등 지도 외 위젯에서 이미지로 사용합니다.
   static Future<Uint8List> createGiftBoxMarkerPng({

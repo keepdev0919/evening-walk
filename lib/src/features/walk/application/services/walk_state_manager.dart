@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
@@ -42,6 +43,7 @@ class WalkStateManager {
   String? _photoPath;
   String? _userReflection;
   String? _poseImageUrl; // 목적지 추천 포즈 이미지 URL 저장
+  Uint8List? _routeSnapshotPng; // 정적 지도 캡처 PNG
   bool _waypointEventOccurred = false;
   bool _destinationEventOccurred = false;
   bool _startReturnEventOccurred = false; // 출발지 복귀 이벤트 상태 추가
@@ -67,6 +69,7 @@ class WalkStateManager {
   String? get userReflection => _userReflection;
   String? get selectedMate => _selectedMate;
   String? get poseImageUrl => _poseImageUrl;
+  Uint8List? get routeSnapshotPng => _routeSnapshotPng;
   String? get destinationBuildingName => _destinationBuildingName;
   bool get isWalkComplete => _startReturnEventOccurred;
   DateTime? get actualStartTime => _actualStartTime;
@@ -132,6 +135,12 @@ class WalkStateManager {
   void savePoseImageUrl(String? url) {
     _poseImageUrl = url;
     LogService.walkState(' 추천 포즈 URL 저장 -> "$_poseImageUrl"');
+  }
+
+  /// 산책 경로 정적 지도 PNG 저장
+  void saveRouteSnapshot(Uint8List? pngBytes) {
+    _routeSnapshotPng = pngBytes;
+    LogService.walkState(' 경로 스냅샷 저장 여부 -> ${pngBytes != null}');
   }
 
   // 소감 저장 메소드

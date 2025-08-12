@@ -4,6 +4,9 @@ import 'package:walk/src/features/walk/application/services/walk_session_service
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:walk/src/features/walk/application/services/pose_image_service.dart';
+import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
+import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
+import 'dart:typed_data';
 import 'dart:io';
 
 import '../../../../shared/providers/upload_provider.dart';
@@ -61,6 +64,41 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         : (widget.selectedMate != null
             ? PoseImageService.fetchRandomImageUrl(widget.selectedMate!)
             : null);
+
+    // 경로 스냅샷이 없다면 진입 시 1회 생성 시도 (fallback)
+    if (widget.walkStateManager.routeSnapshotPng == null) {
+      _generateRouteSnapshotFallback();
+    }
+  }
+
+  Future<void> _generateRouteSnapshotFallback() async {
+    try {
+      final start = widget.walkStateManager.startLocation;
+      final waypoint = widget.walkStateManager.waypointLocation;
+      final dest = widget.walkStateManager.destinationLocation;
+      if (start == null || dest == null) return;
+      // In-app 캡처 우선 시도
+      Uint8List? png = await InAppMapSnapshotService.captureRouteSnapshot(
+        context: context,
+        start: start,
+        waypoint: waypoint,
+        destination: dest,
+        width: 600,
+        height: 400,
+      );
+      // 실패 시 Static Maps fallback
+      png ??= await RouteSnapshotService.generateRouteSnapshot(
+        start: start,
+        waypoint: waypoint,
+        destination: dest,
+        width: 600,
+        height: 400,
+      );
+      if (png != null) {
+        widget.walkStateManager.saveRouteSnapshot(png);
+        if (mounted) setState(() {});
+      }
+    } catch (_) {}
   }
 
   @override
@@ -916,8 +954,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 walkReflection: reflectionController.text.trim().isEmpty
                     ? null
                     : reflectionController.text.trim(),
-                locationName:
-                    widget.walkStateManager.destinationBuildingName,
+                locationName: widget.walkStateManager.destinationBuildingName,
               );
 
               if (sessionId != null) {
@@ -1134,81 +1171,165 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text(
-              '🗺️ 산책 경로',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
+          // 제목 스타일을 다른 섹션(경유지에서/목적지에서)와 통일
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                const Text('🗺️', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 6),
+                const Text(
+                  '산책 경로',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
 
-          // 출발지 정보
-          FutureBuilder<String>(
-            future: widget.walkStateManager.getStartLocationAddress(),
-            builder: (context, snapshot) {
-              return _buildLocationRow(
-                leading: const Icon(
-                  Icons.home,
-                  color: Colors.blue,
-                  size: 22,
-                ),
-                label: '출발지',
-                address: snapshot.data ?? '로딩 중...',
-                isLoading: snapshot.connectionState == ConnectionState.waiting,
-              );
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 경유지 정보 (경유지가 있는 경우만)
-          FutureBuilder<String?>(
-            future: widget.walkStateManager.getWaypointLocationAddress(),
-            builder: (context, snapshot) {
-              if (snapshot.data != null) {
-                return Column(
+          // 좌: 위치 리스트, 우: 정적 지도 스냅샷
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 좌측 컬럼: 출발지/경유지/목적지
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLocationRow(
-                      leading: const Icon(
-                        Icons.card_giftcard,
-                        color: Colors.orange,
-                        size: 22,
-                      ),
-                      label: '경유지',
-                      address: snapshot.data!,
-                      isLoading:
-                          snapshot.connectionState == ConnectionState.waiting,
+                    // 출발지 정보
+                    FutureBuilder<String>(
+                      future: widget.walkStateManager.getStartLocationAddress(),
+                      builder: (context, snapshot) {
+                        return _buildLocationRow(
+                          leading: const Icon(
+                            Icons.home,
+                            color: Colors.blue,
+                            size: 22,
+                          ),
+                          label: '출발지',
+                          address: snapshot.data ?? '로딩 중...',
+                          isLoading: snapshot.connectionState ==
+                              ConnectionState.waiting,
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
+                    // 경유지 정보 (있을 때만)
+                    FutureBuilder<String?>(
+                      future:
+                          widget.walkStateManager.getWaypointLocationAddress(),
+                      builder: (context, snapshot) {
+                        if (snapshot.data != null) {
+                          return Column(
+                            children: [
+                              _buildLocationRow(
+                                leading: const Icon(
+                                  Icons.card_giftcard,
+                                  color: Colors.orange,
+                                  size: 22,
+                                ),
+                                label: '경유지',
+                                address: snapshot.data!,
+                                isLoading: snapshot.connectionState ==
+                                    ConnectionState.waiting,
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    // 목적지 정보
+                    FutureBuilder<String>(
+                      future: widget.walkStateManager
+                          .getDestinationLocationAddress(),
+                      builder: (context, snapshot) {
+                        return _buildLocationRow(
+                          leading: const Icon(
+                            Icons.flag,
+                            color: Colors.red,
+                            size: 22,
+                          ),
+                          label: '목적지',
+                          address: snapshot.data ?? '로딩 중...',
+                          isLoading: snapshot.connectionState ==
+                              ConnectionState.waiting,
+                        );
+                      },
+                    ),
                   ],
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-
-          // 목적지 정보
-          FutureBuilder<String>(
-            future: widget.walkStateManager.getDestinationLocationAddress(),
-            builder: (context, snapshot) {
-              return _buildLocationRow(
-                leading: const Icon(
-                  Icons.flag,
-                  color: Colors.red,
-                  size: 22,
                 ),
-                label: '목적지',
-                address: snapshot.data ?? '로딩 중...',
-                isLoading: snapshot.connectionState == ConnectionState.waiting,
-              );
-            },
+              ),
+              const SizedBox(width: 16),
+              // 우측: 경로 스냅샷 이미지
+              if (widget.walkStateManager.routeSnapshotPng != null)
+                GestureDetector(
+                  onTap: () => _showFullScreenRouteSnapshot(
+                      widget.walkStateManager.routeSnapshotPng!),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      widget.walkStateManager.routeSnapshotPng!,
+                      width: 180,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 180,
+                  height: 120,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: const Text(
+                    '경로 이미지를 준비 중...',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// 전체 화면 경로 스냅샷 보기
+  void _showFullScreenRouteSnapshot(Uint8List pngBytes) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.memory(
+                pngBytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

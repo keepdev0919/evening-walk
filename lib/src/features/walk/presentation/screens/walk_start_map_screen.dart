@@ -375,7 +375,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                   color: Colors.white,
                 ),
               ),
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.black.withOpacity(0.6),
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
             ),
