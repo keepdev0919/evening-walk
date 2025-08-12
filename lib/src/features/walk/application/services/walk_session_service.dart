@@ -29,8 +29,12 @@ class WalkSessionService {
         return null;
       }
 
-      // 고유 ID 생성
-      final docRef = _firestore.collection('walk_sessions').doc();
+      // 서브컬렉션에서 고유 ID 생성
+      final docRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('walk_sessions')
+          .doc();
 
       // // 사진이 있으면 Firebase Storage에 업로드
       // String? uploadedPhotoUrl;
@@ -91,8 +95,8 @@ class WalkSessionService {
   /// 사용자의 모든 산책 세션 목록을 최신순으로 가져오기
   ///
   /// Firebase 인덱스 필요:
-  /// Collection: walk_sessions
-  /// Fields: userId (Ascending), startTime (Descending)
+  /// Collection: users/{userId}/walk_sessions
+  /// Fields: startTime (Descending)
   Future<List<WalkSession>> getUserWalkSessions({int? limit}) async {
     try {
       final user = _auth.currentUser;
@@ -101,10 +105,11 @@ class WalkSessionService {
         return [];
       }
 
-      // Firebase에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
+      // 서브컬렉션에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
       Query query = _firestore
+          .collection('users')
+          .doc(user.uid)
           .collection('walk_sessions')
-          .where('userId', isEqualTo: user.uid)
           .orderBy('startTime', descending: true); // 최신순 정렬
 
       // limit이 지정된 경우에만 적용
@@ -131,18 +136,19 @@ class WalkSessionService {
   /// 실시간 산책 세션 목록 스트림 (홈화면에서 실시간 업데이트용)
   ///
   /// Firebase 인덱스 필요:
-  /// Collection: walk_sessions
-  /// Fields: userId (Ascending), startTime (Descending)
+  /// Collection: users/{userId}/walk_sessions
+  /// Fields: startTime (Descending)
   Stream<List<WalkSession>> getUserWalkSessionsStream({int? limit}) {
     final user = _auth.currentUser;
     if (user == null) {
       return Stream.value([]);
     }
 
-    // Firebase에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
+    // 서브컬렉션에서 최신순으로 정렬해서 가져오기 (서버사이드 정렬)
     Query query = _firestore
+        .collection('users')
+        .doc(user.uid)
         .collection('walk_sessions')
-        .where('userId', isEqualTo: user.uid)
         .orderBy('startTime', descending: true); // 최신순 정렬
 
     // limit이 지정된 경우에만 적용
@@ -159,8 +165,19 @@ class WalkSessionService {
   /// 특정 산책 세션 하나만 가져오기
   Future<WalkSession?> getWalkSession(String sessionId) async {
     try {
-      final doc =
-          await _firestore.collection('walk_sessions').doc(sessionId).get();
+      // 현재 사용자의 세션인지 확인을 위해 userId 필요
+      final user = _auth.currentUser;
+      if (user == null) {
+        print('WalkSessionService: 사용자가 로그인되지 않음');
+        return null;
+      }
+      
+      final doc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('walk_sessions')
+          .doc(sessionId)
+          .get();
 
       if (doc.exists && doc.data() != null) {
         return WalkSession.fromFirestore(doc.data()!, doc.id);
@@ -178,7 +195,15 @@ class WalkSessionService {
   Future<bool> updateWalkSession(
       String sessionId, Map<String, dynamic> updates) async {
     try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        print('WalkSessionService: 사용자가 로그인되지 않음');
+        return false;
+      }
+      
       await _firestore
+          .collection('users')
+          .doc(user.uid)
           .collection('walk_sessions')
           .doc(sessionId)
           .update(updates);
@@ -194,7 +219,18 @@ class WalkSessionService {
   /// 산책 세션 삭제
   Future<bool> deleteWalkSession(String sessionId) async {
     try {
-      await _firestore.collection('walk_sessions').doc(sessionId).delete();
+      final user = _auth.currentUser;
+      if (user == null) {
+        print('WalkSessionService: 사용자가 로그인되지 않음');
+        return false;
+      }
+      
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('walk_sessions')
+          .doc(sessionId)
+          .delete();
 
       print('WalkSessionService: 세션 $sessionId 삭제 완료');
       return true;
@@ -213,8 +249,9 @@ class WalkSessionService {
       }
 
       final querySnapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
           .collection('walk_sessions')
-          .where('userId', isEqualTo: user.uid)
           .get();
 
       int totalWalks = querySnapshot.docs.length;
@@ -257,8 +294,12 @@ class WalkSessionService {
         return null;
       }
 
-      // 고유 ID 생성
-      final docRef = _firestore.collection('walk_sessions').doc();
+      // 서브컬렉션에서 고유 ID 생성
+      final docRef = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('walk_sessions')
+          .doc();
 
       // WalkSession 객체 생성 (사진 없이)
       final walkSession = WalkSession.fromWalkStateManager(

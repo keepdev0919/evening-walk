@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 사용자 프로필 규칙
+    match /users/{userId} {
+      // 사용자는 자신의 프로필만 읽고 쓸 수 있음
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 산책 세션 서브컬렉션 규칙
+      match /walk_sessions/{sessionId} {
+        // 사용자는 자신의 산책 세션만 읽고 쓸 수 있음
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // 기타 모든 문서는 기본적으로 접근 거부
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

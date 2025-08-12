@@ -1,47 +1,213 @@
 import 'package:flutter/material.dart';
+import 'package:walk/src/shared/widgets/black_cat_widget.dart';
 
+/// 온보딩 화면
+/// 역할: 첫 로그인 후 간단한 안내를 보여주고 홈으로 진입시키는 화면
 class Onboarding extends StatelessWidget {
   const Onboarding({super.key});
+
+  void _goHome(BuildContext context) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/homescreen',
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('온보딩'),
-        automaticallyImplyLeading: false, // 뒤로가기 버튼 제거 (원한다면 유지 가능)
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '환영합니다!',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              '이제 산책을 시작할 준비가 되었어요.\n앱 사용법을 간단히 알려드릴게요.',
-              style: TextStyle(fontSize: 18),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: 홈 화면 또는 다음 페이지로 이동
-                  // Navigator.pushReplacementNamed(context, '/homescreen');
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/homescreen',
-                    (route) => false,
-                  );
-                },
-                child: const Text('시작하기'),
-              ),
-            )
-          ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          '저녁산책',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
         ),
+        centerTitle: true,
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 배경 이미지 (홈과 동일)
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/nature_walk.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          // 콘텐츠
+          SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 16),
+                    // 메인 카피
+                    Text(
+                      '환영합니다!\n저녁 공기를 마시며, 가볍게 걸어볼까요?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        height: 1.35,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.8),
+                            blurRadius: 8,
+                            offset: const Offset(2, 2),
+                          ),
+                          Shadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // 안내 카드
+                    _OnboardCard(
+                      title: '산책 경로',
+                      emoji: '🗺️',
+                      description: '출발지 → 경유지 → 목적지를 따라 \n가볍게 다녀오면 끝!',
+                    ),
+                    const SizedBox(height: 12),
+                    _OnboardCard(
+                      title: '포즈 추천',
+                      emoji: '✨',
+                      description: '목적지에서 랜덤 포즈를 추천해드려요. \n사진 촬영으로 추억을 남겨요.',
+                    ),
+                    const SizedBox(height: 12),
+                    _OnboardCard(
+                      title: '산책 일기',
+                      emoji: '📒',
+                      description: '시간과 경로를 기록하고 \n짧은 소감을 남겨보세요.',
+                    ),
+                    const SizedBox(height: 28),
+                    // 시작 버튼 (홈 스타일)
+                    GestureDetector(
+                      onTap: () => _goHome(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 60, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Text(
+                          '시작하기',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 120),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // 하단 검은 고양이 - 환영 텍스트
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double screenWidth = constraints.maxWidth;
+                final double screenHeight = constraints.maxHeight;
+                final double catWidth = screenWidth * 0.28 * 2;
+                final double bottomPadding = screenHeight * 0.06;
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: bottomPadding),
+                    child: Transform.translate(
+                      offset: Offset(-screenWidth * 0.23, 0),
+                      child: BlackCatWidget(
+                        width: catWidth,
+                        bubbleMaxWidth: catWidth * 0.8,
+                        screenType: 'selectMate',
+                        defaultText: '어서오라냥~',
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 온보딩 카드 위젯: 간단한 안내 항목 하나를 표시
+class _OnboardCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String emoji;
+
+  const _OnboardCard({
+    required this.title,
+    required this.description,
+    required this.emoji,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

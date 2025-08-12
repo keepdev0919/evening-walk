@@ -32,15 +32,30 @@ Future<bool> signInWithKakao() async {
     final user = userCredential.user;
     if (user == null) return false;
 
-    // 4. Firestore에 사용자 정보 저장
+    // 4. Firestore에 사용자 정보 저장 (legacy profileImage → profileImageUrl 마이그레이션 포함)
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // 기존 문서 조회하여 legacy 필드 보정
+    final existing = await userDoc.get();
+    String finalProfileUrl = profileImage;
+    if ((finalProfileUrl.isEmpty) && existing.exists) {
+      final data = existing.data();
+      if (data != null) {
+        final legacy = data['profileImage']?.toString() ?? '';
+        if (legacy.isNotEmpty) {
+          finalProfileUrl = legacy;
+        }
+      }
+    }
 
     await userDoc.set({
       'uid': user.uid,
       'email': email,
       'provider': 'kakao',
-      'profileImage': profileImage,
+      'profileImageUrl': finalProfileUrl,
+      // 더 이상 사용하지 않는 legacy 키 정리
+      'profileImage': FieldValue.delete(),
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // 중복 로그인 대비
 

@@ -23,14 +23,26 @@ class _GenderSelectorWidgetState extends State<GenderSelectorWidget> {
   @override
   void initState() {
     super.initState();
-    _selectedGender = widget.initialGender;
+    // 초기 값 정규화: 드롭다운 항목에 없는 값이 들어오면 null로 처리
+    final String? raw = widget.initialGender?.trim();
+    if (raw == null || raw.isEmpty) {
+      _selectedGender = null;
+    } else if (_genderOptions.contains(raw)) {
+      _selectedGender = raw;
+    } else if (raw == '남') {
+      _selectedGender = '남자';
+    } else if (raw == '여') {
+      _selectedGender = '여자';
+    } else {
+      _selectedGender = null;
+    }
   }
 
   void _onGenderSelected(String? gender) {
     setState(() {
       _selectedGender = gender;
     });
-    
+
     if (gender != null) {
       widget.onGenderSelected(gender);
     }

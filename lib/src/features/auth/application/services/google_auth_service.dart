@@ -38,15 +38,30 @@ Future<bool> signInWithGoogle() async {
 
     print('✅ 로그인 성공: ${user.displayName}');
 
-    // ✅ Firestore에 저장
+    // ✅ Firestore에 저장 (legacy profileImage → profileImageUrl 마이그레이션 포함)
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // 기존 문서 조회하여 legacy 필드가 있으면 보정
+    final existing = await userDoc.get();
+    String finalProfileUrl = user.photoURL ?? '';
+    if ((finalProfileUrl.isEmpty) && existing.exists) {
+      final data = existing.data();
+      if (data != null) {
+        final legacy = data['profileImage']?.toString() ?? '';
+        if (legacy.isNotEmpty) {
+          finalProfileUrl = legacy;
+        }
+      }
+    }
 
     await userDoc.set({
       'uid': user.uid,
       'email': user.email ?? '',
       'provider': 'google',
-      'profileImage': user.photoURL ?? '',
+      'profileImageUrl': finalProfileUrl,
+      // 더 이상 사용하지 않는 legacy 키 정리
+      'profileImage': FieldValue.delete(),
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // merge: true → 중복 로그인 시 덮어쓰기 방지
 

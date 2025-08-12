@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../application/services/kakao_auth_service.dart';
 import '../../application/services/google_auth_service.dart';
-import 'user_info_screen.dart';
+import 'user_info_screen.dart' as userinfo;
+import 'package:walk/src/shared/widgets/black_cat_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:walk/src/features/home/presentation/screens/home_screen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -24,10 +28,43 @@ class LoginPage extends StatelessWidget {
     Navigator.pop(context);
 
     if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const UserInfo()),
-      );
+      // 프로필 존재 여부를 확인하여 분기
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception('인증 사용자 정보를 찾을 수 없습니다.');
+        }
+
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        final data = doc.data();
+        final String nickname = (data?['nickname'] ?? '').toString().trim();
+        final bool hasProfile = nickname.isNotEmpty;
+
+        if (hasProfile) {
+          // 기존 사용자: 홈으로 직행 (백스택 제거)
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false,
+          );
+        } else {
+          // 신규 사용자: 프로필(온보딩 모드)로 이동
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const userinfo.UserInfo()),
+          );
+        }
+      } catch (e) {
+        // 확인 실패 시 안전하게 온보딩 경로로 보냄
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const userinfo.UserInfo()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -41,81 +78,129 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // 상단 이미지 카드
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      height: 240,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            "https://lh3.googleusercontent.com/aida-public/AB6AXuB0oRtqbouYEyEAiCl3x_NDoS6bLnt9DxxfDWGNQe91pwP43CnnPq_7xzVLmJ5dSDzflTVYUnmWEBB6FetbNqmsqSqFnXnJKpkZJNXSpcB4B8Kl9Y_zi8tir2kFyzM96Ei9Xl9yH7sf5fI1KXOI9D0CXKYL7xslqijPJ3di1yFFLfAs9WxV4Mpwtj-K4gYmMJznOPWDFoUfZOJHQZnRrE1YTe_erw1dW43PiNNI7YVYvUqH79Z5YV5rfTPj0C8foqEPvrOn5NOvWSGm",
-                          ),
-                          fit: BoxFit.cover,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          '저녁산책',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 배경 이미지 (홈과 동일)
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/nature_walk.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          // 콘텐츠
+          SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height,
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 30),
+                      // 중앙 문구 (홈과 유사 톤)
+                      Text(
+                        '저녁 공기를 마시며,\n가볍게 걸어볼까요?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          height: 1.3,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.8),
+                              blurRadius: 8,
+                              offset: const Offset(2, 2),
+                            ),
+                            Shadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 4,
+                              offset: const Offset(1, 1),
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 40),
+                      // 로그인 버튼 영역 (공식 버튼 이미지 그대로 사용)
+                      Column(
+                        children: [
+                          Center(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  handleLogin(context, signInWithKakao),
+                              child: Image.asset(
+                                'assets/images/kakao_login.png',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  handleLogin(context, signInWithGoogle),
+                              child: Image.asset(
+                                'assets/images/google_login.png',
+                                width: 200,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 120),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // 하단 검은 고양이 (홈과 동일 규칙, 텍스트만 변경)
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double screenWidth = constraints.maxWidth;
+                final double screenHeight = constraints.maxHeight;
+                final double catWidth = screenWidth * 0.28 * 2;
+                final double bottomPadding = screenHeight * 0.06;
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: bottomPadding),
+                    child: Transform.translate(
+                      offset: Offset(-screenWidth * 0.23, 0),
+                      child: BlackCatWidget(
+                        width: catWidth,
+                        bubbleMaxWidth: catWidth * 0.8,
+                        screenType: 'selectMate', // defaultText 사용을 위해 재활용
+                        defaultText: '어서오라냥~',
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(30.0, 30.0, 0.0, 0.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('저녁 먹고 30분,',
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          )),
-                      Text('특별한 산책 경험,',
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          )),
-                      Text('그리고 반짝이는 기록,',
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          )),
-                      SizedBox(height: 50),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () => handleLogin(context, signInWithKakao),
-                          child: Image.asset(
-                            'assets/images/kakao_login.png',
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () => handleLogin(context, signInWithGoogle),
-                          child: Image.asset(
-                            'assets/images/google_login.png',
-                            width: 200,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

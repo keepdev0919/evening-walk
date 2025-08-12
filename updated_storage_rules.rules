@@ -1,0 +1,50 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // 1. 프로필 이미지 저장 경로에 대한 규칙
+    // 예: /profile_images/{userId}/profile.jpg
+    match /profile_images/{userId}/{fileName} {
+      // 누구나 프로필 이미지를 읽을 수 있음 (다른 사람 프로필 사진 보기)
+      allow read: if true;
+
+      // 인증된 사용자만 자신의 이미지를 쓸 수 있음 (업로드, 수정, 삭제 포함)       
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. 추천 포즈 이미지 저장 경로에 대한 규칙
+    // 예: /images_destination/alone/image1.jpg
+    match /images_destination/{allPaths=**} {
+      // 모든 사용자에게 추천 포즈 이미지 읽기 허용
+      allow read: if true;
+      // 쓰기 권한은 기본적으로 허용하지 않음 (관리자만 업로드)
+      allow write: if false;
+    }
+
+    // 3. 사용자 산책 사진 저장 경로 (수정됨)
+    // 예: /user_photos/{userId}/session123_destination.jpg
+    match /user_photos/{userId}/{fileName} {
+      // 자신의 사진만 읽을 수 있음 (개인정보 보호 강화)
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // 인증된 사용자만 자신의 산책 사진을 업로드/삭제할 수 있음
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 4. 산책 경로 스냅샷 저장 경로 (새로 추가)
+    // 예: /route_snapshots/{userId}/session123_route.png
+    match /route_snapshots/{userId}/{fileName} {
+      // 자신의 경로 스냅샷만 읽을 수 있음
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // 자신의 경로 스냅샷만 업로드/삭제할 수 있음
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 5. 그 외 모든 경로에 대한 기본 규칙 (수정됨)
+    match /{allPaths=**} {
+      // 기본적으로 접근 거부 (보안 강화)
+      allow read, write: if false;
+    }
+  }
+}

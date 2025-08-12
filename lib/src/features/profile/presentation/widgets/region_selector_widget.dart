@@ -268,7 +268,11 @@ class _RegionSelectorWidgetState extends State<RegionSelectorWidget> {
 
   /// 초기 지역 정보를 파싱하여 시/도와 구/군으로 분리
   void _parseInitialRegion() {
-    if (widget.initialRegion == null || widget.initialRegion!.isEmpty) return;
+    if (widget.initialRegion == null || widget.initialRegion!.isEmpty) {
+      _selectedProvince = null;
+      _selectedDistrict = null;
+      return;
+    }
 
     final region = widget.initialRegion!.trim();
 
@@ -276,10 +280,9 @@ class _RegionSelectorWidgetState extends State<RegionSelectorWidget> {
     for (String province in _koreanRegions.keys) {
       for (String district in _koreanRegions[province]!) {
         if (region.contains(province) && region.contains(district)) {
-          setState(() {
-            _selectedProvince = province;
-            _selectedDistrict = district;
-          });
+          _selectedProvince = province;
+          _selectedDistrict = district;
+          setState(() {});
           return;
         }
       }
@@ -287,10 +290,9 @@ class _RegionSelectorWidgetState extends State<RegionSelectorWidget> {
 
     // 정확한 매칭이 안 되면 첫 번째 단어로 시/도 추정
     for (String province in _koreanRegions.keys) {
-      if (region.contains(province.substring(0, 2))) {
-        setState(() {
-          _selectedProvince = province;
-        });
+      if (province.isNotEmpty && region.contains(province.substring(0, 2))) {
+        _selectedProvince = province;
+        setState(() {});
         break;
       }
     }
@@ -302,7 +304,7 @@ class _RegionSelectorWidgetState extends State<RegionSelectorWidget> {
       _selectedProvince = province;
       _selectedDistrict = null;
     });
-    
+
     if (province != null) {
       // 시/도만 선택해도 콜백 호출
       widget.onRegionSelected(province);
@@ -321,7 +323,6 @@ class _RegionSelectorWidgetState extends State<RegionSelectorWidget> {
       widget.onRegionSelected(fullRegion);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

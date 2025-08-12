@@ -7,10 +7,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/region_selector_widget.dart';
 import '../widgets/gender_selector_widget.dart';
+import 'package:walk/src/features/auth/application/services/logout_service.dart';
+import 'package:walk/src/features/auth/presentation/screens/login_page_screen.dart';
+import 'package:walk/src/features/auth/presentation/screens/onboarding_screen.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
-  const Profile({super.key});
+  /// 온보딩에서 호출 시 true로 전달하면 처음부터 수정 모드로 시작하고
+  /// 저장 후 온보딩 화면으로 진행합니다.
+  final bool isOnboarding;
+
+  const Profile({super.key, this.isOnboarding = false});
 
   @override
   State<Profile> createState() => _ProfileState();
@@ -39,6 +46,8 @@ class _ProfileState extends State<Profile> {
   void initState() {
     super.initState();
     _user = _auth.currentUser;
+    // 온보딩 진입이면 수정 모드로 시작
+    _isEditing = widget.isOnboarding ? true : false;
     if (_user != null) {
       // 현재 사용자의 정보를 Firestore에서 가져옵니다.
       _userFuture = _firestore.collection('users').doc(_user!.uid).get();
@@ -117,6 +126,15 @@ class _ProfileState extends State<Profile> {
         duration: const Duration(seconds: 2),
       ),
     );
+
+    // 온보딩 진입이었다면, 저장 후 온보딩 화면으로 이동
+    if (widget.isOnboarding && mounted) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const Onboarding()),
+      );
+      return;
+    }
   }
 
   @override
@@ -244,6 +262,46 @@ class _ProfileState extends State<Profile> {
                             _buildGenderField('성별', _sexController),
                             _buildInfoField('이메일', _emailController,
                                 keyboardType: TextInputType.emailAddress),
+                            if (!widget.isOnboarding) ...[
+                              const SizedBox(height: 16),
+                              // 로그아웃 버튼 (온보딩 모드에서는 숨김)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0, horizontal: 20.0),
+                                  child: OutlinedButton.icon(
+                                    icon: const Icon(Icons.logout,
+                                        color: Colors.white70, size: 18),
+                                    label: const Text(
+                                      '로그아웃',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor:
+                                          Colors.white.withOpacity(0.08),
+                                      side: BorderSide(
+                                          color:
+                                              Colors.white.withOpacity(0.25)),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ).copyWith(
+                                      overlayColor:
+                                          const MaterialStatePropertyAll(
+                                        Color.fromRGBO(255, 255, 255, 0.12),
+                                      ),
+                                    ),
+                                    onPressed: _confirmAndLogout,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -253,6 +311,74 @@ class _ProfileState extends State<Profile> {
         ],
       ),
     );
+  }
+
+  /// 로그아웃 확인 다이얼로그 후 로그아웃 실행
+  Future<void> _confirmAndLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withOpacity(0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24, width: 1),
+        ),
+        title: const Text('로그아웃',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content:
+            const Text('로그아웃하시겠습니까?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
+
+    // 실제 로그아웃 실행
+    try {
+      // 지연 import 방지: 파일 상단에 의존성 추가하지 않기 위해 동적 import 불가 → 상단에 import 추가 필요
+      // ignore: use_build_context_synchronously
+      await _performLogout();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('로그아웃되었습니다.'),
+          backgroundColor: Colors.black.withOpacity(0.7),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      // 로그인 화면으로 이동하며 기존 스택 제거
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red.withOpacity(0.85),
+        ),
+      );
+    }
+  }
+
+  /// 실제 로그아웃 처리 (서비스 호출)
+  Future<void> _performLogout() async {
+    await AuthLogoutService.signOut();
   }
 
   /// 사용자 정보 필드를 생성하는 위젯입니다.
