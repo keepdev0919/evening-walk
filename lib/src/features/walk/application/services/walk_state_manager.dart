@@ -77,6 +77,9 @@ class WalkStateManager {
   SpeechBubbleState? get currentSpeechBubbleState => _currentSpeechBubbleState;
   bool get speechBubbleVisible => _speechBubbleVisible;
 
+  /// 경유지 이벤트 발생 여부 (경유지 도착 알림 트리거 여부)
+  bool get waypointEventOccurred => _waypointEventOccurred;
+
   // 실제 산책 소요 시간 계산 (분 단위)
   int? get actualDurationInMinutes {
     if (_actualStartTime == null || _actualEndTime == null) return null;
@@ -496,7 +499,8 @@ class WalkStateManager {
   void completeWaypointEvent() {
     if (_currentSpeechBubbleState == SpeechBubbleState.almostWaypoint) {
       _currentSpeechBubbleState = SpeechBubbleState.waypointEventCompleted;
-      LogService.info('SpeechBubble', '경유지 이벤트 완료 - 말풍선: ${_currentSpeechBubbleState?.message}');
+      LogService.info('SpeechBubble',
+          '경유지 이벤트 완료 - 말풍선: ${_currentSpeechBubbleState?.message}');
     }
   }
 }

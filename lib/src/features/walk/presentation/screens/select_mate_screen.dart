@@ -20,6 +20,39 @@ class SelectMateScreen extends StatefulWidget {
 }
 
 class _SelectMateScreenState extends State<SelectMateScreen> {
+  /// 메이트 종류별 강조 색상을 반환합니다.
+  /// - '혼자' → #5F7C9D
+  /// - '연인' → #F4ACB7
+  /// - '친구' → #FADDAA
+  Color _mateColor(String mate) {
+    switch (mate) {
+      case '혼자':
+        return Colors.blue;
+      case '연인':
+        return Colors.pinkAccent;
+      case '친구':
+        return Colors.yellow;
+      default:
+        return Colors.white;
+    }
+  }
+
+  /// 주어진 단어 뒤에 올 적절한 조사 '로/으로'를 반환합니다.
+  /// 받침이 없거나 받침이 'ㄹ'인 경우 '로', 그 외에는 '으로'를 반환합니다.
+  String _postPositionRo(String word) {
+    if (word.isEmpty) return '로';
+    final int lastCodeUnit = word.codeUnitAt(word.length - 1);
+    const int hangulBase = 0xAC00; // '가'
+    const int hangulLast = 0xD7A3; // '힣'
+    if (lastCodeUnit < hangulBase || lastCodeUnit > hangulLast) {
+      return '로';
+    }
+    final int syllableIndex = lastCodeUnit - hangulBase;
+    final int jongIndex = syllableIndex % 28; // 0: 받침 없음, 1~27: 받침 있음
+    if (jongIndex == 0 || jongIndex == 8) return '로';
+    return '으로';
+  }
+
   Future<bool?> _showConfirmationDialog(
       BuildContext context, String mate) async {
     return showDialog<bool>(
@@ -35,12 +68,22 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             '산책 메이트 확정',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-          content: Text(
-            '산책 메이트를 \'$mate\'로 \n확정하시겠습니까?',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontWeight: FontWeight.bold,
+          content: Text.rich(
+            TextSpan(
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              children: [
+                const TextSpan(text: '산책 메이트를 '),
+                TextSpan(
+                  text: '\'$mate\'',
+                  style: TextStyle(color: _mateColor(mate)),
+                ),
+                TextSpan(text: '${_postPositionRo(mate)} \n확정하시겠습니까?'),
+              ],
             ),
+            // textAlign: TextAlign.center,
           ),
           actions: <Widget>[
             ElevatedButton(
@@ -227,4 +270,3 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
     );
   }
 }
-

@@ -16,6 +16,7 @@ class DebugModeButtons extends StatelessWidget {
   final String selectedMate;
   final Function(bool, String?, String?) updateWaypointEventState;
   final Function(bool) updateDestinationEventState;
+  final VoidCallback hideDestinationTeaseBubble;
   final Function(String) onPoseImageGenerated;
   final Function(String?) onPhotoTaken;
   final String? initialPoseImageUrl;
@@ -29,6 +30,7 @@ class DebugModeButtons extends StatelessWidget {
     required this.selectedMate,
     required this.updateWaypointEventState,
     required this.updateDestinationEventState,
+    required this.hideDestinationTeaseBubble,
     required this.onPoseImageGenerated,
     required this.onPhotoTaken,
     required this.initialPoseImageUrl,
@@ -115,6 +117,7 @@ class DebugModeButtons extends StatelessWidget {
                     );
 
                     if (wantsToSeeEvent == true) {
+                      hideDestinationTeaseBubble();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -167,7 +170,8 @@ class DebugModeButtons extends StatelessWidget {
                                   ),
                                 ),
                               );
-                            } else if (shouldShowDiary == false && context.mounted) {
+                            } else if (shouldShowDiary == false &&
+                                context.mounted) {
                               // 4. '나중에' 선택 시 홈으로 이동
                               Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/',
@@ -179,6 +183,7 @@ class DebugModeButtons extends StatelessWidget {
                       });
                     } else {
                       // 나중에 보기 → 출발지 복귀 감지 시작 및 상단 깃발 아이콘 표시
+                      hideDestinationTeaseBubble();
                       walkStateManager.startReturningHome();
                       updateDestinationEventState(true);
                     }

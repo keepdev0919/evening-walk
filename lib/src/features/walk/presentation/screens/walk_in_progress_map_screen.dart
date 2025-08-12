@@ -77,6 +77,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   bool _showWaypointEventButton = false;
   bool _showDestinationEventButton = false;
 
+  /// 경유지 이벤트 이후, 목적지로 유도하는 말풍선("얼른와..!") 표시 여부
+  bool _showDestinationTeaseBubble = false;
+
   /// 마지막으로 발생한 경유지 질문 내용을 저장합니다.
   String? _lastWaypointQuestion;
   String? _lastWaypointUserAnswer;
@@ -116,12 +119,18 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       _showWaypointEventButton = show;
       _lastWaypointQuestion = question;
       _lastWaypointUserAnswer = answer;
+      // 경유지 이벤트가 시작되면 목적지 유도 말풍선을 활성화
+      if (show) {
+        _showDestinationTeaseBubble = true;
+      }
     });
+    // 좌표 즉시 갱신하여 말풍선이 바로 보이도록 보장
+    _updateOverlayPositions();
     // 사용자가 경유지 질문에 답변을 제출한 경우, 매니저에 즉시 저장하여 일기에서 보이도록 함
     if (answer != null && answer.trim().isNotEmpty) {
       _walkStateManager.saveAnswerAndPhoto(answer: answer.trim());
     }
-    
+
     // 경유지 이벤트가 시작되면 (나중에 버튼이든 이벤트 확인이든) 말풍선 상태 변경
     if (show) {
       _walkStateManager.completeWaypointEvent();
@@ -265,6 +274,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           );
 
           if (wantsToSeeEvent == true) {
+            if (mounted) {
+              setState(() {
+                _showDestinationTeaseBubble = false; // 확인 시 숨김
+              });
+            }
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -280,6 +294,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             if (mounted) {
               setState(() {
                 _showDestinationEventButton = true;
+                _showDestinationTeaseBubble = false; // 나중에 시 숨김
               });
             }
           }
@@ -470,6 +485,13 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 _showDestinationEventButton = show;
               });
             },
+            hideDestinationTeaseBubble: () {
+              if (mounted) {
+                setState(() {
+                  _showDestinationTeaseBubble = false;
+                });
+              }
+            },
             onPoseImageGenerated: (imageUrl) {
               setState(() {
                 _currentDestinationPoseImageUrl = imageUrl;
@@ -558,6 +580,114 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     animate: true,
                     alignment: Alignment.bottomCenter,
                     fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          // 목적지 유도 말풍선: 경유지 이벤트(나중에/확인)가 발생한 뒤 목적지 도착 전까지 표시
+          if (!_isLoading &&
+              _destinationOverlayOffset != null &&
+              _showDestinationTeaseBubble)
+            Positioned(
+              left: _destinationOverlayOffset!.dx - 40,
+              top: _destinationOverlayOffset!.dy -
+                  _destinationOverlayHeight -
+                  22,
+              child: IgnorePointer(
+                ignoring: true,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          '얼른와..!',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            height: 0.8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      CustomPaint(
+                        size: const Size(20, 10),
+                        painter: SpeechBubbleTailPainter(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // 경유지 말풍선: 경유지 도착 알림 전까지만 표시
+          if (!_isLoading &&
+              _waypointOverlayOffset != null &&
+              !_walkStateManager.waypointEventOccurred)
+            Positioned(
+              left: _waypointOverlayOffset!.dx - 50,
+              top: _waypointOverlayOffset!.dy - _waypointOverlayHeight - 22,
+              child: IgnorePointer(
+                ignoring: true,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          '어떤 선물이..?',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            height: 0.8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      CustomPaint(
+                        size: const Size(20, 10),
+                        painter: SpeechBubbleTailPainter(),
+                      ),
+                    ],
                   ),
                 ),
               ),
