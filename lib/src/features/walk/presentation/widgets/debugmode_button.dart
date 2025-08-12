@@ -21,6 +21,7 @@ class DebugModeButtons extends StatelessWidget {
   final Function(String?) onPhotoTaken;
   final String? initialPoseImageUrl;
   final String? initialTakenPhotoPath;
+  final WalkMode walkMode; // 산책 모드 추가
 
   const DebugModeButtons({
     Key? key,
@@ -35,6 +36,7 @@ class DebugModeButtons extends StatelessWidget {
     required this.onPhotoTaken,
     required this.initialPoseImageUrl,
     required this.initialTakenPhotoPath,
+    required this.walkMode, // 산책 모드 추가
   }) : super(key: key);
 
   @override
@@ -109,7 +111,7 @@ class DebugModeButtons extends StatelessWidget {
                   if (!context.mounted) return;
 
                   if (result == 'destination_reached') {
-                    // 상단바 목적지 아이콘 표시(유지)
+                    // 왕복 모드 처리
                     updateDestinationEventState(true);
                     final bool? wantsToSeeEvent =
                         await DestinationDialog.showDestinationArrivalDialog(
@@ -127,65 +129,127 @@ class DebugModeButtons extends StatelessWidget {
                         ),
                       );
 
-                      // 디버그 모드에서는 3초 후 자동으로 출발지 복귀 완료 처리
-                      Future.delayed(const Duration(seconds: 3), () async {
-                        if (currentPosition != null && context.mounted) {
-                          final result =
-                              await walkStateManager.updateUserLocation(
-                            currentPosition!,
-                            forceStartReturnEvent: true,
-                          );
-
-                          if (result == 'start_returned' && context.mounted) {
-                            // 1. 기존 세션에 완료 시간 업데이트
-                            if (walkStateManager.savedSessionId != null) {
-                              final walkSessionService = WalkSessionService();
-                              await walkSessionService.updateWalkSession(
-                                walkStateManager.savedSessionId!,
-                                {'endTime': DateTime.now().toIso8601String()},
-                              );
-                              print('디버그: 출발지 복귀 완료 시간 업데이트 완료');
-                            }
-
-                            // 2. 산책 완료 알림 다이얼로그 표시
-                            final bool? shouldShowDiary =
-                                await WalkCompletionDialog
-                                    .showWalkCompletionDialog(
-                              context: context,
-                              savedSessionId:
-                                  walkStateManager.savedSessionId ?? '',
+                      // 왕복 모드에서만 3초 후 자동으로 출발지 복귀 완료 처리
+                      if (walkMode == WalkMode.roundTrip) {
+                        Future.delayed(const Duration(seconds: 3), () async {
+                          if (currentPosition != null && context.mounted) {
+                            final result =
+                                await walkStateManager.updateUserLocation(
+                              currentPosition!,
+                              forceStartReturnEvent: true,
                             );
 
-                            // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
-                            if (shouldShowDiary == true && context.mounted) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => WalkDiaryScreen(
-                                    walkStateManager: walkStateManager,
-                                    sessionId: walkStateManager.savedSessionId,
-                                    onWalkCompleted: (completed) {
-                                      print('디버그: 산책이 완전히 완료되었습니다!');
-                                    },
+                            if (result == 'start_returned' && context.mounted) {
+                              // 1. 기존 세션에 완료 시간 업데이트
+                              if (walkStateManager.savedSessionId != null) {
+                                final walkSessionService = WalkSessionService();
+                                await walkSessionService.updateWalkSession(
+                                  walkStateManager.savedSessionId!,
+                                  {
+                                    'endTime': DateTime.now().toIso8601String(),
+                                    'totalDuration': walkStateManager.actualDurationInMinutes,
+                                    'totalDistance': walkStateManager.accumulatedDistanceKm,
+                                  },
+                                );
+                                print('디버그: 출발지 복귀 완료 시간 업데이트 완료');
+                              }
+
+                              // 2. 산책 완료 알림 다이얼로그 표시
+                              final bool? shouldShowDiary =
+                                  await WalkCompletionDialog
+                                      .showWalkCompletionDialog(
+                                context: context,
+                                savedSessionId:
+                                    walkStateManager.savedSessionId ?? '',
+                              );
+
+                              // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
+                              if (shouldShowDiary == true && context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => WalkDiaryScreen(
+                                      walkStateManager: walkStateManager,
+                                      sessionId: walkStateManager.savedSessionId,
+                                      onWalkCompleted: (completed) {
+                                        print('디버그: 산책이 완전히 완료되었습니다!');
+                                      },
+                                    ),
                                   ),
-                                ),
-                              );
-                            } else if (shouldShowDiary == false &&
-                                context.mounted) {
-                              // 4. '나중에' 선택 시 홈으로 이동
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                '/',
-                                (route) => false,
-                              );
+                                );
+                              } else if (shouldShowDiary == false &&
+                                  context.mounted) {
+                                // 4. '나중에' 선택 시 홈으로 이동
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                  '/',
+                                  (route) => false,
+                                );
+                              }
                             }
                           }
-                        }
-                      });
+                        });
+                      }
                     } else {
                       // 나중에 보기 → 출발지 복귀 감지 시작 및 상단 깃발 아이콘 표시
                       hideDestinationTeaseBubble();
                       walkStateManager.startReturningHome();
                       updateDestinationEventState(true);
+                    }
+                  } else if (result == 'one_way_completed') {
+                    // 편도 모드 처리 - 먼저 목적지 도착 알림 표시
+                    final bool? wantsToSeeEvent =
+                        await DestinationDialog.showDestinationArrivalDialog(
+                      context: context,
+                    );
+
+                    if (wantsToSeeEvent == true) {
+                      // 확인 선택 시 포즈 추천 화면으로 이동
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PoseRecommendationScreen(
+                            walkStateManager: walkStateManager,
+                          ),
+                        ),
+                      );
+                    }
+
+                    // 포즈 추천 완료 후 세션 업데이트
+                    if (walkStateManager.savedSessionId != null) {
+                      final walkSessionService = WalkSessionService();
+                      await walkSessionService.updateWalkSession(
+                        walkStateManager.savedSessionId!,
+                        {
+                          'endTime': DateTime.now().toIso8601String(),
+                          'totalDuration': walkStateManager.actualDurationInMinutes,
+                          'totalDistance': walkStateManager.accumulatedDistanceKm,
+                        },
+                      );
+                    }
+
+                    // 완료 다이얼로그 표시
+                    final bool? shouldShowDiary =
+                        await WalkCompletionDialog.showWalkCompletionDialog(
+                      context: context,
+                      savedSessionId: walkStateManager.savedSessionId ?? '',
+                    );
+
+                    if (shouldShowDiary == true && context.mounted) {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WalkDiaryScreen(
+                            walkStateManager: walkStateManager,
+                            sessionId: walkStateManager.savedSessionId,
+                            onWalkCompleted: (completed) {},
+                          ),
+                        ),
+                      );
+                    } else if (shouldShowDiary == false && context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/homescreen',
+                        (route) => false,
+                      );
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +275,8 @@ class DebugModeButtons extends StatelessWidget {
               child: const Text('목적지 도착', style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(height: 8),
-            // 출발지 복귀 버튼
+            // 출발지 복귀 버튼 (왕복 모드에서만 표시)
+            if (walkMode == WalkMode.roundTrip)
             ElevatedButton(
               onPressed: () async {
                 if (currentPosition != null) {

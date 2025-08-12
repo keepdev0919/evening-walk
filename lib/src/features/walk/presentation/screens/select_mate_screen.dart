@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
+import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import '../../../../shared/widgets/black_cat_widget.dart';
 
 class SelectMateScreen extends StatefulWidget {
   final LatLng startLocation;
   final LatLng destinationLocation;
   final String? destinationBuildingName;
+  final WalkMode mode;
 
   const SelectMateScreen({
     Key? key,
     required this.startLocation,
     required this.destinationLocation,
     this.destinationBuildingName,
+    this.mode = WalkMode.roundTrip,
   }) : super(key: key);
 
   @override
@@ -226,6 +229,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                                 selectedMate: mate,
                                 destinationBuildingName:
                                     widget.destinationBuildingName,
+                                mode: widget.mode,
                               ),
                             ),
                           );

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 class AppConstants {
   // === 거리 관련 상수 ===
   static const double maxWalkDistance = 1200.0; // 미터
-  static const double waypointTriggerDistance = 20.0; // 미터
-  static const double destinationTriggerDistance = 20.0; // 미터
-  static const double startReturnTriggerDistance = 20.0; // 미터
+  static const double waypointTriggerDistance = 40.0; // 미터
+  static const double destinationTriggerDistance = 40.0; // 미터
+  static const double startReturnTriggerDistance = 40.0; // 미터
 
   // === UI 크기 상수 ===
   static const double shareContentWidth = 400.0;

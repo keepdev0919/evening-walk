@@ -166,7 +166,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           ],
         ),
         onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-          '/',
+          '/homescreen',
           (route) => false,
         ),
       ),

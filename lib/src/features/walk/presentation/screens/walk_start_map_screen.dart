@@ -13,6 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
+import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 // 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -21,7 +22,8 @@ import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.d
 
 /// 산책 시작 전 목적지를 설정하는 지도 화면입니다.
 class WalkStartMapScreen extends StatefulWidget {
-  const WalkStartMapScreen({super.key});
+  final WalkMode mode;
+  const WalkStartMapScreen({super.key, this.mode = WalkMode.roundTrip});
 
   @override
   State<WalkStartMapScreen> createState() => _WalkStartMapScreenState();
@@ -406,6 +408,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
               startLocation: _currentPosition!,
               destinationLocation: _selectedDestination!,
               destinationBuildingName: _selectedAddress, // 건물명 또는 주소 전달
+              mode: widget.mode,
             ),
           ),
         );

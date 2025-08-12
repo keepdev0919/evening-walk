@@ -30,6 +30,7 @@ class WalkInProgressMapScreen extends StatefulWidget {
   final LatLng destinationLocation;
   final String selectedMate;
   final String? destinationBuildingName;
+  final WalkMode mode;
 
   const WalkInProgressMapScreen({
     Key? key,
@@ -37,6 +38,7 @@ class WalkInProgressMapScreen extends StatefulWidget {
     required this.destinationLocation,
     required this.selectedMate,
     this.destinationBuildingName,
+    this.mode = WalkMode.roundTrip,
   }) : super(key: key);
 
   @override
@@ -88,15 +90,19 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   String? _lastWaypointUserAnswer;
   String? _currentDestinationPoseImageUrl;
   String? _currentDestinationTakenPhotoPath;
-  // 목적지/경유지 Lottie 오버레이 좌표 및 크기
+  // 목적지/경유지/출발지 Lottie 오버레이 좌표 및 크기
   Offset? _destinationOverlayOffset;
   Offset? _waypointOverlayOffset;
+  Offset? _startOverlayOffset;
   static const double _destinationOverlayWidth = 50;
   static const double _destinationOverlayHeight = 50;
   static const double _overlayBottomTrim = 12.0; // Lottie 하단 여백 보정
   // 경유지 표시: 출발지/목적지와 동일하게 width/height로만 제어
   static const double _waypointOverlayWidth = 50;
   static const double _waypointOverlayHeight = 50;
+  // 출발지 표시
+  static const double _startOverlayWidth = 40;
+  static const double _startOverlayHeight = 40;
 
   /// 현재 위치 Lottie 오버레이 좌표 및 크기
   Offset? _userOverlayOffset;
@@ -177,6 +183,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     // _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
     _walkStateManager = WalkStateManager();
+    _walkStateManager.setWalkMode(widget.mode);
 
     // 산책 초기화를 시작합니다.
     _initializeWalk();
@@ -209,6 +216,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   Future<void> _updateOverlayPositions() async {
     if (!mounted) return;
     final dpr = MediaQuery.of(context).devicePixelRatio;
+
+    // 목적지 위치 계산
     try {
       final destScreen =
           await mapController.getScreenCoordinate(widget.destinationLocation);
@@ -220,6 +229,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       });
     } catch (_) {}
 
+    // 경유지 위치 계산
     try {
       final waypoint = _walkStateManager.waypointLocation;
       if (waypoint != null) {
@@ -235,6 +245,18 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           _waypointOverlayOffset = null;
         });
       }
+    } catch (_) {}
+
+    // 출발지 위치 계산 (편도/왕복 모드 모두)
+    try {
+      final startScreen =
+          await mapController.getScreenCoordinate(widget.startLocation);
+      setState(() {
+        _startOverlayOffset = Offset(
+          startScreen.x.toDouble() / dpr,
+          startScreen.y.toDouble() / dpr,
+        );
+      });
     } catch (_) {}
   }
 
@@ -298,6 +320,58 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       });
 
       switch (eventSignal) {
+        case "one_way_completed":
+          _positionStreamSubscription?.cancel();
+
+          // 편도 완료: 먼저 포즈 추천 화면 표시
+          await _generateAndSaveRouteSnapshot();
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PoseRecommendationScreen(
+                walkStateManager: _walkStateManager,
+              ),
+            ),
+          );
+
+          // 포즈 추천 완료 후 세션 업데이트
+          if (_walkStateManager.savedSessionId != null) {
+            final walkSessionService = WalkSessionService();
+            await walkSessionService.updateWalkSession(
+              _walkStateManager.savedSessionId!,
+              {
+                'endTime': DateTime.now().toIso8601String(),
+                'totalDuration': _walkStateManager.actualDurationInMinutes,
+                'totalDistance': _walkStateManager.accumulatedDistanceKm,
+              },
+            );
+          }
+
+          // 완료 다이얼로그
+          final bool? shouldShowDiary =
+              await WalkCompletionDialog.showWalkCompletionDialog(
+            context: context,
+            savedSessionId: _walkStateManager.savedSessionId ?? '',
+          );
+
+          if (shouldShowDiary == true && context.mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WalkDiaryScreen(
+                  walkStateManager: _walkStateManager,
+                  sessionId: _walkStateManager.savedSessionId,
+                  onWalkCompleted: (completed) {},
+                ),
+              ),
+            );
+          } else if (shouldShowDiary == false && context.mounted) {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/homescreen',
+              (route) => false,
+            );
+          }
+          break;
         case "destination_reached":
           final bool? wantsToSeeEvent =
               await DestinationDialog.showDestinationArrivalDialog(
@@ -510,6 +584,39 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     _updateOverlayPositions();
                   },
                 ),
+          // 산책 모드 표시 (AppBar 바로 아래)
+          if (!_isLoading)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 5, left: 20, right: 20),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(
+                          color: Colors.blueAccent.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        widget.mode == WalkMode.roundTrip ? '되돌아오기' : '목적지까지',
+                        style: const TextStyle(
+                            color: Colors.blueAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // 디버그 모드일 때만 경유지/목적지 도착 버튼을 표시합니다. 로딩 중에는 표시하지 않습니다.
           DebugModeButtons(
             isLoading: _isLoading,
@@ -541,27 +648,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             },
             initialPoseImageUrl: _currentDestinationPoseImageUrl,
             initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
+            walkMode: widget.mode, // 산책 모드 전달
           ),
-          // 현재 위치에 붙는 Lottie 애니메이션 오버레이
-          if (!_isLoading && _userOverlayOffset != null)
-            Positioned(
-              left: _userOverlayOffset!.dx - (_overlayWidth / 2),
-              top: _userOverlayOffset!.dy - _overlayHeight + _overlayBottomTrim,
-              child: IgnorePointer(
-                ignoring: true,
-                child: SizedBox(
-                  width: _overlayWidth,
-                  height: _overlayHeight,
-                  child: lottie.Lottie.asset(
-                    'assets/animations/start.json',
-                    repeat: true,
-                    animate: true,
-                    alignment: Alignment.bottomCenter,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
           // 현재 위치 말풍선 오버레이
           if (!_isLoading && _userOverlayOffset != null)
             Positioned(
@@ -599,8 +687,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 ),
               ),
             ),
-          // 경유지 Lottie 애니메이션 오버레이 (width/height로만 제어)
-          if (!_isLoading && _waypointOverlayOffset != null)
+          // 경유지 Lottie 애니메이션 오버레이 (경유지 이벤트 발생 전까지만 표시)
+          if (!_isLoading &&
+              _waypointOverlayOffset != null &&
+              !_walkStateManager.waypointEventOccurred)
             Positioned(
               left: _waypointOverlayOffset!.dx - (_waypointOverlayWidth / 2),
               top: _waypointOverlayOffset!.dy -
@@ -725,6 +815,102 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         painter: SpeechBubbleTailPainter(),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ),
+          // 출발지 말풍선 (왕복 모드에서만 표시)
+          if (!_isLoading &&
+              _startOverlayOffset != null &&
+              widget.mode == WalkMode.roundTrip &&
+              _walkStateManager.isReturningHome)
+            Positioned(
+              left: _startOverlayOffset!.dx - 40,
+              top: _startOverlayOffset!.dy - _startOverlayHeight - 22,
+              child: IgnorePointer(
+                ignoring: true,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              offset: const Offset(0, 2),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          '집으로..!',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            height: 0.8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      CustomPaint(
+                        size: const Size(20, 10),
+                        painter: SpeechBubbleTailPainter(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // 출발지 Lottie 애니메이션 오버레이 (편도/왕복 모드 모두 표시)
+          if (!_isLoading && _startOverlayOffset != null)
+            Positioned(
+              left: _startOverlayOffset!.dx - (_startOverlayWidth / 2),
+              top: _startOverlayOffset!.dy -
+                  _startOverlayHeight +
+                  _overlayBottomTrim,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _startOverlayWidth,
+                  height: _startOverlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/house.json',
+                    repeat: true,
+                    animate: true,
+                    alignment: Alignment.bottomCenter,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          // 현재 위치에 붙는 Lottie 애니메이션 오버레이 (최상위로 배치)
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left: _userOverlayOffset!.dx - (_overlayWidth / 2),
+              top: _userOverlayOffset!.dy - _overlayHeight + _overlayBottomTrim,
+              child: IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: _overlayWidth,
+                  height: _overlayHeight,
+                  child: lottie.Lottie.asset(
+                    'assets/animations/start.json',
+                    repeat: true,
+                    animate: true,
+                    alignment: Alignment.bottomCenter,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

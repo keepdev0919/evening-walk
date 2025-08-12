@@ -23,6 +23,9 @@ enum SpeechBubbleState {
   final String message;
 }
 
+/// 산책 방식
+enum WalkMode { roundTrip, oneWay }
+
 class WalkStateManager {
   // 핸들러 및 프로바이더 인스턴스
   final WaypointEventHandler _waypointHandler = WaypointEventHandler();
@@ -48,6 +51,7 @@ class WalkStateManager {
   bool _destinationEventOccurred = false;
   bool _startReturnEventOccurred = false; // 출발지 복귀 이벤트 상태 추가
   bool _isReturningHome = false; // 목적지에서 출발지로 돌아가는 중인지 여부
+  WalkMode _mode = WalkMode.roundTrip; // 기본은 되돌아오기
 
   // 실제 산책 시간 추적
   DateTime? _actualStartTime;
@@ -87,6 +91,9 @@ class WalkStateManager {
   /// 경유지 이벤트 발생 여부 (경유지 도착 알림 트리거 여부)
   bool get waypointEventOccurred => _waypointEventOccurred;
 
+  /// 목적지에서 출발지로 돌아가는 중인지 여부
+  bool get isReturningHome => _isReturningHome;
+
   // 실제 산책 소요 시간 계산 (분 단위)
   int? get actualDurationInMinutes {
     if (_actualStartTime == null || _actualEndTime == null) return null;
@@ -108,6 +115,11 @@ class WalkStateManager {
       _destinationLocation!.latitude,
       _destinationLocation!.longitude,
     );
+  }
+
+  /// 산책 방식을 설정합니다. (왕복/편도)
+  void setWalkMode(WalkMode mode) {
+    _mode = mode;
   }
 
   /// 답변 및 사진 저장 메소드
@@ -284,6 +296,12 @@ class WalkStateManager {
       if (arrived) {
         _destinationEventOccurred = true;
         LogService.walkState(' 목적지 도착!');
+        if (_mode == WalkMode.oneWay) {
+          // 편도: 목적지 도착 즉시 종료 처리
+          _actualEndTime = DateTime.now();
+          LogService.walkState(' 편도 산책 완료! 실제 종료 시간 기록 -> $_actualEndTime');
+          return "one_way_completed";
+        }
         return "destination_reached";
       }
     }
@@ -295,7 +313,8 @@ class WalkStateManager {
     LogService.walkState(
         ' 출발지 복귀 체크 - _startReturnEventOccurred: $_startReturnEventOccurred');
 
-    if (_destinationEventOccurred &&
+    if (_mode == WalkMode.roundTrip &&
+        _destinationEventOccurred &&
         _isReturningHome &&
         !_startReturnEventOccurred) {
       LogService.walkState(' 출발지 복귀 조건 만족 - 거리 체크 중...');

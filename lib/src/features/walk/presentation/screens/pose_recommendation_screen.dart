@@ -153,13 +153,13 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       // 이전 화면(지도)으로 돌아가기
       Navigator.pop(context);
 
-      _showSuccessSnackBar('목적지 이벤트 완료! 출발지로 돌아가세요.');
+      _showSuccessSnackBar('목적지 이벤트 완료! ✨');
     } catch (e) {
       LogService.error('PoseRecommendation', '완료 처리 중 오류', e);
       // 오류가 있어도 출발지 복귀는 시작
       widget.walkStateManager.startReturningHome();
       Navigator.pop(context);
-      _showErrorSnackBar('일부 오류가 있지만 출발지로 돌아가세요.');
+      _showErrorSnackBar('완료 처리 중 일부 오류가 발생했습니다.');
     }
   }
 
