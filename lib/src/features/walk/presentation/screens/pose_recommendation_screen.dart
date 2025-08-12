@@ -7,6 +7,9 @@ import 'package:walk/src/features/walk/application/services/photo_share_service.
 import 'package:walk/src/core/constants/app_constants.dart';
 import 'package:walk/src/core/services/log_service.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
+import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
 
 /// 목적지 도착 후 포즈 추천 화면
 class PoseRecommendationScreen extends StatefulWidget {
@@ -36,6 +39,10 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     super.initState();
     _loadRecommendedPose();
     _userPhotoPath = widget.walkStateManager.photoPath;
+    // 목적지 화면 진입 시 경로 스냅샷이 없다면 미리 생성 시도 (사용자가 즉시 확인 가능)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureRouteSnapshotGenerated();
+    });
   }
 
   /// 추천 포즈 이미지 로드 (기존 포즈가 있으면 재사용)
@@ -171,8 +178,65 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       return;
     }
 
+    // 공유 전에 경로 스냅샷이 없다면 한 번 생성 시도 (in-app 우선 → static maps)
+    if (widget.walkStateManager.routeSnapshotPng == null &&
+        widget.walkStateManager.startLocation != null &&
+        widget.walkStateManager.destinationLocation != null) {
+      try {
+        Uint8List? png = await InAppMapSnapshotService.captureRouteSnapshot(
+          context: context,
+          start: widget.walkStateManager.startLocation!,
+          waypoint: widget.walkStateManager.waypointLocation,
+          destination: widget.walkStateManager.destinationLocation!,
+          width: 900,
+          height: 600,
+        );
+        png ??= await RouteSnapshotService.generateRouteSnapshot(
+          start: widget.walkStateManager.startLocation!,
+          waypoint: widget.walkStateManager.waypointLocation,
+          destination: widget.walkStateManager.destinationLocation!,
+          width: 900,
+          height: 600,
+        );
+        if (png != null) {
+          widget.walkStateManager.saveRouteSnapshot(png);
+        }
+      } catch (e) {
+        LogService.warning('Share', '경로 스냅샷 생성 실패 (무시 가능)');
+      }
+    }
+
     // 임시로 공유용 위젯을 오프스크린에 렌더링
     await _captureAndShareDirectly();
+  }
+
+  /// 경로 스냅샷이 없으면 in-app 캡처 우선 생성 (실패 시 Static Maps)
+  Future<void> _ensureRouteSnapshotGenerated() async {
+    if (widget.walkStateManager.routeSnapshotPng != null) return;
+    if (widget.walkStateManager.startLocation == null ||
+        widget.walkStateManager.destinationLocation == null) return;
+
+    try {
+      Uint8List? png = await InAppMapSnapshotService.captureRouteSnapshot(
+        context: context,
+        start: widget.walkStateManager.startLocation!,
+        waypoint: widget.walkStateManager.waypointLocation,
+        destination: widget.walkStateManager.destinationLocation!,
+        width: 900,
+        height: 600,
+      );
+      png ??= await RouteSnapshotService.generateRouteSnapshot(
+        start: widget.walkStateManager.startLocation!,
+        waypoint: widget.walkStateManager.waypointLocation,
+        destination: widget.walkStateManager.destinationLocation!,
+        width: 900,
+        height: 600,
+      );
+      if (png != null) {
+        widget.walkStateManager.saveRouteSnapshot(png);
+        if (mounted) setState(() {});
+      }
+    } catch (_) {}
   }
 
   /// 직접 공유하기
@@ -263,7 +327,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 공유용 콘텐츠 위젯
+  /// 공유용 콘텐츠 위젯 (워터마크 적용, 해시태그 배지 제거)
   Widget _buildShareContent() {
     return Container(
       width: AppConstants.shareContentWidth,
@@ -274,63 +338,82 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
           fit: BoxFit.cover,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withOpacity(0.3),
-              Colors.black.withOpacity(0.3),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-            child: Column(
-              children: [
-                // 상단: 제목
-                _buildHashtagSection(),
-
-                const SizedBox(height: 16),
-
-                // 메인 콘텐츠
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        // 산책 정보 (출발지, 목적지)
-                        _buildWalkInfoSection(),
-
-                        const SizedBox(height: 16),
-
-                        // 경유지 질문 (있을 때만)
-                        if (widget.walkStateManager.waypointQuestion !=
-                            null) ...[
-                          _buildWaypointQuestionSection(),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // 사용자 촬영 사진
-                        if (_userPhotoPath != null &&
-                            File(_userPhotoPath!).existsSync())
-                          _buildShareUserPhotoSection(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+      child: Stack(
+        children: [
+          // 은은한 워터마크 (#저녁산책 반복 텍스트), 터치 막음
+          IgnorePointer(
+            ignoring: true,
+            child: Opacity(
+              opacity: 0.13,
+              child: const CustomPaint(
+                painter: _WatermarkPainter(text: '#저녁산책'),
+                size: Size.infinite,
+              ),
             ),
           ),
-        ),
+          // 상하 그라디언트 + 실제 컨텐츠
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.3),
+                  Colors.black.withOpacity(0.3),
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 16.0),
+                child: Column(
+                  children: [
+                    // 메인 콘텐츠
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            // 산책 경로: 좌측 정보(a) + 우측 지도(동일 높이)
+                            _buildShareRouteCombinedSection(),
+
+                            const SizedBox(height: 16),
+
+                            // 경유지 질문 (있을 때만)
+                            if (widget.walkStateManager.waypointQuestion !=
+                                null) ...[
+                              _buildWaypointQuestionSection(),
+                              const SizedBox(height: 16),
+                            ],
+
+                            // 사용자 촬영 사진
+                            if (_userPhotoPath != null &&
+                                File(_userPhotoPath!).existsSync())
+                              _buildShareUserPhotoSection(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// 산책 정보 섹션 (출발지, 목적지)
-  Widget _buildWalkInfoSection() {
+  // 기존 산책 정보 섹션은 통합 UI로 대체되어 제거했습니다.
+
+  /// 공유용 경로 스냅샷 섹션 (목적지 화면): 산책일기 UI와 동일한 구성
+  Widget _buildShareRouteCombinedSection() {
+    final png = widget.walkStateManager.routeSnapshotPng;
+    final startAddressFuture =
+        widget.walkStateManager.getStartLocationAddress();
+    final destAddressFuture =
+        widget.walkStateManager.getDestinationLocationAddress();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -341,10 +424,10 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 제목(좌) + 시간/거리(우)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // 왼쪽: 산책 경로 제목
               const Row(
                 children: [
                   Text('🗺️', style: TextStyle(fontSize: 18)),
@@ -360,54 +443,109 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   ),
                 ],
               ),
-              // 오른쪽: 시간/거리 정보
               _buildTimeDistanceInfo(),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // 출발지, 목적지 2열 배치
+          const SizedBox(height: 16),
+          // 좌: 출발지/목적지, 우: 지도 PNG (일기 화면과 동일 배치)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 출발지
               Expanded(
-                child: FutureBuilder<String>(
-                  future: widget.walkStateManager.getStartLocationAddress(),
-                  builder: (context, snapshot) {
-                    return _buildLocationInfo(
-                      icon: Icons.home,
-                      iconColor: Colors.blue,
-                      label: '출발지',
-                      address: snapshot.data ?? '로딩 중...',
-                      isLoading:
-                          snapshot.connectionState == ConnectionState.waiting,
-                    );
-                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FutureBuilder<String>(
+                      future: startAddressFuture,
+                      builder: (context, snapshot) {
+                        return _buildLocationInfo(
+                          icon: Icons.home,
+                          iconColor: Colors.blue,
+                          label: '출발지',
+                          address: snapshot.data ?? '로딩 중...',
+                          isLoading: snapshot.connectionState ==
+                              ConnectionState.waiting,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    FutureBuilder<String>(
+                      future: destAddressFuture,
+                      builder: (context, snapshot) {
+                        return _buildLocationInfo(
+                          icon: Icons.flag,
+                          iconColor: Colors.red,
+                          label: '목적지',
+                          address: snapshot.data ?? '로딩 중...',
+                          isLoading: snapshot.connectionState ==
+                              ConnectionState.waiting,
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              // 목적지
-              Expanded(
-                child: FutureBuilder<String>(
-                  future:
-                      widget.walkStateManager.getDestinationLocationAddress(),
-                  builder: (context, snapshot) {
-                    return _buildLocationInfo(
-                      icon: Icons.flag,
-                      iconColor: Colors.red,
-                      label: '목적지',
-                      address: snapshot.data ?? '로딩 중...',
-                      isLoading:
-                          snapshot.connectionState == ConnectionState.waiting,
-                    );
-                  },
+              const SizedBox(width: 16),
+              if (png != null)
+                GestureDetector(
+                  onTap: () => _showFullScreenRouteSnapshot(png),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      png,
+                      width: 180,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 180,
+                  height: 120,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  ),
+                  child: const Text(
+                    '경로 이미지를 준비 중...',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ),
-              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// 전체 화면 경로 스냅샷 보기 (목적지 화면)
+  void _showFullScreenRouteSnapshot(Uint8List pngBytes) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.memory(
+                pngBytes,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -634,26 +772,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 해시태그 섹션
-  Widget _buildHashtagSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-      ),
-      child: const Text(
-        AppConstants.walkHashtag,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.0,
-        ),
-      ),
-    );
-  }
+  // 해시태그 배지는 워터마크로 대체되어 제거했습니다.
 
   @override
   Widget build(BuildContext context) {
@@ -693,7 +812,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildHeader(),
+                    // 산책 경로 UI (좌측 정보 a + 우측 지도)
+                    _buildShareRouteCombinedSection(),
                     const SizedBox(height: 24),
                     _buildPoseRecommendationSection(),
                     const SizedBox(height: 24),
@@ -750,53 +870,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 헤더 섹션
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white54, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '🎉',
-            style: TextStyle(fontSize: 48),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '목적지 도착 완료!',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '추천 포즈로 멋진 사진을 남기고 \n친구들과 공유해보세요',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+  // 기존 헤더 섹션은 산책 경로 UI로 대체되어 제거했습니다.
 
   /// 포즈 추천 섹션
   Widget _buildPoseRecommendationSection() {
@@ -1198,4 +1272,47 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       ),
     );
   }
+}
+
+/// 반복 워터마크 페인터
+class _WatermarkPainter extends CustomPainter {
+  final String text;
+  const _WatermarkPainter({required this.text});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Paint 인스턴스는 현재 필요하지 않습니다.
+    final textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+
+    const double stepX = 160;
+    const double stepY = 80;
+    const double angle = -0.35; // 라디안 단위 근사 (약 -20도)
+
+    for (double y = -stepY; y < size.height + stepY; y += stepY) {
+      for (double x = -stepX; x < size.width + stepX; x += stepX) {
+        final span = TextSpan(
+          text: text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        );
+        textPainter.text = span;
+        textPainter.layout();
+
+        canvas.save();
+        canvas.translate(x, y);
+        canvas.rotate(angle);
+        textPainter.paint(canvas, Offset.zero);
+        canvas.restore();
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

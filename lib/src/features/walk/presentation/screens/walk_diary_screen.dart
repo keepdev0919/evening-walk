@@ -396,7 +396,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          // 출발지와 목적지 사이 간격 확대
+          const SizedBox(height: 16),
           content,
         ],
       ),
@@ -1171,24 +1172,27 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 제목 스타일을 다른 섹션(경유지에서/목적지에서)와 통일
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                const Text('🗺️', style: TextStyle(fontSize: 18)),
-                const SizedBox(width: 6),
-                const Text(
-                  '산책 경로',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
+          // 제목(좌) + 시간/거리 정보(우)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Text('🗺️', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 6),
+                  Text(
+                    '산책 경로',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              _buildDiaryTimeDistanceInfo(),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -1218,34 +1222,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    // 경유지 정보 (있을 때만)
-                    FutureBuilder<String?>(
-                      future:
-                          widget.walkStateManager.getWaypointLocationAddress(),
-                      builder: (context, snapshot) {
-                        if (snapshot.data != null) {
-                          return Column(
-                            children: [
-                              _buildLocationRow(
-                                leading: const Icon(
-                                  Icons.card_giftcard,
-                                  color: Colors.orange,
-                                  size: 22,
-                                ),
-                                label: '경유지',
-                                address: snapshot.data!,
-                                isLoading: snapshot.connectionState ==
-                                    ConnectionState.waiting,
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                    // 목적지 정보
+                    const SizedBox(height: 8),
                     FutureBuilder<String>(
                       future: widget.walkStateManager
                           .getDestinationLocationAddress(),
@@ -1303,6 +1280,58 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         ],
       ),
     );
+  }
+
+  /// 산책 일기 헤더용 시간/거리 정보 (우측 정렬)
+  Widget _buildDiaryTimeDistanceInfo() {
+    final duration = widget.walkStateManager.actualDurationInMinutes;
+    final distance = widget.walkStateManager.walkDistance;
+
+    if (duration == null && distance == null) {
+      return const SizedBox.shrink();
+    }
+
+    List<Widget> info = [];
+
+    if (duration != null) {
+      final String durationText = duration <= 0 ? '1분 미만' : '${duration}분';
+      info.addAll([
+        const Icon(Icons.access_time, color: Colors.white70, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          durationText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]);
+    }
+
+    if (distance != null) {
+      if (info.isNotEmpty) {
+        info.addAll([
+          const SizedBox(width: 12),
+          Text('•', style: TextStyle(color: Colors.white70, fontSize: 13)),
+          const SizedBox(width: 12),
+        ]);
+      }
+      info.addAll([
+        const Icon(Icons.straighten, color: Colors.white70, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          '${distance.round()}m',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]);
+    }
+
+    return Row(mainAxisSize: MainAxisSize.min, children: info);
   }
 
   /// 전체 화면 경로 스냅샷 보기
