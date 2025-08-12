@@ -115,7 +115,9 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
               child: Column(
                 children: [
                   _buildStatisticsHeader(),
+                  // 필터 탭과 목록 사이에 상하 여백을 충분히 둬서 드래그 시 겹쳐 보이지 않도록 완충 간격 추가
                   _buildFilterTabs(),
+                  const SizedBox(height: 12),
                   Expanded(
                     child: _buildWalkSessionsList(),
                   ),

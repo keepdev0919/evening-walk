@@ -18,7 +18,8 @@ class WalkHistoryItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      // 카드가 필터 탭/상단 위젯과 붙어 보이지 않도록 하단 여백을 넉넉히 확보
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.5), // 다이얼로그 스타일 참고한 반투명 검정 배경
         borderRadius: BorderRadius.circular(20),

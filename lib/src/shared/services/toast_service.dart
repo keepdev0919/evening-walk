@@ -9,9 +9,11 @@ class ToastService {
   static ToastService get instance => _instance;
 
   // 현재 컨텍스트를 저장하기 위한 글로벌 키
-  static final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-  
-  static GlobalKey<ScaffoldMessengerState> get scaffoldMessengerKey => _scaffoldMessengerKey;
+  static final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
+  static GlobalKey<ScaffoldMessengerState> get scaffoldMessengerKey =>
+      _scaffoldMessengerKey;
 
   /// 성공 토스트 메시지
   static void showSuccess(String message) {
@@ -40,23 +42,9 @@ class ToastService {
       scaffoldMessenger.hideCurrentSnackBar(); // 기존 토스트 숨기기
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16.0,
-              fontFamily: 'Cafe24Oneprettynight',
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-          backgroundColor: Colors.black.withOpacity(0.6),
+          content: Text(message),
           duration: duration,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
+          // 스타일은 Theme.of(context).snackBarTheme을 따릅니다.
         ),
       );
     }
@@ -75,23 +63,9 @@ class ToastService {
       scaffoldMessenger.hideCurrentSnackBar();
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-            style: TextStyle(
-              color: textColor ?? Colors.white,
-              fontSize: fontSize,
-              fontFamily: 'Cafe24Oneprettynight',
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-          backgroundColor: backgroundColor ?? Colors.black.withOpacity(0.6),
+          content: Text(message),
+          // 배경색/텍스트 스타일/모양은 전역 SnackBarTheme을 사용합니다.
           duration: duration ?? const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
         ),
       );
     }
