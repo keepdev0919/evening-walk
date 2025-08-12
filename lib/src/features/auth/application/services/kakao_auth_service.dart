@@ -1,13 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 
 Future<bool> signInWithKakao() async {
   try {
     OAuthToken token;
-    // 1. 카카오톡 앱이 설치되어 있으면 그걸로 로그인 시도
+    // 1. 카카오톡 앱 설치 시 우선 시도하되, 연결 안됨/오류면 계정 로그인으로 폴백
     if (await isKakaoTalkInstalled()) {
-      token = await UserApi.instance.loginWithKakaoTalk();
+      try {
+        token = await UserApi.instance.loginWithKakaoTalk();
+      } on PlatformException {
+        // 예: NotSupportError: KakaoTalk is installed but not connected to Kakao account.
+        token = await UserApi.instance.loginWithKakaoAccount();
+      } catch (_) {
+        token = await UserApi.instance.loginWithKakaoAccount();
+      }
     } else {
       token = await UserApi.instance.loginWithKakaoAccount(); // 없으면 웹뷰로
     }
