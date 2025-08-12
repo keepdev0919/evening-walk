@@ -1,41 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart' as lottie;
+import 'dart:math';
 
 /// 공용 검은 고양이 애니메이션 위젯
 /// 홈 화면과 산책 메이트 선택 화면에서 재사용
+/// 내부에서 날씨별 텍스트와 화남 텍스트를 자동으로 처리
 class BlackCatWidget extends StatefulWidget {
   final double width;
-  final String bubbleText;
   final double bubbleMaxWidth;
-  final VoidCallback? onTap;
   final bool showBubble;
   final bool ignorePointer;
-  final bool showAngryEmoji;
+
+  // 새로운 파라미터들
+  final String screenType; // 'home' 또는 'selectMate'
+  final String? weatherCondition; // 날씨 조건 (홈 화면용)
+  final String? defaultText; // 기본 텍스트 (selectMate용)
 
   const BlackCatWidget({
     Key? key,
     required this.width,
-    this.bubbleText = '',
     required this.bubbleMaxWidth,
-    this.onTap,
+    required this.screenType,
+    this.weatherCondition,
+    this.defaultText,
     this.showBubble = true,
     this.ignorePointer = false,
-    this.showAngryEmoji = false,
   }) : super(key: key);
 
   @override
   State<BlackCatWidget> createState() => _BlackCatWidgetState();
 }
 
-class _BlackCatWidgetState extends State<BlackCatWidget> 
+class _BlackCatWidgetState extends State<BlackCatWidget>
     with TickerProviderStateMixin {
   late AnimationController _lottieController;
+
+  // 텍스트 상태 관리
+  String _currentText = '';
+  bool _isAngry = false;
+  String _originalText = '';
 
   @override
   void initState() {
     super.initState();
     // Lottie 애니메이션 컨트롤러 초기화
     _lottieController = AnimationController(vsync: this);
+    // 초기 텍스트 설정
+    _initializeText();
   }
 
   @override
@@ -48,6 +59,110 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
     // 애니메이션을 처음부터 다시 시작
     _lottieController.reset();
     _lottieController.forward();
+  }
+
+  /// 초기 텍스트 설정
+  void _initializeText() {
+    _originalText = _getDefaultText();
+    _currentText = _originalText;
+  }
+
+  /// 화면 타입과 날씨에 따른 기본 텍스트 반환
+  String _getDefaultText() {
+    if (widget.screenType == 'home') {
+      if (widget.weatherCondition != null) {
+        return _getCatTextByWeather(widget.weatherCondition!);
+      }
+      return '같이 산책가는거냥?';
+    } else if (widget.screenType == 'selectMate') {
+      return widget.defaultText ?? '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~';
+    }
+    return '같이 산책가는거냥?';
+  }
+
+  /// 날씨 상태에 따른 고양이 텍스트 반환
+  String _getCatTextByWeather(String weatherCondition) {
+    switch (weatherCondition.toLowerCase()) {
+      case 'clear':
+        return '산책하기 딱 좋은 날이냥 !';
+      case 'clouds':
+      case 'broken clouds':
+      case 'overcast clouds':
+        return '하늘에 솜사탕 보러가자냥 !';
+      case 'few clouds':
+      case 'scattered clouds':
+        return '선선해서 걷기 좋다냥 ~';
+      case 'rain':
+      case 'light rain':
+      case 'moderate rain':
+      case 'heavy rain':
+      case 'extreme rain':
+      case 'drizzle':
+        return '비 산책 너무 낭만있다냥..';
+      case 'thunderstorm':
+        return '천둥소리가 무섭다냥...';
+      case 'snow':
+        return '추워도 눈구경 가자냥 !';
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return '신비로운 구름 산책이다냥 !';
+      default:
+        return '같이 산책가는거냥 ?';
+    }
+  }
+
+  /// 고양이 클릭 시 랜덤 화남 텍스트 반환
+  String _getRandomAngryCatText() {
+    final List<String> angryCatTexts = [
+      '츄르안줄꺼면 건들지말라냥~',
+      '함부로 만지는 거 아니다냥 !',
+      '인내심을 시험하지 말라냥 !',
+      '그 손 좀 치워보라냥 !',
+      '간지럽다냥..',
+      '자꾸 귀찮게 하면 할퀸다냥..',
+      '그루밍 방해하지 말라냥 !!'
+    ];
+
+    final random = Random();
+    return angryCatTexts[random.nextInt(angryCatTexts.length)];
+  }
+
+  /// 고양이 클릭 처리
+  void _handleTap() {
+    print('고양이 클릭됨! 화면 타입: ${widget.screenType}');
+    setState(() {
+      _currentText = _getRandomAngryCatText();
+      _isAngry = true;
+    });
+    print('텍스트 변경됨: $_currentText, 화남: $_isAngry');
+
+    // 복구 시간 통일 (모든 화면 2초)
+    const duration = Duration(seconds: 2);
+
+    // 원래 상태로 복원
+    Future.delayed(duration, () {
+      if (mounted) {
+        setState(() {
+          _originalText = _getDefaultText(); // 최신 기본 텍스트로 업데이트
+          _currentText = _originalText;
+          _isAngry = false;
+        });
+        print('텍스트 복원됨: $_currentText, 화남: $_isAngry');
+      }
+    });
+  }
+
+  /// 날씨 조건이 변경되었을 때 텍스트 업데이트
+  @override
+  void didUpdateWidget(BlackCatWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.weatherCondition != widget.weatherCondition && !_isAngry) {
+      setState(() {
+        _originalText = _getDefaultText();
+        _currentText = _originalText;
+      });
+    }
   }
 
   @override
@@ -66,17 +181,15 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
       },
     );
 
-    // 클릭 가능한 경우 GestureDetector로 감싸기
-    if (widget.onTap != null) {
-      catAnimation = GestureDetector(
-        onTap: () {
-          // 애니메이션 초기화 후 사용자 onTap 실행
-          _restartAnimation();
-          widget.onTap!();
-        },
-        child: catAnimation,
-      );
-    }
+    // 항상 클릭 가능하도록 GestureDetector로 감싸기
+    catAnimation = GestureDetector(
+      onTap: () {
+        // 애니메이션 초기화 후 내부 클릭 처리 실행
+        _restartAnimation();
+        _handleTap();
+      },
+      child: catAnimation,
+    );
 
     // IgnorePointer가 필요한 경우 적용
     if (widget.ignorePointer) {
@@ -92,9 +205,9 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           // 말풍선 (필요한 경우에만 표시)
-          if (widget.showBubble && widget.bubbleText.isNotEmpty) ...[
+          if (widget.showBubble && _currentText.isNotEmpty) ...[
             _CatBubble(
-              text: widget.bubbleText,
+              text: _currentText,
               maxWidth: widget.bubbleMaxWidth,
             ),
             const SizedBox(height: 2),
@@ -106,7 +219,7 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
               // 고양이 애니메이션
               catAnimation,
               // 화남 이모지 (우측 상단에 위치)
-              if (widget.showAngryEmoji)
+              if (_isAngry)
                 Positioned(
                   top: -3,
                   right: 72,

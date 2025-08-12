@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../widgets/region_selector_widget.dart';
+import '../widgets/gender_selector_widget.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
@@ -90,6 +92,9 @@ class _ProfileState extends State<Profile> {
       'email': _emailController.text,
     };
 
+    print('저장할 지역 데이터: ${_regionController.text}'); // 디버그 로그
+    print('저장할 전체 데이터: $dataToUpdate'); // 디버그 로그
+
     // 이미지 URL이 있으면 데이터에 추가합니다.
     if (imageUrl != null) {
       dataToUpdate['profileImageUrl'] = imageUrl;
@@ -109,6 +114,7 @@ class _ProfileState extends State<Profile> {
       SnackBar(
         content: const Text('프로필이 업데이트되었습니다.'),
         backgroundColor: Colors.black.withOpacity(0.6),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -234,8 +240,8 @@ class _ProfileState extends State<Profile> {
                             _buildInfoField('닉네임', _nicknameController),
                             _buildInfoField('나이', _ageController,
                                 keyboardType: TextInputType.number),
-                            _buildInfoField('지역', _regionController),
-                            _buildInfoField('성별', _sexController),
+                            _buildRegionField('지역', _regionController),
+                            _buildGenderField('성별', _sexController),
                             _buildInfoField('이메일', _emailController,
                                 keyboardType: TextInputType.emailAddress),
                           ],
@@ -254,39 +260,155 @@ class _ProfileState extends State<Profile> {
       {TextInputType keyboardType = TextInputType.text}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-      child: _isEditing
-          ? TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white), // 입력 텍스트 색상
-              decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(color: Colors.white70), // 라벨 텍스트 색상
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white54),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              keyboardType: keyboardType,
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('$label: ',
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white70)),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Text(controller.text,
-                        style: const TextStyle(
-                            fontSize: 18, color: Colors.white))),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
             ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white54),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: _isEditing
+                ? TextField(
+                    controller: controller,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Cafe24Oneprettynight',
+                      fontSize: 16,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: '$label 입력',
+                      hintStyle: const TextStyle(
+                        color: Colors.white70,
+                        fontFamily: 'Cafe24Oneprettynight',
+                        fontSize: 16,
+                      ),
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    keyboardType: keyboardType,
+                  )
+                : Text(
+                    controller.text.isEmpty ? '$label 없음' : controller.text,
+                    style: TextStyle(
+                      color: controller.text.isEmpty
+                          ? Colors.white70
+                          : Colors.white,
+                      fontFamily: 'Cafe24Oneprettynight',
+                      fontSize: 16,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 지역 선택 필드를 생성하는 위젯입니다.
+  Widget _buildRegionField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _isEditing
+              ? RegionSelectorWidget(
+                  initialRegion: controller.text,
+                  onRegionSelected: (region) {
+                    print('지역 선택됨: $region'); // 디버그 로그
+                    controller.text = region;
+                    print('컨트롤러 업데이트됨: ${controller.text}'); // 디버그 로그
+                  },
+                )
+              : Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white54),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    controller.text.isEmpty ? '$label 없음' : controller.text,
+                    style: TextStyle(
+                      color: controller.text.isEmpty
+                          ? Colors.white70
+                          : Colors.white,
+                      fontFamily: 'Cafe24Oneprettynight',
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  /// 성별 선택 필드를 생성하는 위젯입니다.
+  Widget _buildGenderField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _isEditing
+              ? GenderSelectorWidget(
+                  initialGender: controller.text,
+                  onGenderSelected: (gender) {
+                    controller.text = gender;
+                  },
+                )
+              : Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white54),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    controller.text.isEmpty ? '$label 없음' : controller.text,
+                    style: TextStyle(
+                      color: controller.text.isEmpty
+                          ? Colors.white70
+                          : Colors.white,
+                      fontFamily: 'Cafe24Oneprettynight',
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+        ],
+      ),
     );
   }
 }

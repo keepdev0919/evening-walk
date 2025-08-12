@@ -20,11 +20,6 @@ class SelectMateScreen extends StatefulWidget {
 }
 
 class _SelectMateScreenState extends State<SelectMateScreen> {
-  // 고양이 말풍선 텍스트 상태
-  String _catBubbleText = '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~';
-  
-  // 고양이 화남 상태
-  bool _isCatAngry = false;
   Future<bool?> _showConfirmationDialog(
       BuildContext context, String mate) async {
     return showDialog<bool>(
@@ -158,27 +153,9 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                       offset: Offset(-screenWidth * 0.15, 0),
                       child: BlackCatWidget(
                         width: catWidth,
-                        bubbleText: _catBubbleText,
                         bubbleMaxWidth: catWidth * 0.8,
-                        showAngryEmoji: _isCatAngry,
-                        onTap: () {
-                          print('산책 메이트 화면에서 고양이 클릭됨!');
-                          setState(() {
-                            _catBubbleText = '츄르안줄꺼면 건들지말라냥~';
-                            _isCatAngry = true;
-                          });
-                          print('텍스트 변경됨: $_catBubbleText, 화남: $_isCatAngry');
-                          // 3초 후 원래 상태로 복원
-                          Future.delayed(const Duration(seconds: 3), () {
-                            if (mounted) {
-                              setState(() {
-                                _catBubbleText = '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~';
-                                _isCatAngry = false;
-                              });
-                              print('텍스트 복원됨: $_catBubbleText, 화남: $_isCatAngry');
-                            }
-                          });
-                        },
+                        screenType: 'selectMate',
+                        defaultText: '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~',
                       ),
                     ),
                   ),

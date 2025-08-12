@@ -8,7 +8,6 @@ import 'dart:ui' as ui;
 // import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -231,51 +230,53 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
 
     // Places API로 근처 건물 검색
     final placeDetails = await _validatePlaceNearby(position);
-    String displayName;
-    LatLng finalPosition;
 
     if (placeDetails != null) {
       // 건물이 발견된 경우
-      displayName = placeDetails['name'];
-      finalPosition = placeDetails['location'];
+      String displayName = placeDetails['name'];
+      LatLng finalPosition = placeDetails['location'];
       print('건물 발견: $displayName');
+
+      final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
+
+      setState(() {
+        _destinationMarker = Marker(
+          markerId: const MarkerId('destination'),
+          position: finalPosition,
+          infoWindow: InfoWindow(title: displayName),
+          icon: flagIcon,
+          anchor: const Offset(0.5, 1.0),
+        );
+        _selectedDestination = finalPosition;
+        _selectedAddress = displayName;
+      });
+
+      _showDestinationBottomSheet();
     } else {
-      // 건물이 없는 경우 주소 사용
-      displayName = await _getAddressFromLatLng(position);
-      finalPosition = position;
-      print('건물 없음, 주소 사용: $displayName');
-    }
-
-    final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
-
-    setState(() {
-      _destinationMarker = Marker(
-        markerId: const MarkerId('destination'),
-        position: finalPosition,
-        infoWindow: InfoWindow(title: displayName),
-        icon: flagIcon,
-        anchor: const Offset(0.5, 1.0),
+      // 건물이 없는 경우 목적지 설정 불가
+      print('건물 없음, 목적지 설정 불가');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text.rich(
+            TextSpan(
+              style: const TextStyle(color: Colors.white),
+              children: const [
+                TextSpan(text: '주변에 건물이 '),
+                TextSpan(text: '없습니다', style: TextStyle(color: Colors.red)),
+                TextSpan(text: '. 건물이나 장소를 \n선택해 주세요.'),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.black.withOpacity(0.6),
+          duration: const Duration(seconds: 3),
+        ),
       );
-      _selectedDestination = finalPosition;
-      _selectedAddress = displayName;
-    });
-
-    _showDestinationBottomSheet();
-  }
-
-  /// LatLng 좌표로부터 주소를 가져옵니다.
-  Future<String> _getAddressFromLatLng(LatLng position) async {
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      Placemark place = placemarks[0];
-      return "${place.street}";
-    } catch (e) {
-      return "주소를 찾을 수 없습니다.";
+      return;
     }
   }
+
+  // 주소 조회 함수는 현재 사용되지 않아 제거했습니다.
 
   /// 목적지 설정 확인을 위한 하단 시트를 표시합니다.
   void _showDestinationBottomSheet() {
