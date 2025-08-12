@@ -47,7 +47,7 @@ class WalkInProgressMapScreen extends StatefulWidget {
 }
 
 class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
-    with WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   AppLifecycleState? _lastLifecycleState;
 
   /// Google Map 컨트롤러. 지도 제어에 사용됩니다.
@@ -108,6 +108,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   Offset? _userOverlayOffset;
   static const double _overlayWidth = 80;
   static const double _overlayHeight = 80;
+
+  /// 사용자 방향 관련 변수
+  double? _currentHeading; // 현재 방향 (도 단위)
+  late AnimationController _headingAnimationController;
+  late Animation<double> _headingAnimation;
 
   Future<void> _updateOverlayPosition() async {
     if (_currentPosition == null) return;
@@ -179,6 +184,17 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this); // 옵저버 등록
     _lastLifecycleState = WidgetsBinding.instance.lifecycleState; // 초기 상태 설정
+
+    // 방향 애니메이션 컨트롤러 초기화
+    _headingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _headingAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
+      CurvedAnimation(
+          parent: _headingAnimationController, curve: Curves.easeInOut),
+    );
+
     // 현재 사용자 정보를 가져옵니다.
     // _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
@@ -193,8 +209,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // 옵저버 해제
     // 위젯이 dispose될 때 위치 스트림 구독을 취소하여 리소스 누수를 방지합니다.
-
     _positionStreamSubscription?.cancel();
+    // 방향 애니메이션 컨트롤러 해제
+    _headingAnimationController.dispose();
     super.dispose();
   }
 
@@ -260,6 +277,59 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     } catch (_) {}
   }
 
+  /// 사용자 방향 업데이트 및 애니메이션 처리
+  void _updateUserHeading(double newHeading) {
+    print('_updateUserHeading called with: $newHeading degrees');
+
+    if (_currentHeading == null) {
+      // 첫 방향 설정
+      print('Setting initial heading: $newHeading');
+      _currentHeading = newHeading;
+      _headingAnimation = Tween<double>(
+        begin: newHeading * (3.14159 / 180), // 도를 라디안으로 변환
+        end: newHeading * (3.14159 / 180),
+      ).animate(_headingAnimationController);
+      setState(() {}); // UI 업데이트 강제
+    } else {
+      // 방향 변화가 5도 이상일 때만 업데이트 (테스트를 위해 임계값 낮춤)
+      double angleDiff = (newHeading - _currentHeading!).abs();
+      if (angleDiff > 180) angleDiff = 360 - angleDiff; // 최단 각도 계산
+
+      print('Angle difference: $angleDiff degrees');
+
+      if (angleDiff > 5) {
+        // 15도 -> 5도로 낮춤 (테스트용)
+        print('Updating heading from ${_currentHeading} to $newHeading');
+
+        double fromAngle = _currentHeading! * (3.14159 / 180);
+        double toAngle = newHeading * (3.14159 / 180);
+
+        // 360도 경계 처리 (최단 경로로 회전)
+        if ((newHeading - _currentHeading!).abs() > 180) {
+          if (_currentHeading! > newHeading) {
+            toAngle += 2 * 3.14159;
+          } else {
+            fromAngle += 2 * 3.14159;
+          }
+        }
+
+        _headingAnimation = Tween<double>(
+          begin: fromAngle,
+          end: toAngle,
+        ).animate(CurvedAnimation(
+          parent: _headingAnimationController,
+          curve: Curves.easeInOut,
+        ));
+
+        _currentHeading = newHeading;
+        _headingAnimationController.forward(from: 0.0);
+        print('Animation started from $fromAngle to $toAngle radians');
+      } else {
+        print('Heading change too small, skipping animation');
+      }
+    }
+  }
+
   /// 산책 관련 데이터를 초기화하고 지도에 마커를 설정합니다.
   /// 사용자 프로필, 선물 상자, 깃발 마커를 생성하고 위치 추적을 시작합니다.
   Future<void> _initializeWalk() async {
@@ -307,6 +377,22 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
+
+      // 방향 데이터 처리 및 디버깅
+      print('Position: lat=${position.latitude}, lng=${position.longitude}');
+      print('Heading: ${position.heading}');
+      print('Accuracy: ${position.accuracy}');
+      print('Speed: ${position.speed}');
+
+      if (position.heading != null &&
+          position.heading! >= 0 &&
+          position.heading! <= 360) {
+        print('Valid heading detected: ${position.heading}');
+        _updateUserHeading(position.heading!);
+      } else {
+        print('Invalid or null heading: ${position.heading}');
+      }
+
       await _updateOverlayPosition();
       await _updateOverlayPositions();
 
@@ -650,20 +736,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
             walkMode: widget.mode, // 산책 모드 전달
           ),
-          // 현재 위치 말풍선 오버레이
-          if (!_isLoading && _userOverlayOffset != null)
-            Positioned(
-              left:
-                  _userOverlayOffset!.dx - 60, // 말풍선 중앙 정렬 (말풍선 최대 너비 200의 절반)
-              top: _userOverlayOffset!.dy - _overlayHeight - 20, // 애니메이션 위쪽에 표시
-              child: IgnorePointer(
-                ignoring: true,
-                child: SpeechBubbleWidget(
-                  speechBubbleState: _walkStateManager.currentSpeechBubbleState,
-                  visible: _walkStateManager.speechBubbleVisible,
-                ),
-              ),
-            ),
           // 목적지 Lottie 애니메이션 오버레이
           if (!_isLoading && _destinationOverlayOffset != null)
             Positioned(
@@ -912,6 +984,65 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     alignment: Alignment.bottomCenter,
                     fit: BoxFit.contain,
                   ),
+                ),
+              ),
+            ),
+          // 현재 위치 말풍선 오버레이 (최상위로 배치)
+          if (!_isLoading && _userOverlayOffset != null)
+            Positioned(
+              left:
+                  _userOverlayOffset!.dx - 60, // 말풍선 중앙 정렬 (말풍선 최대 너비 200의 절반)
+              top: _userOverlayOffset!.dy - _overlayHeight - 20, // 애니메이션 위쪽에 표시
+              child: IgnorePointer(
+                ignoring: true,
+                child: SpeechBubbleWidget(
+                  speechBubbleState: _walkStateManager.currentSpeechBubbleState,
+                  visible: _walkStateManager.speechBubbleVisible,
+                ),
+              ),
+            ),
+          // 방향 화살표 (파란 세모) - 최상위로 배치
+          if (!_isLoading &&
+              _userOverlayOffset != null &&
+              _currentHeading != null)
+            Positioned(
+              left: _userOverlayOffset!.dx +
+                  (_overlayWidth / 2) -
+                  20, // start.json 오른쪽
+              top: _userOverlayOffset!.dy -
+                  (_overlayHeight / 2) -
+                  8, // start.json 중간 높이
+              child: IgnorePointer(
+                ignoring: true,
+                child: AnimatedBuilder(
+                  animation: _headingAnimation,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      alignment: Alignment.center, // 중심점 고정
+                      angle: _headingAnimation.value,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.blue.withOpacity(0.9),
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              offset: const Offset(0, 1),
+                              blurRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.navigation,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
