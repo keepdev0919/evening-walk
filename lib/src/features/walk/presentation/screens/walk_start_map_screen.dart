@@ -226,7 +226,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             ),
           ),
           backgroundColor: Colors.black.withOpacity(0.6),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
           shape:
@@ -281,7 +281,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             textAlign: TextAlign.center,
           ),
           backgroundColor: Colors.black.withOpacity(0.8),
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape:
@@ -518,7 +518,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
       ),
       backgroundColor: Colors.black.withOpacity(0.6),
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 2),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
@@ -566,7 +566,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         ),
         backgroundColor: Colors.black.withOpacity(0.6),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -783,7 +783,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                         ),
                         backgroundColor: Colors.black.withOpacity(0.8),
                         behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 5),
+                        duration: Duration(seconds: 2),
                       ),
                     );
                   },
