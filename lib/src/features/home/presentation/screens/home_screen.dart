@@ -27,6 +27,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 고양이 말풍선 텍스트 상태
   String _catBubbleText = '같이 산책가는거냥?';
+  
+  // 고양이 화남 상태
+  bool _isCatAngry = false;
 
   final String _apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   InfoStatus _locationStatus = InfoStatus.loading;
@@ -547,19 +550,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: catWidth,
                           bubbleText: _catBubbleText,
                           bubbleMaxWidth: catWidth * 0.8,
+                          showAngryEmoji: _isCatAngry,
                           onTap: () {
                             print('고양이 클릭됨! 현재 텍스트: $_catBubbleText');
                             setState(() {
                               _catBubbleText = '간지럽다냥..';
+                              _isCatAngry = true;
                             });
-                            print('텍스트 변경됨: $_catBubbleText');
-                            // 2초 후 원래 텍스트로 복원
+                            print('텍스트 변경됨: $_catBubbleText, 화남: $_isCatAngry');
+                            // 2초 후 원래 상태로 복원
                             Future.delayed(const Duration(seconds: 2), () {
                               if (mounted) {
                                 setState(() {
                                   _catBubbleText = '같이 산책가는거냥?';
+                                  _isCatAngry = false;
                                 });
-                                print('텍스트 복원됨: $_catBubbleText');
+                                print('텍스트 복원됨: $_catBubbleText, 화남: $_isCatAngry');
                               }
                             });
                           },
