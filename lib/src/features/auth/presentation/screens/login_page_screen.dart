@@ -142,30 +142,44 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      // 로그인 버튼 영역 (공식 버튼 이미지 그대로 사용)
-                      Column(
-                        children: [
-                          Center(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  handleLogin(context, signInWithKakao),
-                              child: Image.asset(
-                                'assets/images/kakao_login.png',
+                      // 로그인 버튼 영역 - 투명한 컨테이너로 감쌈
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: IntrinsicWidth(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                            Center(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    handleLogin(context, signInWithKakao),
+                                child: Image.asset(
+                                  'assets/images/kakao_login.png',
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Center(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  handleLogin(context, signInWithGoogle),
-                              child: Image.asset(
-                                'assets/images/google_login.png',
-                                width: 200,
+                            const SizedBox(height: 16),
+                            Center(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    handleLogin(context, signInWithGoogle),
+                                child: Image.asset(
+                                  'assets/images/google_login.png',
+                                  width: 200,
+                                ),
                               ),
                             ),
+                          ],
                           ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 120),
                     ],
