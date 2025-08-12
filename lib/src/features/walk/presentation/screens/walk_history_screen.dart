@@ -4,6 +4,7 @@ import 'package:walk/src/features/walk/application/services/walk_session_service
 import 'package:walk/src/features/walk/presentation/widgets/walk_history_item_widget.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// 산책 기록 목록을 보여주는 화면
 class WalkHistoryScreen extends StatefulWidget {
@@ -194,8 +195,9 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
     final totalSessions = _walkSessions.length;
     final totalDuration = _walkSessions.fold<int>(
         0, (sum, session) => sum + (session.durationInMinutes ?? 0));
-    final totalDistance = _walkSessions.fold<double>(
-        0, (sum, session) => sum + (session.totalDistance ?? 0));
+    final totalDistance = _walkSessions.fold<double>(0, (sum, session) {
+      return sum + _sessionDistanceKm(session);
+    });
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -236,6 +238,18 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
         ],
       ),
     );
+  }
+
+  /// 세션별 거리(km): 저장된 실제 이동거리 우선, 없으면 출발지→목적지 직선거리로 대체
+  double _sessionDistanceKm(WalkSession session) {
+    if (session.totalDistance != null) return session.totalDistance!;
+    final meters = Geolocator.distanceBetween(
+      session.startLocation.latitude,
+      session.startLocation.longitude,
+      session.destinationLocation.latitude,
+      session.destinationLocation.longitude,
+    );
+    return meters / 1000.0;
   }
 
   /// 통계 항목 위젯 - 감성적 스타일

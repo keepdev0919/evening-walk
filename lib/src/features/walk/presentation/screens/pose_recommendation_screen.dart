@@ -550,6 +550,42 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
+  /// 전체 화면 네트워크 이미지 보기 (추천 포즈)
+  void _showFullScreenNetworkImage(String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.contain,
+                placeholder: (c, u) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+                errorWidget: (c, u, e) => const Center(
+                  child: Icon(Icons.error_outline,
+                      color: Colors.white70, size: 42),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 위치 정보 카드
   Widget _buildLocationInfo({
     required IconData icon,
@@ -679,20 +715,31 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             aspectRatio: 4 / 3,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                File(_userPhotoPath!),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: Text(
-                        '사진을 불러올 수 없습니다',
-                        style: TextStyle(color: Colors.white70),
-                      ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.file(
+                    File(_userPhotoPath!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.black.withOpacity(0.3),
+                        child: const Center(
+                          child: Text(
+                            '사진을 불러올 수 없습니다',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // 살짝 어둡게 보이도록 오버레이
+                  IgnorePointer(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.18),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
           ),
@@ -701,20 +748,17 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 시간/거리 정보 표시
+  /// 시간 정보만 표시 (공유 화면에서는 거리 제거 요청)
   Widget _buildTimeDistanceInfo() {
     final duration = widget.walkStateManager.actualDurationInMinutes;
-    final distance = widget.walkStateManager.walkDistance;
 
-    // 둘 다 null이면 빈 위젯 반환
-    if (duration == null && distance == null) {
-      return const SizedBox.shrink();
-    }
+    // 시간 없으면 빈 위젯
+    if (duration == null) return const SizedBox.shrink();
 
     List<Widget> infoWidgets = [];
 
     // 시간 정보 추가
-    if (duration != null) {
+    {
       String durationText;
       if (duration <= 0) {
         durationText = '1분 미만';
@@ -727,36 +771,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         const SizedBox(width: 4),
         Text(
           durationText,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]);
-    }
-
-    // 거리 정보 추가
-    if (distance != null) {
-      if (infoWidgets.isNotEmpty) {
-        infoWidgets.addAll([
-          const SizedBox(width: 12),
-          Text(
-            '•',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(width: 12),
-        ]);
-      }
-
-      infoWidgets.addAll([
-        const Icon(Icons.straighten, color: Colors.white70, size: 16),
-        const SizedBox(width: 4),
-        Text(
-          '${distance.round()}m',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,
@@ -891,25 +905,42 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             : _recommendedPoseImageUrl != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: CachedNetworkImage(
-                      imageUrl: _recommendedPoseImageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                    child: GestureDetector(
+                      onTap: () => _showFullScreenNetworkImage(
+                        _recommendedPoseImageUrl!,
                       ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                color: Colors.white70, size: 48),
-                            SizedBox(height: 8),
-                            Text(
-                              '이미지를 불러올 수 없습니다',
-                              style: TextStyle(color: Colors.white70),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: _recommendedPoseImageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(
+                                  color: Colors.white),
                             ),
-                          ],
-                        ),
+                            errorWidget: (context, url, error) => const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error_outline,
+                                      color: Colors.white70, size: 48),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    '이미지를 불러올 수 없습니다',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // 추천 포즈 이미지도 배경과 조화롭게 살짝 어둡게
+                          IgnorePointer(
+                            child: Container(
+                              color: Colors.black.withOpacity(0.12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )

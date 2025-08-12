@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:walk/src/features/walk/domain/models/walk_session.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// 산책 목록에서 사용되는 개별 아이템 위젯
 class WalkHistoryItemWidget extends StatelessWidget {
@@ -17,6 +18,8 @@ class WalkHistoryItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double? _distanceKm =
+        walkSession.totalDistance ?? _straightLineDistanceKm(walkSession);
     return Container(
       // 카드가 필터 탭/상단 위젯과 붙어 보이지 않도록 하단 여백을 넉넉히 확보
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
@@ -127,14 +130,14 @@ class WalkHistoryItemWidget extends StatelessWidget {
                         },
                       ),
                     ),
-                    // 오른쪽 끝: 거리, 시간, 삭제 버튼
+                    // 오른쪽 끝: 시간, 거리, 삭제 버튼 (순서 변경)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 거리 정보
-                        if (walkSession.totalDistance != null) ...[
+                        // 시간 정보
+                        if (walkSession.durationInMinutes != null) ...[
                           Text(
-                            '👣 ${walkSession.totalDistance?.toStringAsFixed(1)}km',
+                            '⏰ ${walkSession.durationInMinutes}분',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -150,10 +153,10 @@ class WalkHistoryItemWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                         ],
-                        // 시간 정보
-                        if (walkSession.durationInMinutes != null) ...[
+                        // 거리 정보 (시간 다음)
+                        if (_distanceKm != null) ...[
                           Text(
-                            '⏰ ${walkSession.durationInMinutes}분',
+                            '👣 ${_distanceKm.toStringAsFixed(1)}km',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -284,6 +287,16 @@ class WalkHistoryItemWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  double _straightLineDistanceKm(WalkSession s) {
+    final d = Geolocator.distanceBetween(
+      s.startLocation.latitude,
+      s.startLocation.longitude,
+      s.destinationLocation.latitude,
+      s.destinationLocation.longitude,
+    );
+    return d / 1000.0;
   }
 
   /// 날짜 포맷팅 - 날짜 + 요일 + 시간으로 표시

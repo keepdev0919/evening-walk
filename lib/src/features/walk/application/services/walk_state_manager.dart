@@ -53,6 +53,10 @@ class WalkStateManager {
   DateTime? _actualStartTime;
   DateTime? _actualEndTime;
 
+  // 누적 이동 거리 추적 (미터 단위)
+  LatLng? _lastUserLocation; // 마지막으로 기록된 사용자 위치
+  double _accumulatedDistanceMeters = 0.0; // 누적 이동 거리 (m)
+
   // 저장된 세션 ID (1차 저장 후 업데이트용)
   String? _savedSessionId;
 
@@ -87,6 +91,12 @@ class WalkStateManager {
   int? get actualDurationInMinutes {
     if (_actualStartTime == null || _actualEndTime == null) return null;
     return _actualEndTime!.difference(_actualStartTime!).inMinutes;
+  }
+
+  /// 누적 이동 거리 (km). 0에 가까우면 null 처리하여 표시를 생략할 수 있도록 함
+  double? get accumulatedDistanceKm {
+    if (_accumulatedDistanceMeters <= 0) return null;
+    return _accumulatedDistanceMeters / 1000.0;
   }
 
   // 출발지-목적지 직선거리 계산 (미터 단위)
@@ -196,6 +206,9 @@ class WalkStateManager {
     // 실제 산책 시작 시간 기록
     _actualStartTime = DateTime.now();
     _actualEndTime = null; // 초기화
+    // 누적 거리 초기화
+    _accumulatedDistanceMeters = 0.0;
+    _lastUserLocation = null;
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
     print(
         'WalkStateManager: 산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
@@ -217,6 +230,26 @@ class WalkStateManager {
     bool forceDestinationEvent = false,
     bool forceStartReturnEvent = false,
   }) async {
+    // 누적 이동 거리 갱신
+    try {
+      if (_lastUserLocation == null) {
+        _lastUserLocation = userLocation;
+      } else {
+        final double segment = Geolocator.distanceBetween(
+          _lastUserLocation!.latitude,
+          _lastUserLocation!.longitude,
+          userLocation.latitude,
+          userLocation.longitude,
+        );
+        if (segment.isFinite && segment > 0) {
+          _accumulatedDistanceMeters += segment;
+        }
+        _lastUserLocation = userLocation;
+      }
+    } catch (e) {
+      LogService.error('WalkState', '누적 거리 계산 실패', e);
+    }
+
     // 말풍선 상태 업데이트
     updateSpeechBubbleState(userLocation);
     // 경유지 이벤트 확인 (아직 발생하지 않았을 때만)

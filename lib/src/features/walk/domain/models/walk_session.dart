@@ -28,6 +28,7 @@ class WalkSession {
 
   // 메타 정보
   final int? totalDuration; // 총 소요 시간 (분)
+  final double? totalDistance; // 총 이동 거리 (km)
   final String? locationName; // 위치명 (예: "서울 강남구")
 
   WalkSession({
@@ -45,6 +46,7 @@ class WalkSession {
     this.takenPhotoPath,
     this.walkReflection,
     this.totalDuration,
+    this.totalDistance,
     this.locationName,
   });
 
@@ -65,6 +67,7 @@ class WalkSession {
     String? locationName,
     DateTime? endTime,
     int? totalDuration,
+    double? totalDistance,
   }) {
     return WalkSession(
       id: id,
@@ -81,6 +84,7 @@ class WalkSession {
       takenPhotoPath: takenPhotoPath,
       walkReflection: walkReflection,
       totalDuration: totalDuration, // 전달받은 총 소요 시간 사용
+      totalDistance: totalDistance,
       locationName: locationName,
     );
   }
@@ -127,7 +131,6 @@ class WalkSession {
       return const LatLng(0.0, 0.0);
     }
 
-
     return WalkSession(
       id: docId,
       userId: data['userId']?.toString() ?? '',
@@ -146,6 +149,9 @@ class WalkSession {
       totalDuration: (data['totalDuration'] is num)
           ? (data['totalDuration'] as num).toInt()
           : int.tryParse(data['totalDuration']?.toString() ?? ''),
+      totalDistance: (data['totalDistance'] is num)
+          ? (data['totalDistance'] as num).toDouble()
+          : double.tryParse(data['totalDistance']?.toString() ?? ''),
       locationName: data['locationName']?.toString(),
     );
   }
@@ -175,6 +181,7 @@ class WalkSession {
       'takenPhotoPath': takenPhotoPath,
       'walkReflection': walkReflection,
       'totalDuration': totalDuration,
+      'totalDistance': totalDistance,
       'locationName': locationName,
     };
   }
@@ -188,8 +195,7 @@ class WalkSession {
     return endTime!.difference(startTime).inMinutes;
   }
 
-  /// 총 거리 (사용하지 않는 필드이지만 UI 호환성을 위해 0 반환)
-  double? get totalDistance => 0.0;
+  // 총 이동 거리(totalDistance)는 km 단위로 저장됩니다.
 
   /// 동반자 이름을 표시용으로 변환
   String get mateDisplayName {

@@ -44,6 +44,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   bool isEditingPhoto = false; // 사진 편집 모드
   bool hasRequestedPhotoRefreshAfterUpload = false;
   Future<String?>? recommendedPoseFuture;
+  double? _recordedDistanceKm; // 세션에 저장된 실제 이동 거리(km)
+  int? _recordedDurationMin; // 세션에 저장된 총 소요 시간(분)
 
   @override
   void initState() {
@@ -69,6 +71,25 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     if (widget.walkStateManager.routeSnapshotPng == null) {
       _generateRouteSnapshotFallback();
     }
+
+    // 세션 기록 거리 로드 (있다면 우선 표시)
+    _loadRecordedDistanceIfAny();
+  }
+
+  Future<void> _loadRecordedDistanceIfAny() async {
+    if (widget.sessionId == null) return;
+    try {
+      final svc = WalkSessionService();
+      final session = await svc.getWalkSession(widget.sessionId!);
+      if (session != null) {
+        setState(() {
+          _recordedDistanceKm = session.totalDistance; // km 단위
+          // 저장된 총시간이 없으면 카드와 동일하게 종료-시작 기반 계산값 사용
+          _recordedDurationMin =
+              session.totalDuration ?? session.durationInMinutes; // 분 단위
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _generateRouteSnapshotFallback() async {
@@ -940,7 +961,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   );
                 }
 
-                ToastService.showSuccess('산책 일기가 업데이트되었습니다!');
+                // 성공 스낵바 제거 (요청에 따라 알림 표시 없음)
               } else {
                 ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
               }
@@ -975,7 +996,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   );
                 }
 
-                ToastService.showSuccess('일기가 저장되었습니다!');
+                // 성공 스낵바 제거 (요청에 따라 알림 표시 없음)
 
                 if (widget.walkStateManager.photoPath != null) {
                   uploadProvider.startBackgroundUpload(
@@ -1284,10 +1305,13 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
 
   /// 산책 일기 헤더용 시간/거리 정보 (우측 정렬)
   Widget _buildDiaryTimeDistanceInfo() {
-    final duration = widget.walkStateManager.actualDurationInMinutes;
-    final distance = widget.walkStateManager.walkDistance;
+    final duration =
+        widget.walkStateManager.actualDurationInMinutes ?? _recordedDurationMin;
+    final straightLineMeters = widget.walkStateManager.walkDistance; // m
 
-    if (duration == null && distance == null) {
+    if (duration == null &&
+        straightLineMeters == null &&
+        _recordedDistanceKm == null) {
       return const SizedBox.shrink();
     }
 
@@ -1309,7 +1333,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       ]);
     }
 
-    if (distance != null) {
+    if (straightLineMeters != null || _recordedDistanceKm != null) {
       if (info.isNotEmpty) {
         info.addAll([
           const SizedBox(width: 12),
@@ -1317,11 +1341,15 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           const SizedBox(width: 12),
         ]);
       }
+      final distanceText = _formatDistanceText(
+        kilometers: _recordedDistanceKm,
+        meters: _recordedDistanceKm == null ? straightLineMeters : null,
+      );
       info.addAll([
         const Icon(Icons.straighten, color: Colors.white70, size: 16),
         const SizedBox(width: 4),
         Text(
-          '${distance.round()}m',
+          distanceText,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,
@@ -1332,6 +1360,19 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     }
 
     return Row(mainAxisSize: MainAxisSize.min, children: info);
+  }
+
+  /// 거리 표시 포맷터: km 값이 우선, 없으면 m 값 사용. 1000m 이상은 km로 표시.
+  String _formatDistanceText({double? kilometers, double? meters}) {
+    if (kilometers != null) {
+      if (kilometers >= 1.0) return '${kilometers.toStringAsFixed(1)}km';
+      return '${(kilometers * 1000).round()}m';
+    }
+    if (meters != null) {
+      if (meters >= 1000.0) return '${(meters / 1000).toStringAsFixed(1)}km';
+      return '${meters.round()}m';
+    }
+    return '';
   }
 
   /// 전체 화면 경로 스냅샷 보기

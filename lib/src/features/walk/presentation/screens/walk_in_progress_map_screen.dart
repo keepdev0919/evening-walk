@@ -336,12 +336,16 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         case "start_returned":
           _positionStreamSubscription?.cancel();
 
-          // 1. 기존 세션에 완료 시간 업데이트
+          // 1. 기존 세션에 완료 시간/총 시간/총 거리 업데이트
           if (_walkStateManager.savedSessionId != null) {
             final walkSessionService = WalkSessionService();
             await walkSessionService.updateWalkSession(
               _walkStateManager.savedSessionId!,
-              {'endTime': DateTime.now().toIso8601String()},
+              {
+                'endTime': DateTime.now().toIso8601String(),
+                'totalDuration': _walkStateManager.actualDurationInMinutes,
+                'totalDistance': _walkStateManager.accumulatedDistanceKm,
+              },
             );
             LogService.info('WalkProgress', '출발지 복귀 완료 시간 업데이트 완료');
           }

@@ -2,13 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walk/src/features/walk/domain/models/walk_session.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
+// import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
 
 /// 산책 세션 관리를 위한 Firebase 연동 서비스
 class WalkSessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final PhotoUploadService _photoUploadService = PhotoUploadService();
+  // final PhotoUploadService _photoUploadService = PhotoUploadService(); // 미사용
 
   /// 산책 세션을 Firebase에 저장
   Future<String?> saveWalkSession({
@@ -67,6 +67,7 @@ class WalkSessionService {
         locationName: locationName,
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
         totalDuration: walkStateManager.actualDurationInMinutes, // 실제 소요 시간 설정
+        totalDistance: walkStateManager.accumulatedDistanceKm, // 누적 이동 거리(km)
       );
 
       // Firestore에 저장 전 디버깅
@@ -278,6 +279,7 @@ class WalkSessionService {
         locationName: locationName,
         endTime: walkStateManager.actualEndTime,
         totalDuration: walkStateManager.actualDurationInMinutes,
+        totalDistance: walkStateManager.accumulatedDistanceKm,
       );
 
       // Firestore에 즉시 저장
