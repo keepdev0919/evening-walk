@@ -194,6 +194,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         SnackBar(
           content: const Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.'),
           backgroundColor: Colors.black.withOpacity(0.6),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       );
       return;
@@ -213,8 +217,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         SnackBar(
           content: Text.rich(
             TextSpan(
-              style: TextStyle(color: Colors.white),
-              children: [
+              style: const TextStyle(color: Colors.white),
+              children: const [
                 TextSpan(text: '목적지는 최대 '),
                 TextSpan(text: '빨간원', style: TextStyle(color: Colors.red)),
                 TextSpan(text: '까지만 설정할 수 있습니다.'),
@@ -222,7 +226,11 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
             ),
           ),
           backgroundColor: Colors.black.withOpacity(0.6),
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       );
       return;
@@ -259,17 +267,25 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
         SnackBar(
           content: Text.rich(
             TextSpan(
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
               children: const [
                 TextSpan(text: '주변에 건물이 '),
                 TextSpan(text: '없습니다', style: TextStyle(color: Colors.red)),
-                TextSpan(text: '. 건물이나 장소를 \n선택해 주세요.'),
+                TextSpan(text: '. 건물이나 장소를 선택해 주세요.'),
               ],
             ),
             textAlign: TextAlign.center,
           ),
-          backgroundColor: Colors.black.withOpacity(0.6),
-          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.black.withOpacity(0.8),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
       );
       return;
