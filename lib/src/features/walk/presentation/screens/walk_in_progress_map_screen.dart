@@ -19,6 +19,7 @@ import 'package:walk/src/core/services/log_service.dart';
 import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
 import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
 import 'dart:typed_data';
+import 'dart:math' as math;
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.
@@ -113,6 +114,50 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   double? _currentHeading; // 현재 방향 (도 단위)
   late AnimationController _headingAnimationController;
   late Animation<double> _headingAnimation;
+
+  /// 이동 방향 계산 및 소스 스위칭을 위한 보조 상태값
+  Position? _lastPositionForCourse; // 이전 GPS 위치 (bearing 계산용)
+  bool _preferCourse = false; // 속도 조건을 만족하면 진행방향(course)을 우선 사용
+
+  /// 보조 함수: 각도를 0~360도로 정규화합니다.
+  double _normalizeDegrees(double angle) {
+    double a = angle % 360.0;
+    if (a < 0) a += 360.0;
+    return a;
+  }
+
+  /// 보조 함수: 두 지점 사이의 진행방향(bearing, 0~360°)을 계산합니다.
+  double _bearingBetween(LatLng from, LatLng to) {
+    final double lat1 = from.latitude * math.pi / 180.0;
+    final double lon1 = from.longitude * math.pi / 180.0;
+    final double lat2 = to.latitude * math.pi / 180.0;
+    final double lon2 = to.longitude * math.pi / 180.0;
+
+    final double dLon = lon2 - lon1;
+    final double y = math.sin(dLon) * math.cos(lat2);
+    final double x = math.cos(lat1) * math.sin(lat2) -
+        math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+    final double brng = math.atan2(y, x);
+    return _normalizeDegrees(brng * 180.0 / math.pi);
+  }
+
+  /// 보조 함수: 최단 회전 경로로 각도를 보간합니다. 반환값은 도 단위입니다.
+  double _lerpAngleShortestDegrees(double fromDeg, double toDeg, double t) {
+    double from = _normalizeDegrees(fromDeg);
+    double to = _normalizeDegrees(toDeg);
+    double diff = to - from;
+    if (diff > 180.0) diff -= 360.0;
+    if (diff < -180.0) diff += 360.0;
+    return _normalizeDegrees(from + diff * t);
+  }
+
+  /// 속도에 따른 보간 민감도. 빠를수록 더 민감하게 반응.
+  double _alphaBySpeed(double speedMetersPerSecond) {
+    if (speedMetersPerSecond >= 2.0) return 0.35; // 달리기 수준
+    if (speedMetersPerSecond >= 1.4) return 0.25; // 보통 보행
+    if (speedMetersPerSecond >= 0.8) return 0.15; // 느린 보행
+    return 0.10; // 정지/아주 느림: 더 안정적으로
+  }
 
   Future<void> _updateOverlayPosition() async {
     if (_currentPosition == null) return;
@@ -378,20 +423,54 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
 
-      // 방향 데이터 처리 및 디버깅
-      print('Position: lat=${position.latitude}, lng=${position.longitude}');
-      print('Heading: ${position.heading}');
-      print('Accuracy: ${position.accuracy}');
-      print('Speed: ${position.speed}');
+      // --- 방향 스위칭 + 보정 로직 ---
+      // 1) 나침반(컴퍼스) 각도 (Geolocator의 heading은 non-nullable이므로 범위로만 판정)
+      final double? compassHeading =
+          (position.heading >= 0 && position.heading <= 360)
+              ? position.heading
+              : null;
 
-      if (position.heading != null &&
-          position.heading! >= 0 &&
-          position.heading! <= 360) {
-        print('Valid heading detected: ${position.heading}');
-        _updateUserHeading(position.heading!);
-      } else {
-        print('Invalid or null heading: ${position.heading}');
+      // 2) 이동 진행방향(course) 계산: 이전 위치 대비 bearing
+      double? courseHeading;
+      if (_lastPositionForCourse != null) {
+        final double movedMeters = Geolocator.distanceBetween(
+          _lastPositionForCourse!.latitude,
+          _lastPositionForCourse!.longitude,
+          position.latitude,
+          position.longitude,
+        );
+        if (movedMeters > 3.0) {
+          courseHeading = _bearingBetween(
+            LatLng(_lastPositionForCourse!.latitude,
+                _lastPositionForCourse!.longitude),
+            LatLng(position.latitude, position.longitude),
+          );
+        }
       }
+
+      // 3) 스위칭 규칙: 속도가 충분하고 course가 있으면 course 우선, 저속이면 compass 우선
+      if (position.speed >= 1.4 && courseHeading != null) {
+        _preferCourse = true;
+      } else if (position.speed <= 0.8) {
+        _preferCourse = false;
+      }
+
+      // 4) 후보 각도 선택
+      final double? targetHeading = _preferCourse
+          ? (courseHeading ?? compassHeading)
+          : (compassHeading ?? courseHeading);
+
+      // 5) 보정: 최단 각도 보간(EMA 느낌) 후 애니메이션에 전달
+      if (targetHeading != null) {
+        final double fused = (_currentHeading == null)
+            ? targetHeading
+            : _lerpAngleShortestDegrees(
+                _currentHeading!, targetHeading, _alphaBySpeed(position.speed));
+        _updateUserHeading(fused);
+      }
+
+      // 6) 다음 회차를 위한 이전 위치 저장
+      _lastPositionForCourse = position;
 
       await _updateOverlayPosition();
       await _updateOverlayPositions();
