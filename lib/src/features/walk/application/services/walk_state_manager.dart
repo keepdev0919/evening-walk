@@ -38,6 +38,7 @@ class WalkStateManager {
   LatLng? _destinationLocation;
   LatLng? _waypointLocation;
   String? _selectedMate;
+  String? _friendGroupType; // 친구 인원 구분: 'two' or 'many'
   String? _destinationBuildingName; // 목적지 건물명
 
   // 이벤트 결과 저장 변수
@@ -76,6 +77,7 @@ class WalkStateManager {
   String? get photoPath => _photoPath;
   String? get userReflection => _userReflection;
   String? get selectedMate => _selectedMate;
+  String? get friendGroupType => _friendGroupType;
   String? get poseImageUrl => _poseImageUrl;
   Uint8List? get routeSnapshotPng => _routeSnapshotPng;
   String? get destinationBuildingName => _destinationBuildingName;
@@ -194,10 +196,12 @@ class WalkStateManager {
     required LatLng start,
     required LatLng destination,
     required String mate,
+    String? friendGroupType,
   }) {
     _startLocation = start; // 출발지 위치 저장
     _destinationLocation = destination;
     _selectedMate = mate;
+    _friendGroupType = friendGroupType;
     _waypointLocation = _waypointHandler.generateWaypoint(start, destination);
     _waypointEventOccurred = false;
     _destinationEventOccurred = false;
@@ -274,8 +278,10 @@ class WalkStateManager {
 
       if (arrived) {
         _waypointEventOccurred = true;
-        final String? question =
-            await _questionProvider.getQuestionForMate(_selectedMate);
+        final String? question = await _questionProvider.getQuestionForMate(
+          _selectedMate,
+          friendGroupType: _friendGroupType,
+        );
 
         if (question != null) {
           _waypointQuestion = question;
@@ -384,26 +390,35 @@ class WalkStateManager {
       );
 
       if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        // 한국 주소 형식: 시/도 구/군 동 (상세 주소 제외)
+        final PlaceMark = placemarks.first;
         // 일부 단말/지역에서 '.' 같은 플레이스홀더가 올 수 있어 필터링 처리
-        String _sanitize(String? value) {
-          if (value == null) return '';
-          final trimmed = value.trim();
-          if (trimmed.isEmpty) return '';
-          if (trimmed == '.' || trimmed == '·' || trimmed == '-') return '';
-          return trimmed;
+        String _s(String? v) {
+          if (v == null) return '';
+          final t = v.trim();
+          if (t.isEmpty) return '';
+          if (t == '.' || t == '·' || t == '-') return '';
+          return t;
         }
 
-        final String administrativeArea = _sanitize(place.administrativeArea);
-        final String locality = _sanitize(place.locality);
-        final String subLocality = _sanitize(place.subLocality);
+        final String region = _s(PlaceMark.administrativeArea); // 시/도
+        final String cityA = _s(PlaceMark.locality); // 시/군/구 (기기별 편차)
+        final String cityB = _s(PlaceMark.subAdministrativeArea); // 시/군/구 보조
+        final String district = _s(PlaceMark.subLocality); // 동/읍/면
+        final String street = _s(PlaceMark.street); // 도로명 + 번지까지 포함될 수 있음
+        final String road = _s(PlaceMark.thoroughfare);
+        final String number = _s(PlaceMark.subThoroughfare);
 
-        final List<String> parts = [
-          if (administrativeArea.isNotEmpty) administrativeArea,
-          if (locality.isNotEmpty) locality,
-          if (subLocality.isNotEmpty) subLocality,
-        ];
+        final List<String> parts = [];
+        if (region.isNotEmpty) parts.add(region);
+        if (cityA.isNotEmpty) parts.add(cityA);
+        if (cityB.isNotEmpty && cityB != cityA) parts.add(cityB);
+        if (district.isNotEmpty) parts.add(district);
+
+        String tail = street;
+        if (tail.isEmpty) {
+          tail = [road, number].where((e) => e.trim().isNotEmpty).join(' ');
+        }
+        if (tail.isNotEmpty) parts.add(tail);
 
         final String address = parts.join(' ').trim();
         return address.isNotEmpty ? address : '알 수 없는 위치';

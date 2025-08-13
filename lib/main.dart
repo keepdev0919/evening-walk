@@ -4,6 +4,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/date_symbol_data_local.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
 import 'src/features/auth/presentation/screens/login_page_screen.dart';
@@ -45,7 +46,21 @@ class MyApp extends StatelessWidget {
     if (user == null) {
       return const LoginPage(); // 로그인 안되어 있으면 로그인 화면
     } else {
-      return const HomeScreen(); // 로그인 되어있으면 홈 화면
+      // 사용자 문서 존재 여부 확인 (콘솔에서 삭제된 경우 대응)
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (!doc.exists) {
+          await FirebaseAuth.instance.signOut();
+          return const LoginPage();
+        }
+      } catch (_) {
+        await FirebaseAuth.instance.signOut();
+        return const LoginPage();
+      }
+      return const HomeScreen(); // 로그인 + 사용자 문서 존재 시 홈 화면
     }
   }
 
@@ -104,6 +119,7 @@ class MyApp extends StatelessWidget {
             },
           ),
           routes: {
+            '/login': (context) => const LoginPage(),
             '/homescreen': (context) => const HomeScreen(),
             '/walk_history': (context) => const WalkHistoryScreen(),
           }),

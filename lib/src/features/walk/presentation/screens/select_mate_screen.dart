@@ -4,6 +4,9 @@ import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import '../../../../shared/widgets/black_cat_widget.dart';
 
+// 친구 메이트 선택 시 인원 구분을 위한 타입
+enum FriendGroupType { two, many }
+
 class SelectMateScreen extends StatefulWidget {
   final LatLng startLocation;
   final LatLng destinationLocation;
@@ -127,6 +130,119 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
     );
   }
 
+  // 친구 메이트 전용: 인원수(2명/여러명) 선택을 강제하는 확인 다이얼로그
+  Future<FriendGroupType?> _showFriendConfirmationDialog(
+      BuildContext context) async {
+    FriendGroupType? selected;
+    return showDialog<FriendGroupType>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (ctx, setState) {
+          return AlertDialog(
+            backgroundColor: Colors.black.withOpacity(0.7),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.white54, width: 1),
+            ),
+            title: const Text(
+              '산책 메이트 확정',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '친구 메이트 인원수를 선택해주세요.',
+                  style: TextStyle(color: Colors.white70, height: 1.3),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            setState(() => selected = FriendGroupType.two),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: selected == FriendGroupType.two
+                              ? Colors.blue
+                              : Colors.white.withOpacity(0.15),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(
+                                color: Colors.white54, width: 0.5),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('2명'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            setState(() => selected = FriendGroupType.many),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: selected == FriendGroupType.many
+                              ? Colors.blue
+                              : Colors.white.withOpacity(0.15),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(
+                                color: Colors.white54, width: 0.5),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('여러명'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(null), // 취소
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: Colors.white54, width: 0.5),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text('취소'),
+              ),
+              ElevatedButton(
+                onPressed: selected == null
+                    ? null
+                    : () => Navigator.of(context).pop(selected), // 확정
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                  disabledForegroundColor: Colors.white60,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: Colors.white54, width: 0.5),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text('확정'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   Widget _buildMateButton(
       BuildContext context, String text, VoidCallback onPressed) {
     return LayoutBuilder(builder: (context, constraints) {
@@ -216,23 +332,48 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                 ...['혼자', '연인', '친구'].map((mate) => Padding(
                       padding: const EdgeInsets.only(bottom: 20.0),
                       child: _buildMateButton(context, mate, () async {
-                        final bool? confirm =
-                            await _showConfirmationDialog(context, mate);
-                        if (confirm == true) {
-                          if (!mounted) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => WalkInProgressMapScreen(
-                                startLocation: widget.startLocation,
-                                destinationLocation: widget.destinationLocation,
-                                selectedMate: mate,
-                                destinationBuildingName:
-                                    widget.destinationBuildingName,
-                                mode: widget.mode,
+                        if (mate == '친구') {
+                          final FriendGroupType? group =
+                              await _showFriendConfirmationDialog(context);
+                          if (group != null) {
+                            if (!mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WalkInProgressMapScreen(
+                                  startLocation: widget.startLocation,
+                                  destinationLocation:
+                                      widget.destinationLocation,
+                                  selectedMate: group == FriendGroupType.two
+                                      ? '친구(2명)'
+                                      : '친구(여러명)',
+                                  destinationBuildingName:
+                                      widget.destinationBuildingName,
+                                  mode: widget.mode,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
+                        } else {
+                          final bool? confirm =
+                              await _showConfirmationDialog(context, mate);
+                          if (confirm == true) {
+                            if (!mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WalkInProgressMapScreen(
+                                  startLocation: widget.startLocation,
+                                  destinationLocation:
+                                      widget.destinationLocation,
+                                  selectedMate: mate,
+                                  destinationBuildingName:
+                                      widget.destinationBuildingName,
+                                  mode: widget.mode,
+                                ),
+                              ),
+                            );
+                          }
                         }
                       }),
                     )),

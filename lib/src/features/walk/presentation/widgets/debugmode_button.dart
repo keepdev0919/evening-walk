@@ -71,6 +71,7 @@ class DebugModeButtons extends StatelessWidget {
                     WaypointDialogs.showWaypointArrivalDialog(
                       context: context,
                       questionPayload: question,
+                      selectedMate: selectedMate,
                       updateWaypointEventState: updateWaypointEventState,
                     );
                   } else {
@@ -147,8 +148,10 @@ class DebugModeButtons extends StatelessWidget {
                                   walkStateManager.savedSessionId!,
                                   {
                                     'endTime': DateTime.now().toIso8601String(),
-                                    'totalDuration': walkStateManager.actualDurationInMinutes,
-                                    'totalDistance': walkStateManager.accumulatedDistanceKm,
+                                    'totalDuration': walkStateManager
+                                        .actualDurationInMinutes,
+                                    'totalDistance':
+                                        walkStateManager.accumulatedDistanceKm,
                                   },
                                 );
                                 print('디버그: 출발지 복귀 완료 시간 업데이트 완료');
@@ -170,7 +173,8 @@ class DebugModeButtons extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (context) => WalkDiaryScreen(
                                       walkStateManager: walkStateManager,
-                                      sessionId: walkStateManager.savedSessionId,
+                                      sessionId:
+                                          walkStateManager.savedSessionId,
                                       onWalkCompleted: (completed) {
                                         print('디버그: 산책이 완전히 완료되었습니다!');
                                       },
@@ -221,8 +225,10 @@ class DebugModeButtons extends StatelessWidget {
                         walkStateManager.savedSessionId!,
                         {
                           'endTime': DateTime.now().toIso8601String(),
-                          'totalDuration': walkStateManager.actualDurationInMinutes,
-                          'totalDistance': walkStateManager.accumulatedDistanceKm,
+                          'totalDuration':
+                              walkStateManager.actualDurationInMinutes,
+                          'totalDistance':
+                              walkStateManager.accumulatedDistanceKm,
                         },
                       );
                     }
@@ -277,78 +283,79 @@ class DebugModeButtons extends StatelessWidget {
             const SizedBox(height: 8),
             // 출발지 복귀 버튼 (왕복 모드에서만 표시)
             if (walkMode == WalkMode.roundTrip)
-            ElevatedButton(
-              onPressed: () async {
-                if (currentPosition != null) {
-                  final result = await walkStateManager.updateUserLocation(
-                    currentPosition!,
-                    forceStartReturnEvent: true,
-                  );
-
-                  if (!context.mounted) return;
-
-                  if (result == 'start_returned') {
-                    // 1. 기존 세션에 완료 시간 업데이트
-                    if (walkStateManager.savedSessionId != null) {
-                      final walkSessionService = WalkSessionService();
-                      await walkSessionService.updateWalkSession(
-                        walkStateManager.savedSessionId!,
-                        {'endTime': DateTime.now().toIso8601String()},
-                      );
-                      print('디버그: 출발지 복귀 완료 시간 업데이트 완룼');
-                    }
-
-                    // 2. 산책 완료 알림 다이얼로그 표시
-                    final bool? shouldShowDiary =
-                        await WalkCompletionDialog.showWalkCompletionDialog(
-                      context: context,
-                      savedSessionId: walkStateManager.savedSessionId ?? '',
+              ElevatedButton(
+                onPressed: () async {
+                  if (currentPosition != null) {
+                    final result = await walkStateManager.updateUserLocation(
+                      currentPosition!,
+                      forceStartReturnEvent: true,
                     );
 
-                    // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
-                    if (shouldShowDiary == true && context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => WalkDiaryScreen(
-                            walkStateManager: walkStateManager,
-                            sessionId: walkStateManager.savedSessionId,
-                            onWalkCompleted: (completed) {
-                              print('디버그: 산책이 완전히 완료되었습니다!');
-                            },
-                          ),
-                        ),
+                    if (!context.mounted) return;
+
+                    if (result == 'start_returned') {
+                      // 1. 기존 세션에 완료 시간 업데이트
+                      if (walkStateManager.savedSessionId != null) {
+                        final walkSessionService = WalkSessionService();
+                        await walkSessionService.updateWalkSession(
+                          walkStateManager.savedSessionId!,
+                          {'endTime': DateTime.now().toIso8601String()},
+                        );
+                        print('디버그: 출발지 복귀 완료 시간 업데이트 완룼');
+                      }
+
+                      // 2. 산책 완료 알림 다이얼로그 표시
+                      final bool? shouldShowDiary =
+                          await WalkCompletionDialog.showWalkCompletionDialog(
+                        context: context,
+                        savedSessionId: walkStateManager.savedSessionId ?? '',
                       );
-                    } else if (shouldShowDiary == false && context.mounted) {
-                      // 4. '나중에' 선택 시 홈으로 이동
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/',
-                        (route) => false,
+
+                      // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
+                      if (shouldShowDiary == true && context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WalkDiaryScreen(
+                              walkStateManager: walkStateManager,
+                              sessionId: walkStateManager.savedSessionId,
+                              onWalkCompleted: (completed) {
+                                print('디버그: 산책이 완전히 완료되었습니다!');
+                              },
+                            ),
+                          ),
+                        );
+                      } else if (shouldShowDiary == false && context.mounted) {
+                        // 4. '나중에' 선택 시 홈으로 이동
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/',
+                          (route) => false,
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('출발지 복귀 이벤트 처리에 실패했습니다.'),
+                          backgroundColor: Colors.black.withOpacity(0.6),
+                        ),
                       );
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('출발지 복귀 이벤트 처리에 실패했습니다.'),
+                        content:
+                            const Text('현재 위치를 알 수 없어 출발지 복귀를 강제할 수 없습니다.'),
                         backgroundColor: Colors.black.withOpacity(0.6),
                       ),
                     );
                   }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('현재 위치를 알 수 없어 출발지 복귀를 강제할 수 없습니다.'),
-                      backgroundColor: Colors.black.withOpacity(0.6),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.withOpacity(0.8),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.withOpacity(0.8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
               ),
-              child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
-            ),
             const SizedBox(height: 8),
             // 말풍선 테스트 버튼
             ElevatedButton(

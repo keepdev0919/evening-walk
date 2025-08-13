@@ -654,11 +654,11 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.card_giftcard, color: Colors.orange, size: 18),
-              SizedBox(width: 6),
-              Text(
+              const Icon(Icons.card_giftcard, color: Colors.orange, size: 18),
+              const SizedBox(width: 6),
+              const Text(
                 '경유지에서',
                 style: TextStyle(
                   color: Colors.white,
@@ -667,6 +667,37 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   letterSpacing: 0.3,
                 ),
               ),
+              const SizedBox(width: 8),
+              if (widget.walkStateManager.selectedMate != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white24, width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _mateEmoji(_normalizedMate(
+                            widget.walkStateManager.selectedMate!)),
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _normalizedMate(widget.walkStateManager.selectedMate!),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -681,6 +712,23 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         ],
       ),
     );
+  }
+
+  String _normalizedMate(String mate) {
+    return mate.startsWith('친구') ? '친구' : mate;
+  }
+
+  String _mateEmoji(String mate) {
+    switch (mate) {
+      case '혼자':
+        return '🌙';
+      case '연인':
+        return '💕';
+      case '친구':
+        return '👫';
+      default:
+        return '🚶';
+    }
   }
 
   /// 공유용 사용자 사진 섹션

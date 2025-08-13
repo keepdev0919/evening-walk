@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
@@ -54,6 +55,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
 
   /// 사용자가 선택한 목적지의 주소 문자열입니다.
   String _selectedAddress = "";
+  bool _isManualSelection = false; // 사용자가 직접 선택했는지 여부
+  TextEditingController? _destNameController; // 사용자 이름 편집 컨트롤러
 
   // --- Firebase 및 API 관련 변수 ---
   /// 현재 로그인한 Firebase 사용자 정보입니다.
@@ -320,60 +323,22 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       return;
     }
 
-    // Places API로 근처 건물 검색
-    final placeDetails = await _validatePlaceNearby(position);
-
-    if (placeDetails != null) {
-      // 건물이 발견된 경우
-      String displayName = placeDetails['name'];
-      LatLng finalPosition = placeDetails['location'];
-      print('건물 발견: $displayName');
-
-      final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
-
-      setState(() {
-        _destinationMarker = Marker(
-          markerId: const MarkerId('destination'),
-          position: finalPosition,
-          infoWindow: InfoWindow(title: displayName),
-          icon: flagIcon,
-          anchor: const Offset(0.5, 1.0),
-        );
-        _selectedDestination = finalPosition;
-        _selectedAddress = displayName;
-      });
-
-      _showDestinationBottomSheet();
-    } else {
-      // 건물이 없는 경우 목적지 설정 불가
-      print('건물 없음, 목적지 설정 불가');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text.rich(
-            TextSpan(
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              children: const [
-                TextSpan(text: '주변에 건물이 '),
-                TextSpan(text: '없습니다', style: TextStyle(color: Colors.red)),
-                TextSpan(text: '. 건물이나 장소를 선택해 주세요.'),
-              ],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Colors.black.withOpacity(0.8),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
+    // 사용자가 직접 위치를 선택: 역지오코딩으로 주소 표시, 이름 편집 허용
+    final String address = await _reverseGeocode(position);
+    final BitmapDescriptor flagIcon = await _createFlagMarkerBitmap();
+    setState(() {
+      _destinationMarker = Marker(
+        markerId: const MarkerId('destination'),
+        position: position,
+        infoWindow: InfoWindow(title: address),
+        icon: flagIcon,
+        anchor: const Offset(0.5, 1.0),
       );
-      return;
-    }
+      _selectedDestination = position;
+      _selectedAddress = address;
+      _isManualSelection = true;
+    });
+    _showDestinationBottomSheet();
   }
 
   // 주소 조회 함수는 현재 사용되지 않아 제거했습니다.
@@ -387,61 +352,105 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0), // 패딩
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.7), // 반투명 검정 배경
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border.all(color: Colors.white54, width: 1), // 얇은 테두리
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          child: SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.all(16.0), // 패딩
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7), // 반투명 검정 배경
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border.all(color: Colors.white54, width: 1), // 얇은 테두리
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.flag,
-                    color: Colors.redAccent,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _selectedAddress,
-                      style: const TextStyle(
-                        fontSize: 18, // 폰트 크기
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // 텍스트 색상
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.flag,
+                        color: Colors.redAccent,
+                        size: 20,
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedAddress,
+                          style: const TextStyle(
+                            fontSize: 18, // 폰트 크기
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white, // 텍스트 색상
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_isManualSelection) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '목적지 이름(선택)',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _destNameController ??=
+                                TextEditingController(text: _selectedAddress),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                            decoration: const InputDecoration(
+                              hintText: '예) 강아지공원 앞 벤치',
+                              hintStyle: TextStyle(
+                                  color: Colors.white54, fontSize: 13),
+                              isDense: true,
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _confirmDestination();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF4A90E2).withOpacity(0.8), // 부드러운 블루
+                        foregroundColor: Colors.white, // 텍스트 색상
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25), // 둥근 모서리
+                          side: const BorderSide(
+                              color: Colors.white54, width: 0.5), // 얇은 테두리
+                        ),
+                        elevation: 0, // 그림자 제거
+                        padding: const EdgeInsets.symmetric(vertical: 14), // 패딩
+                      ),
+                      child: const Text('이곳으로 산책 떠나기'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _confirmDestination();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF4A90E2).withOpacity(0.8), // 부드러운 블루
-                    foregroundColor: Colors.white, // 텍스트 색상
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25), // 둥근 모서리
-                      side: const BorderSide(
-                          color: Colors.white54, width: 0.5), // 얇은 테두리
-                    ),
-                    elevation: 0, // 그림자 제거
-                    padding: const EdgeInsets.symmetric(vertical: 14), // 패딩
-                  ),
-                  child: const Text('이곳으로 산책 떠나기'),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -455,11 +464,16 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         flagColor: Colors.greenAccent,
         poleColor: Colors.black87,
       );
+      final String finalName = _isManualSelection
+          ? ((_destNameController?.text.trim().isNotEmpty ?? false)
+              ? _destNameController!.text.trim()
+              : _selectedAddress)
+          : _selectedAddress;
       setState(() {
         _destinationMarker = Marker(
           markerId: const MarkerId('destination'),
           position: _selectedDestination!,
-          infoWindow: InfoWindow(title: _selectedAddress),
+          infoWindow: InfoWindow(title: finalName),
           icon: flagIcon,
           anchor: const Offset(0.5, 1.0),
         );
@@ -468,7 +482,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           .showSnackBar(
             SnackBar(
               content: Text(
-                '목적지 설정 완료: $_selectedAddress',
+                '목적지 설정 완료: $finalName',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -489,7 +503,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
             builder: (context) => SelectMateScreen(
               startLocation: _currentPosition!,
               destinationLocation: _selectedDestination!,
-              destinationBuildingName: _selectedAddress, // 건물명 또는 주소 전달
+              destinationBuildingName: finalName, // 사용자 편집명 또는 주소
               mode: widget.mode,
             ),
           ),
@@ -698,6 +712,40 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       print('Google Places API error: $e');
     }
     return null;
+  }
+
+  Future<String> _reverseGeocode(LatLng position) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final String region = (p.administrativeArea ?? '').trim(); // 경기도
+        final String cityA = (p.locality ?? '').trim(); // 수원시
+        final String cityB = (p.subAdministrativeArea ?? '').trim(); // 수원시/구/군
+        final String district = (p.subLocality ?? '').trim(); // 영통구/동
+        final String street = (p.street ?? '').trim(); // 도로명 + 번지까지 합쳐질 수도 있음
+        final String road = (p.thoroughfare ?? '').trim();
+        final String number = (p.subThoroughfare ?? '').trim();
+
+        final List<String> parts = [];
+        if (region.isNotEmpty) parts.add(region);
+        if (cityA.isNotEmpty) parts.add(cityA);
+        if (cityB.isNotEmpty && cityB != cityA) parts.add(cityB);
+        if (district.isNotEmpty) parts.add(district);
+
+        String tail = street;
+        if (tail.isEmpty) {
+          tail = [road, number].where((e) => e.trim().isNotEmpty).join(' ');
+        }
+        if (tail.trim().isNotEmpty) parts.add(tail.trim());
+
+        if (parts.isNotEmpty) return parts.join(' ');
+      }
+    } catch (_) {}
+    return '주소 미확인 지점';
   }
 
   @override

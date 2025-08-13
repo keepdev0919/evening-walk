@@ -255,6 +255,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     });
     // 좌표 즉시 갱신하여 말풍선이 바로 보이도록 보장
     _updateOverlayPositions();
+    // 선택/결정된 경유지 질문을 상태 매니저에 저장하여 공유/일기 화면에서 표시되도록 함
+    if (question != null && question.trim().isNotEmpty) {
+      _walkStateManager.setWaypointQuestion(question.trim());
+    }
     // 사용자가 경유지 질문에 답변을 제출한 경우, 매니저에 즉시 저장하여 일기에서 보이도록 함
     if (answer != null && answer.trim().isNotEmpty) {
       _walkStateManager.saveAnswerAndPhoto(answer: answer.trim());
@@ -376,11 +380,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// 사용자 방향 업데이트 및 애니메이션 처리
   void _updateUserHeading(double newHeading) {
-    print('_updateUserHeading called with: $newHeading degrees');
+    // debug print suppressed
 
     if (_currentHeading == null) {
       // 첫 방향 설정
-      print('Setting initial heading: $newHeading');
+      // debug print suppressed
       _currentHeading = newHeading;
       _headingAnimation = Tween<double>(
         begin: newHeading * (3.14159 / 180), // 도를 라디안으로 변환
@@ -392,11 +396,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       double angleDiff = (newHeading - _currentHeading!).abs();
       if (angleDiff > 180) angleDiff = 360 - angleDiff; // 최단 각도 계산
 
-      print('Angle difference: $angleDiff degrees');
+      // debug print suppressed
 
       if (angleDiff > 5) {
         // 15도 -> 5도로 낮춤 (테스트용)
-        print('Updating heading from ${_currentHeading} to $newHeading');
+        // debug print suppressed
 
         double fromAngle = _currentHeading! * (3.14159 / 180);
         double toAngle = newHeading * (3.14159 / 180);
@@ -420,9 +424,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
         _currentHeading = newHeading;
         _headingAnimationController.forward(from: 0.0);
-        print('Animation started from $fromAngle to $toAngle radians');
+        // debug print suppressed
       } else {
-        print('Heading change too small, skipping animation');
+        // debug print suppressed
       }
     }
   }
@@ -436,6 +440,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       start: widget.startLocation,
       destination: widget.destinationLocation,
       mate: widget.selectedMate,
+      friendGroupType: widget.selectedMate.startsWith('친구(')
+          ? (widget.selectedMate.contains('2명') ? 'two' : 'many')
+          : null,
     );
 
     // 목적지 건물명이 있으면 WalkStateManager에 저장
@@ -685,6 +692,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             await WaypointDialogs.showWaypointArrivalDialog(
               context: context,
               questionPayload: eventSignal,
+              selectedMate: widget.selectedMate,
               updateWaypointEventState: _handleWaypointEventState,
             );
           }

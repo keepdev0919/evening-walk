@@ -76,6 +76,48 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     _loadRecordedDistanceIfAny();
   }
 
+  Widget _buildMateChip(String? selectedMate) {
+    if (selectedMate == null) return const SizedBox.shrink();
+    final String text = selectedMate.startsWith('친구') ? '친구' : selectedMate;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white24, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_mateEmoji(text), style: const TextStyle(fontSize: 11)),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _mateEmoji(String mate) {
+    switch (mate) {
+      case '혼자':
+        return '🌙';
+      case '연인':
+        return '💕';
+      case '친구':
+        return '👫';
+      default:
+        return '🚶';
+    }
+  }
+
   Future<void> _loadRecordedDistanceIfAny() async {
     if (widget.sessionId == null) return;
     try {
@@ -192,6 +234,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                         color: Colors.orange,
                         size: 18,
                       ),
+                      trailing: _buildMateChip(widget.selectedMate),
                       content: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -387,6 +430,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   Widget _buildExperienceSection({
     required String title,
     Widget? leading,
+    Widget? trailing,
     required Widget content,
   }) {
     return Container(
@@ -415,6 +459,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   letterSpacing: 0.3,
                 ),
               ),
+              const SizedBox(width: 8),
+              if (trailing != null) trailing,
             ],
           ),
           // 출발지와 목적지 사이 간격 확대

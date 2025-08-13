@@ -52,6 +52,21 @@ class _ProfileState extends State<Profile> {
       // 현재 사용자의 정보를 Firestore에서 가져옵니다.
       _userFuture = _firestore.collection('users').doc(_user!.uid).get();
     }
+
+    // 온보딩 진입 시 안내 스낵바 노출
+    if (widget.isOnboarding) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('회원 정보를 입력해주세요'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.black.withOpacity(0.7),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
   }
 
   @override
@@ -150,19 +165,13 @@ class _ProfileState extends State<Profile> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
-          // 회원탈퇴 버튼: 우측 상단 (온보딩 중에는 표시하지 않음)
-          if (!widget.isOnboarding)
-            IconButton(
-              tooltip: '회원탈퇴',
-              icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-              onPressed: _confirmAndDeleteAccount,
-            ),
           // 수정/저장 버튼
           IconButton(
             icon:
                 Icon(_isEditing ? Icons.save : Icons.edit, color: Colors.white),
             onPressed: () {
               if (_isEditing) {
+                if (!_validateProfileAndWarn()) return;
                 _updateProfile(); // 저장 로직 실행
               } else {
                 setState(() {
@@ -285,35 +294,43 @@ class _ProfileState extends State<Profile> {
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 4.0, horizontal: 20.0),
-                                    child: OutlinedButton.icon(
-                                      icon: const Icon(Icons.logout,
-                                          color: Colors.white70, size: 18),
-                                      label: const Text(
-                                        '로그아웃',
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor:
-                                            Colors.white.withOpacity(0.08),
-                                        side: BorderSide(
-                                            color:
-                                                Colors.white.withOpacity(0.25)),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12, horizontal: 16),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // 로그아웃 버튼
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.logout,
+                                              color: Colors.white70, size: 18),
+                                          label: const Text(
+                                            '로그아웃',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.white,
+                                            backgroundColor:
+                                                Colors.white.withOpacity(0.08),
+                                            side: BorderSide(
+                                                color: Colors.white
+                                                    .withOpacity(0.25)),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ).copyWith(
+                                            overlayColor:
+                                                const MaterialStatePropertyAll(
+                                              Color.fromRGBO(
+                                                  255, 255, 255, 0.12),
+                                            ),
+                                          ),
+                                          onPressed: _confirmAndLogout,
                                         ),
-                                      ).copyWith(
-                                        overlayColor:
-                                            const MaterialStatePropertyAll(
-                                          Color.fromRGBO(255, 255, 255, 0.12),
-                                        ),
-                                      ),
-                                      onPressed: _confirmAndLogout,
+                                        // 회원탈퇴 버튼 제거 (테스트 단계에서는 Firebase 콘솔에서 직접 삭제)
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -398,138 +415,7 @@ class _ProfileState extends State<Profile> {
     await AuthLogoutService.signOut();
   }
 
-  /// 회원탈퇴 확인 다이얼로그를 표시합니다.
-  /// 역할: 파괴적 작업임을 명확하게 경고하고 사용자의 재확인을 받습니다.
-  Future<void> _confirmAndDeleteAccount() async {
-    final bool? shouldDelete = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.black.withOpacity(0.92),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white24, width: 1),
-        ),
-        title: const Text(
-          '회원탈퇴',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-        ),
-        content: const Text(
-          '탈퇴 시 프로필, 산책 기록 등 모든 정보가 영구 삭제됩니다.\n정말로 탈퇴하시겠어요?',
-          style: TextStyle(color: Colors.white70, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소', style: TextStyle(color: Colors.white70)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withOpacity(0.9),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('탈퇴'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldDelete == true) {
-      await _deleteAccountAndAllData();
-    }
-  }
-
-  /// 회원의 모든 앱 데이터를 삭제하고 Firebase 계정을 삭제합니다.
-  /// - Firestore: users/{uid} 및 하위 컬렉션(예: walk_sessions) 삭제
-  /// - Storage: profile_images/{uid}/profile.jpg 삭제
-  /// - Auth: FirebaseAuth 사용자 삭제(최근 로그인 필요할 수 있음)
-  /// 성공 시 로그인 화면으로 이동합니다.
-  Future<void> _deleteAccountAndAllData() async {
-    if (_user == null) return;
-
-    // 진행 다이얼로그
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    String? errorMessage;
-
-    try {
-      final String uid = _user!.uid;
-
-      // 1) Firestore 하위 컬렉션 삭제 (walk_sessions)
-      try {
-        final sessions = await _firestore
-            .collection('users')
-            .doc(uid)
-            .collection('walk_sessions')
-            .get();
-        for (final doc in sessions.docs) {
-          await doc.reference.delete();
-        }
-      } catch (_) {}
-
-      // 2) Firestore 사용자 문서 삭제
-      try {
-        await _firestore.collection('users').doc(uid).delete();
-      } catch (_) {}
-
-      // 3) Storage 프로필 이미지 삭제
-      try {
-        final ref = _storage
-            .ref()
-            .child('profile_images')
-            .child(uid)
-            .child('profile.jpg');
-        await ref.delete();
-      } catch (_) {}
-
-      // 4) Firebase Auth 사용자 삭제
-      try {
-        await _auth.currentUser?.reload();
-        await _auth.currentUser?.delete();
-      } catch (e) {
-        errorMessage = e.toString();
-      }
-    } finally {
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-    }
-
-    if (errorMessage != null) {
-      if (!mounted) return;
-      // 최근 로그인 필요 등의 이유로 계정 삭제가 실패할 수 있음
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('일부 항목 삭제에 실패했어요. 다시 로그인 후 재시도해주세요.'),
-          backgroundColor: Colors.red.withOpacity(0.85),
-        ),
-      );
-      // 안전하게 로그아웃 후 로그인 화면으로 이동
-      await _performLogout();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-      return;
-    }
-
-    // 전부 성공
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('회원탈퇴가 완료되었습니다.'),
-        backgroundColor: Colors.black.withOpacity(0.75),
-      ),
-    );
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
-  }
+  // 회원탈퇴 기능은 테스트 단계에서 비활성화되었습니다.
 
   /// 편집 모드가 아닐 때 편집 안내 스낵바를 표시합니다.
   /// 역할: 사용자가 화면을 터치하면 우측 상단 연필 아이콘을 안내합니다.
@@ -545,6 +431,60 @@ class _ProfileState extends State<Profile> {
         duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  /// 프로필 유효성 검사 + 항목별 스낵바 안내
+  bool _validateProfileAndWarn() {
+    String nickname = _nicknameController.text.trim();
+    String ageText = _ageController.text.trim();
+    String region = _regionController.text.trim();
+    String sex = _sexController.text.trim();
+    String email = _emailController.text.trim();
+
+    SnackBar _sb(String msg) => SnackBar(
+          content: Text(msg),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.black.withOpacity(0.75),
+          behavior: SnackBarBehavior.floating,
+        );
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+
+    if (nickname.isEmpty) {
+      messenger.showSnackBar(_sb('닉네임을 입력해주세요'));
+      return false;
+    }
+    if (ageText.isEmpty) {
+      messenger.showSnackBar(_sb('나이를 입력해주세요'));
+      return false;
+    }
+    final int? age = int.tryParse(ageText);
+    if (age == null) {
+      messenger.showSnackBar(_sb('나이는 숫자로 입력해주세요'));
+      return false;
+    }
+    if (age <= 0) {
+      messenger.showSnackBar(_sb('나이는 1 이상의 숫자여야 해요'));
+      return false;
+    }
+    if (region.isEmpty) {
+      messenger.showSnackBar(_sb('지역을 선택해주세요'));
+      return false;
+    }
+    if (sex.isEmpty) {
+      messenger.showSnackBar(_sb('성별을 선택해주세요'));
+      return false;
+    }
+    if (email.isEmpty) {
+      messenger.showSnackBar(_sb('이메일을 입력해주세요'));
+      return false;
+    }
+    if (!email.contains('@') || !email.contains('.')) {
+      messenger.showSnackBar(_sb('이메일에는 @와 .을 포함해주세요'));
+      return false;
+    }
+    return true;
   }
 
   /// 사용자 정보 필드를 생성하는 위젯입니다.

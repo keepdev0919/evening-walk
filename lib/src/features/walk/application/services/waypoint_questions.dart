@@ -6,6 +6,9 @@ import 'package:flutter/services.dart' show rootBundle;
 class WaypointQuestionProvider {
   // 산책 메이트별 질문 목록 (로드 후 저장될 맵)
   final Map<String, List<String>> _loadedQuestions = {};
+  // 친구 인원별 추가 세분화 질문 목록
+  List<String> _friendTwoQuestions = [];
+  List<String> _friendManyQuestions = [];
   bool _isLoaded = false;
 
   /// WaypointQuestionProvider가 생성될 때 질문 로드를 시작합니다.
@@ -21,12 +24,29 @@ class WaypointQuestionProvider {
           'lib/src/features/walk/application/data/walk_question/alone_questions.json');
       final String coupleJson = await rootBundle.loadString(
           'lib/src/features/walk/application/data/walk_question/couple_questions.json');
-      final String friendJson = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/friend_questions.json');
+      // 기본 친구 질문 파일(friend_questions.json)은 제거됨. 세분화 파일만 사용.
+      // 세분화된 친구 질문 로드 (없어도 안전)
+      String? friendTwoJson;
+      String? friendManyJson;
+      try {
+        friendTwoJson = await rootBundle.loadString(
+            'lib/src/features/walk/application/data/walk_question/friend_questions_two.json');
+      } catch (_) {}
+      try {
+        friendManyJson = await rootBundle.loadString(
+            'lib/src/features/walk/application/data/walk_question/friend_questions_many.json');
+      } catch (_) {}
 
       _loadedQuestions['혼자'] = List<String>.from(json.decode(aloneJson));
       _loadedQuestions['연인'] = List<String>.from(json.decode(coupleJson));
-      _loadedQuestions['친구'] = List<String>.from(json.decode(friendJson));
+      // '친구' 기본 리스트는 비움. 실제 사용은 two/many 세분화 리스트로 대체
+      _loadedQuestions['친구'] = [];
+      if (friendTwoJson != null) {
+        _friendTwoQuestions = List<String>.from(json.decode(friendTwoJson));
+      }
+      if (friendManyJson != null) {
+        _friendManyQuestions = List<String>.from(json.decode(friendManyJson));
+      }
       _isLoaded = true;
 
       print('WaypointQuestionProvider: 질문 파일 로드 완료.');
@@ -38,7 +58,8 @@ class WaypointQuestionProvider {
   /// 선택된 메이트에 맞는 무작위 질문을 반환합니다.
   ///
   /// 질문이 아직 로드되지 않았다면 로드될 때까지 기다립니다.
-  Future<String?> getQuestionForMate(String? selectedMate) async {
+  Future<String?> getQuestionForMate(String? selectedMate,
+      {String? friendGroupType}) async {
     if (selectedMate == null) {
       return null;
     }
@@ -53,6 +74,23 @@ class WaypointQuestionProvider {
     if (!_isLoaded) {
       print('WaypointQuestionProvider: 질문이 로드되지 않아 질문을 반환할 수 없습니다.');
       return null;
+    }
+
+    // 친구 인원 타입이 지정된 경우 우선 사용
+    if (selectedMate.startsWith('친구') && friendGroupType != null) {
+      final list =
+          friendGroupType == 'two' ? _friendTwoQuestions : _friendManyQuestions;
+      if (list.isNotEmpty) {
+        final Random r = Random();
+        return list[r.nextInt(list.length)];
+      }
+      // 세분화 파일이 아직 없거나 비어있을 때는 도착 다이얼로그만 띄우기 위해 빈 문자열 반환
+      return '';
+    }
+
+    // 친구 기본 리스트는 사용하지 않음. 도착 다이얼로그만 필요하므로 빈 문자열 반환
+    if (selectedMate.startsWith('친구')) {
+      return '';
     }
 
     final List<String>? mateQuestions = _loadedQuestions[selectedMate];

@@ -109,7 +109,7 @@ class WalkHistoryItemWidget extends StatelessWidget {
                                   ),
                                 ),
                                 child: Text(
-                                  '${_getMateEmoji(walkSession.selectedMate)} ${_getSimpleMateText(walkSession.selectedMate)}',
+                                  '${_getMateEmoji(_normalizeMate(walkSession.selectedMate))} ${_normalizeMate(walkSession.selectedMate)}',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -329,21 +329,10 @@ class WalkHistoryItemWidget extends StatelessWidget {
   }
 
   /// 심플한 메이트 텍스트 반환 (이모지 제외)
-  String _getSimpleMateText(String? selectedMate) {
-    switch (selectedMate) {
-      case '혼자':
-        return '혼자';
-      case '연인':
-        return '연인';
-      case '친구':
-        return '친구';
-      case '가족':
-        return '가족';
-      case '반려동물':
-        return '반려동물';
-      default:
-        return '혼자';
-    }
+  String _normalizeMate(String? mate) {
+    if (mate == null) return '혼자';
+    if (mate.startsWith('친구')) return '친구';
+    return mate;
   }
 
   /// 삭제 확인 다이얼로그 표시

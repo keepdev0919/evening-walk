@@ -57,8 +57,10 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
   /// 사용 가능한 메이트 필터 업데이트
   void _updateAvailableMateFilters() {
     // 실제 기록이 있는 메이트 종류만 추출
-    final uniqueMates =
-        _walkSessions.map((session) => session.selectedMate).toSet().toList();
+    final uniqueMates = _walkSessions
+        .map((session) => _normalizeMate(session.selectedMate))
+        .toSet()
+        .toList();
 
     // '전체'를 맨 앞에 추가하고 나머지는 정렬
     _availableMateFilters = ['전체', ...uniqueMates];
@@ -75,8 +77,16 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       return _walkSessions;
     }
     return _walkSessions
-        .where((session) => session.selectedMate == _selectedMateFilter)
+        .where((session) =>
+            _normalizeMate(session.selectedMate) == _selectedMateFilter)
         .toList();
+  }
+
+  /// 메이트 표기를 카드/필터에서 일관되게 단순화
+  String _normalizeMate(String? mate) {
+    if (mate == null) return '혼자';
+    if (mate.startsWith('친구')) return '친구';
+    return mate;
   }
 
   @override
@@ -377,6 +387,8 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       case '연인':
         return '💕';
       case '친구':
+      case '친구(2명)':
+      case '친구(여러명)':
         return '👫';
       default:
         return '🚶'; // 기본 걷기
