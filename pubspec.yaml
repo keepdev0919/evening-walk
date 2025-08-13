@@ -33,6 +33,7 @@ dependencies:
   fluttertoast: ^8.2.8
   lottie: ^2.7.0
   flutter_compass: ^0.8.0
+  video_player: ^2.8.6
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,7 @@ flutter:
     - assets/config/.env
     - lib/src/features/walk/application/data/walk_question/
     - assets/animations/
+    - assets/videos/
 
   fonts:
     - family: Cafe24Oneprettynight

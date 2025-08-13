@@ -150,6 +150,13 @@ class _ProfileState extends State<Profile> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
+          // 회원탈퇴 버튼: 우측 상단 (온보딩 중에는 표시하지 않음)
+          if (!widget.isOnboarding)
+            IconButton(
+              tooltip: '회원탈퇴',
+              icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
+              onPressed: _confirmAndDeleteAccount,
+            ),
           // 수정/저장 버튼
           IconButton(
             icon:
@@ -389,6 +396,139 @@ class _ProfileState extends State<Profile> {
   /// 실제 로그아웃 처리 (서비스 호출)
   Future<void> _performLogout() async {
     await AuthLogoutService.signOut();
+  }
+
+  /// 회원탈퇴 확인 다이얼로그를 표시합니다.
+  /// 역할: 파괴적 작업임을 명확하게 경고하고 사용자의 재확인을 받습니다.
+  Future<void> _confirmAndDeleteAccount() async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withOpacity(0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24, width: 1),
+        ),
+        title: const Text(
+          '회원탈퇴',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
+        content: const Text(
+          '탈퇴 시 프로필, 산책 기록 등 모든 정보가 영구 삭제됩니다.\n정말로 탈퇴하시겠어요?',
+          style: TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('탈퇴'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await _deleteAccountAndAllData();
+    }
+  }
+
+  /// 회원의 모든 앱 데이터를 삭제하고 Firebase 계정을 삭제합니다.
+  /// - Firestore: users/{uid} 및 하위 컬렉션(예: walk_sessions) 삭제
+  /// - Storage: profile_images/{uid}/profile.jpg 삭제
+  /// - Auth: FirebaseAuth 사용자 삭제(최근 로그인 필요할 수 있음)
+  /// 성공 시 로그인 화면으로 이동합니다.
+  Future<void> _deleteAccountAndAllData() async {
+    if (_user == null) return;
+
+    // 진행 다이얼로그
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    String? errorMessage;
+
+    try {
+      final String uid = _user!.uid;
+
+      // 1) Firestore 하위 컬렉션 삭제 (walk_sessions)
+      try {
+        final sessions = await _firestore
+            .collection('users')
+            .doc(uid)
+            .collection('walk_sessions')
+            .get();
+        for (final doc in sessions.docs) {
+          await doc.reference.delete();
+        }
+      } catch (_) {}
+
+      // 2) Firestore 사용자 문서 삭제
+      try {
+        await _firestore.collection('users').doc(uid).delete();
+      } catch (_) {}
+
+      // 3) Storage 프로필 이미지 삭제
+      try {
+        final ref = _storage
+            .ref()
+            .child('profile_images')
+            .child(uid)
+            .child('profile.jpg');
+        await ref.delete();
+      } catch (_) {}
+
+      // 4) Firebase Auth 사용자 삭제
+      try {
+        await _auth.currentUser?.reload();
+        await _auth.currentUser?.delete();
+      } catch (e) {
+        errorMessage = e.toString();
+      }
+    } finally {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    if (errorMessage != null) {
+      if (!mounted) return;
+      // 최근 로그인 필요 등의 이유로 계정 삭제가 실패할 수 있음
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('일부 항목 삭제에 실패했어요. 다시 로그인 후 재시도해주세요.'),
+          backgroundColor: Colors.red.withOpacity(0.85),
+        ),
+      );
+      // 안전하게 로그아웃 후 로그인 화면으로 이동
+      await _performLogout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
+      return;
+    }
+
+    // 전부 성공
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('회원탈퇴가 완료되었습니다.'),
+        backgroundColor: Colors.black.withOpacity(0.75),
+      ),
+    );
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   /// 편집 모드가 아닐 때 편집 안내 스낵바를 표시합니다.

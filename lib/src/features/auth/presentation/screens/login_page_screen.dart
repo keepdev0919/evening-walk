@@ -94,7 +94,7 @@ class LoginPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 배경 이미지 (홈과 동일)
+          // 배경 이미지
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -116,8 +116,6 @@ class LoginPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // const SizedBox(height: 10),
-                      // 중앙 문구 (홈과 유사 톤)
                       Text(
                         '처음 오신 걸 환영해요! \n저녁 공기를 마시며,\n가볍게 걸어볼까요?',
                         textAlign: TextAlign.center,
@@ -142,7 +140,6 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      // 로그인 버튼 영역 - 투명한 컨테이너로 감쌈
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 20),
@@ -189,7 +186,7 @@ class LoginPage extends StatelessWidget {
               ),
             ),
           ),
-          // 하단 검은 고양이 (홈과 동일 규칙, 텍스트만 변경)
+          // 하단 검은 고양이 (유지)
           Positioned.fill(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -206,7 +203,7 @@ class LoginPage extends StatelessWidget {
                       child: BlackCatWidget(
                         width: catWidth,
                         bubbleMaxWidth: catWidth * 0.8,
-                        screenType: 'selectMate', // defaultText 사용을 위해 재활용
+                        screenType: 'selectMate',
                         defaultText: '어서오라냥~',
                       ),
                     ),
