@@ -39,6 +39,7 @@ class WalkStateManager {
   String? _selectedMate;
   String? _friendGroupType; // 친구 인원 구분: 'two' or 'many'
   String? _destinationBuildingName; // 목적지 건물명
+  String? _customStartName; // 사용자 지정 출발지 이름
 
   // 이벤트 결과 저장 변수
   String? _waypointQuestion;
@@ -80,6 +81,7 @@ class WalkStateManager {
   String? get poseImageUrl => _poseImageUrl;
   Uint8List? get routeSnapshotPng => _routeSnapshotPng;
   String? get destinationBuildingName => _destinationBuildingName;
+  String? get customStartName => _customStartName;
   bool get isWalkComplete => _startReturnEventOccurred;
   DateTime? get actualStartTime => _actualStartTime;
   DateTime? get actualEndTime => _actualEndTime;
@@ -186,8 +188,30 @@ class WalkStateManager {
 
   // 목적지 건물명 설정 메소드
   void setDestinationBuildingName(String? buildingName) {
-    _destinationBuildingName = buildingName;
+    // 일부 단말/지역에서 '.' 등 플레이스홀더가 전달될 수 있어 필터링
+    bool _isInvalidPlaceholder(String? value) {
+      if (value == null) return true;
+      final t = value.trim();
+      if (t.isEmpty) return true;
+      return t == '.' || t == '·' || t == '-';
+    }
+
+    _destinationBuildingName =
+        _isInvalidPlaceholder(buildingName) ? null : buildingName!.trim();
     LogService.walkState(' 목적지 건물명 설정 -> "$_destinationBuildingName"');
+  }
+
+  /// 사용자 지정 출발지 이름 설정 메소드
+  void setCustomStartName(String? name) {
+    bool _isInvalidPlaceholder(String? value) {
+      if (value == null) return true;
+      final t = value.trim();
+      if (t.isEmpty) return true;
+      return t == '.' || t == '·' || t == '-';
+    }
+
+    _customStartName = _isInvalidPlaceholder(name) ? null : name!.trim();
+    LogService.walkState(' 사용자 지정 출발지 이름 설정 -> "$_customStartName"');
   }
 
   // 산책 시작 시 초기화
@@ -217,6 +241,7 @@ class WalkStateManager {
     _poseImageUrl = null;
     _savedSessionId = null;
     _destinationBuildingName = null;
+    _customStartName = null;
 
     // 실제 산책 시작 시간 기록
     _actualStartTime = DateTime.now();
@@ -225,7 +250,8 @@ class WalkStateManager {
     _accumulatedDistanceMeters = 0.0;
     _lastUserLocation = null;
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
-    LogService.walkState('산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
+    LogService.walkState(
+        '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
   }
 
   // 목적지에서 출발지로 돌아가기 시작
@@ -400,9 +426,11 @@ class WalkStateManager {
 
         final String region = safeString(placeMark.administrativeArea); // 시/도
         final String cityA = safeString(placeMark.locality); // 시/군/구 (기기별 편차)
-        final String cityB = safeString(placeMark.subAdministrativeArea); // 시/군/구 보조
+        final String cityB =
+            safeString(placeMark.subAdministrativeArea); // 시/군/구 보조
         final String district = safeString(placeMark.subLocality); // 동/읍/면
-        final String street = safeString(placeMark.street); // 도로명 + 번지까지 포함될 수 있음
+        final String street =
+            safeString(placeMark.street); // 도로명 + 번지까지 포함될 수 있음
         final String road = safeString(placeMark.thoroughfare);
         final String number = safeString(placeMark.subThoroughfare);
 
@@ -432,6 +460,9 @@ class WalkStateManager {
   /// 출발지 주소 가져오기
   Future<String> getStartLocationAddress() async {
     if (_startLocation == null) return '출발지 정보 없음';
+    if (_customStartName != null && _customStartName!.trim().isNotEmpty) {
+      return _customStartName!;
+    }
     return await _convertCoordinateToAddress(_startLocation!);
   }
 
@@ -450,8 +481,15 @@ class WalkStateManager {
     if (_destinationLocation == null) return '목적지 정보 없음';
 
     // 건물명이 있으면 우선 표시
+    bool _isInvalidPlaceholder(String? value) {
+      if (value == null) return true;
+      final t = value.trim();
+      if (t.isEmpty) return true;
+      return t == '.' || t == '·' || t == '-';
+    }
+
     if (_destinationBuildingName != null &&
-        _destinationBuildingName!.isNotEmpty) {
+        !_isInvalidPlaceholder(_destinationBuildingName)) {
       return _destinationBuildingName!;
     }
 

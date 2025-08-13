@@ -95,7 +95,8 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(false), // 취소
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.1), // 반투명 흰색 배경
+                backgroundColor:
+                    Colors.white.withValues(alpha: 0.1), // 반투명 흰색 배경
                 foregroundColor: Colors.white, // 텍스트 색상
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -111,7 +112,8 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true), // 확정
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.2), // 반투명 흰색 배경
+                backgroundColor:
+                    Colors.white.withValues(alpha: 0.2), // 반투명 흰색 배경
                 foregroundColor: Colors.white, // 텍스트 색상
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -154,7 +156,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '친구 메이트 인원수를 선택해주세요.',
+                  '산책 메이트 인원수를 선택해주세요.',
                   style: TextStyle(color: Colors.white70, height: 1.3),
                 ),
                 const SizedBox(height: 12),

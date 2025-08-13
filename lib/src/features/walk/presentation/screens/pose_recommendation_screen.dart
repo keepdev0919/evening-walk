@@ -30,6 +30,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   String? _userPhotoPath;
   bool _isLoadingPose = true;
   bool _isLoadingPhoto = false;
+  String? _shareStartAddress;
+  String? _shareDestAddress;
 
   // 공유 기능을 위한 RepaintBoundary Key
   final GlobalKey _shareKey = GlobalKey();
@@ -205,6 +207,14 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         LogService.warning('Share', '경로 스냅샷 생성 실패 (무시 가능)');
       }
     }
+
+    // 주소를 먼저 미리 로드하여 캡처 시점에 반영되도록 함
+    try {
+      _shareStartAddress =
+          await widget.walkStateManager.getStartLocationAddress();
+      _shareDestAddress =
+          await widget.walkStateManager.getDestinationLocationAddress();
+    } catch (_) {}
 
     // 임시로 공유용 위젯을 오프스크린에 렌더링
     await _captureAndShareDirectly();
@@ -409,10 +419,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   /// 공유용 경로 스냅샷 섹션 (목적지 화면): 산책일기 UI와 동일한 구성
   Widget _buildShareRouteCombinedSection() {
     final png = widget.walkStateManager.routeSnapshotPng;
-    final startAddressFuture =
-        widget.walkStateManager.getStartLocationAddress();
-    final destAddressFuture =
-        widget.walkStateManager.getDestinationLocationAddress();
+    final preloadedStart = _shareStartAddress;
+    final preloadedDest = _shareDestAddress;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -455,33 +463,118 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FutureBuilder<String>(
-                      future: startAddressFuture,
-                      builder: (context, snapshot) {
-                        return _buildLocationInfo(
-                          icon: Icons.home,
-                          iconColor: Colors.blue,
-                          label: '출발지',
-                          address: snapshot.data ?? '로딩 중...',
-                          isLoading: snapshot.connectionState ==
-                              ConnectionState.waiting,
-                        );
-                      },
-                    ),
+                    if (preloadedStart != null)
+                      _buildLocationInfo(
+                        icon: Icons.home,
+                        iconColor: Colors.blue,
+                        label: '출발지',
+                        address: preloadedStart,
+                        isLoading: false,
+                        onTap: () {
+                          final initial =
+                              widget.walkStateManager.customStartName ??
+                                  preloadedStart;
+                          _promptEditLocationName(
+                            title: '출발지 이름 수정',
+                            initialValue: initial,
+                            onSave: (value) {
+                              widget.walkStateManager.setCustomStartName(value);
+                              setState(() {
+                                _shareStartAddress = null; // 다음 캡처 전 재해결
+                              });
+                            },
+                          );
+                        },
+                      )
+                    else
+                      FutureBuilder<String>(
+                        future:
+                            widget.walkStateManager.getStartLocationAddress(),
+                        builder: (context, snapshot) {
+                          return _buildLocationInfo(
+                            icon: Icons.home,
+                            iconColor: Colors.blue,
+                            label: '출발지',
+                            address: snapshot.data ?? '로딩 중...',
+                            isLoading: snapshot.connectionState ==
+                                ConnectionState.waiting,
+                            onTap: snapshot.connectionState ==
+                                    ConnectionState.waiting
+                                ? null
+                                : () {
+                                    final initial = widget
+                                            .walkStateManager.customStartName ??
+                                        (snapshot.data ?? '');
+                                    _promptEditLocationName(
+                                      title: '출발지 이름 수정',
+                                      initialValue: initial,
+                                      onSave: (value) {
+                                        widget.walkStateManager
+                                            .setCustomStartName(value);
+                                        setState(() {});
+                                      },
+                                    );
+                                  },
+                          );
+                        },
+                      ),
                     const SizedBox(height: 8),
-                    FutureBuilder<String>(
-                      future: destAddressFuture,
-                      builder: (context, snapshot) {
-                        return _buildLocationInfo(
-                          icon: Icons.flag,
-                          iconColor: Colors.red,
-                          label: '목적지',
-                          address: snapshot.data ?? '로딩 중...',
-                          isLoading: snapshot.connectionState ==
-                              ConnectionState.waiting,
-                        );
-                      },
-                    ),
+                    if (preloadedDest != null)
+                      _buildLocationInfo(
+                        icon: Icons.flag,
+                        iconColor: Colors.red,
+                        label: '목적지',
+                        address: preloadedDest,
+                        isLoading: false,
+                        onTap: () {
+                          final initial =
+                              widget.walkStateManager.destinationBuildingName ??
+                                  preloadedDest;
+                          _promptEditLocationName(
+                            title: '목적지 이름 수정',
+                            initialValue: initial,
+                            onSave: (value) {
+                              widget.walkStateManager
+                                  .setDestinationBuildingName(value);
+                              setState(() {
+                                _shareDestAddress = null; // 다음 캡처 전 재해결
+                              });
+                            },
+                          );
+                        },
+                      )
+                    else
+                      FutureBuilder<String>(
+                        future: widget.walkStateManager
+                            .getDestinationLocationAddress(),
+                        builder: (context, snapshot) {
+                          return _buildLocationInfo(
+                            icon: Icons.flag,
+                            iconColor: Colors.red,
+                            label: '목적지',
+                            address: snapshot.data ?? '로딩 중...',
+                            isLoading: snapshot.connectionState ==
+                                ConnectionState.waiting,
+                            onTap: snapshot.connectionState ==
+                                    ConnectionState.waiting
+                                ? null
+                                : () {
+                                    final initial = widget.walkStateManager
+                                            .destinationBuildingName ??
+                                        (snapshot.data ?? '');
+                                    _promptEditLocationName(
+                                      title: '목적지 이름 수정',
+                                      initialValue: initial,
+                                      onSave: (value) {
+                                        widget.walkStateManager
+                                            .setDestinationBuildingName(value);
+                                        setState(() {});
+                                      },
+                                    );
+                                  },
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -507,7 +600,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: const Text(
                     '경로 이미지를 준비 중...',
@@ -586,6 +680,115 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
+  /// 위치 이름 편집 다이얼로그
+  Future<void> _promptEditLocationName({
+    required String title,
+    required String initialValue,
+    required ValueChanged<String?> onSave,
+  }) async {
+    final controller = TextEditingController(text: initialValue);
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white54, width: 1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.edit, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '공유/일기에 표시될 이름이에요',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white),
+              textInputAction: TextInputAction.done,
+              maxLength: 24,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.06),
+                hintText: '예) OO공원 입구',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon:
+                    const Icon(Icons.place_outlined, color: Colors.white70),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.white54),
+                        onPressed: () {
+                          controller.clear();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Colors.white54, width: 1.2),
+                ),
+                counterStyle:
+                    const TextStyle(color: Colors.white38, fontSize: 11),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              onSave(null); // 기본 주소 사용
+              Navigator.of(ctx).pop();
+            },
+            child:
+                const Text('기본 주소 사용', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              onSave(text.isEmpty ? null : text);
+              Navigator.of(ctx).pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent.withValues(alpha: 0.9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('저장'),
+          )
+        ],
+      ),
+    );
+  }
+
   /// 위치 정보 카드
   Widget _buildLocationInfo({
     required IconData icon,
@@ -593,8 +796,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     required String label,
     required String address,
     required bool isLoading,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final content = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
@@ -640,6 +844,13 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         ],
       ),
     );
+
+    return onTap == null
+        ? content
+        : InkWell(
+            onTap: onTap,
+            child: content,
+          );
   }
 
   /// 경유지 질문 섹션
@@ -768,7 +979,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.4)),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),

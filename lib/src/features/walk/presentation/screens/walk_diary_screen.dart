@@ -44,7 +44,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   bool isEditingPhoto = false; // 사진 편집 모드
   bool hasRequestedPhotoRefreshAfterUpload = false;
   Future<String?>? recommendedPoseFuture;
-  double? _recordedDistanceKm; // 세션에 저장된 실제 이동 거리(km)
   int? _recordedDurationMin; // 세션에 저장된 총 소요 시간(분)
 
   @override
@@ -74,6 +73,122 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
 
     // 세션 기록 거리 로드 (있다면 우선 표시)
     _loadRecordedDistanceIfAny();
+  }
+
+  /// 위치 이름 편집 다이얼로그 (개선된 UI)
+  Future<void> _promptEditLocationName({
+    required String title,
+    required String initialValue,
+    required ValueChanged<String?> onSave,
+  }) async {
+    final controller = TextEditingController(text: initialValue);
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white54, width: 1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.edit, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '공유/일기에 표시될 이름이에요',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            StatefulBuilder(
+              builder: (context, setInner) {
+                return TextField(
+                  controller: controller,
+                  style: const TextStyle(color: Colors.white),
+                  textInputAction: TextInputAction.done,
+                  maxLength: 24,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.06),
+                    hintText: '예) OO공원 입구',
+                    hintStyle: const TextStyle(color: Colors.white54),
+                    prefixIcon:
+                        const Icon(Icons.place_outlined, color: Colors.white70),
+                    suffixIcon: controller.text.isNotEmpty
+                        ? IconButton(
+                            icon:
+                                const Icon(Icons.clear, color: Colors.white54),
+                            onPressed: () {
+                              controller.clear();
+                              setInner(() {});
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Colors.white54, width: 1.2),
+                    ),
+                    counterStyle:
+                        const TextStyle(color: Colors.white38, fontSize: 11),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                  ),
+                  onChanged: (_) => setInner(() {}),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              onSave(null); // 기본 주소 사용
+              Navigator.of(ctx).pop();
+            },
+            child:
+                const Text('기본 주소 사용', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              onSave(text.isEmpty ? null : text);
+              Navigator.of(ctx).pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent.withValues(alpha: 0.9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('저장'),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildMateChip(String? selectedMate) {
@@ -125,7 +240,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       final session = await svc.getWalkSession(widget.sessionId!);
       if (session != null) {
         setState(() {
-          _recordedDistanceKm = session.totalDistance; // km 단위
           // 저장된 총시간이 없으면 카드와 동일하게 종료-시작 기반 계산값 사용
           _recordedDurationMin =
               session.totalDuration ?? session.durationInMinutes; // 분 단위
@@ -1239,60 +1353,67 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 제목(좌) + 시간/거리 정보(우)
+          // 제목(좌) + 시간 정보(우) - 공유 UI와 동일 배치
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
-                child: Row(
-                  children: [
-                    Text('🗺️', style: TextStyle(fontSize: 18)),
-                    SizedBox(width: 6),
-                    Text(
-                      '산책 경로',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
-                      ),
+              const Row(
+                children: [
+                  Text('🗺️', style: TextStyle(fontSize: 18)),
+                  SizedBox(width: 6),
+                  Text(
+                    '산책 경로',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _buildDiaryTimeDistanceInfo(),
-                ),
-              ),
+              _buildDiaryTimeDistanceInfo(),
             ],
           ),
           const SizedBox(height: 16),
-
-          // 좌: 위치 리스트, 우: 정적 지도 스냅샷
+          // 좌: 출발지/목적지, 우: 지도 PNG (공유 UI와 동일 배치)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 좌측 컬럼: 출발지/경유지/목적지
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 출발지 정보
                     FutureBuilder<String>(
                       future: widget.walkStateManager.getStartLocationAddress(),
                       builder: (context, snapshot) {
-                        return _buildLocationRow(
-                          leading: const Icon(
-                            Icons.home,
-                            color: Colors.blue,
-                            size: 22,
-                          ),
+                        final bool isLoading =
+                            snapshot.connectionState == ConnectionState.waiting;
+                        final String address =
+                            widget.walkStateManager.customStartName ??
+                                (snapshot.data ?? '로딩 중...');
+                        return _buildLocationInfo(
+                          icon: Icons.home,
+                          iconColor: Colors.blue,
                           label: '출발지',
-                          address: snapshot.data ?? '로딩 중...',
-                          isLoading: snapshot.connectionState ==
-                              ConnectionState.waiting,
+                          address: address,
+                          isLoading: isLoading,
+                          onTap: isLoading
+                              ? null
+                              : () {
+                                  final initial =
+                                      widget.walkStateManager.customStartName ??
+                                          (snapshot.data ?? '');
+                                  _promptEditLocationName(
+                                    title: '출발지 이름 수정',
+                                    initialValue: initial,
+                                    onSave: (value) {
+                                      widget.walkStateManager
+                                          .setCustomStartName(value);
+                                      setState(() {});
+                                    },
+                                  );
+                                },
                         );
                       },
                     ),
@@ -1301,16 +1422,33 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                       future: widget.walkStateManager
                           .getDestinationLocationAddress(),
                       builder: (context, snapshot) {
-                        return _buildLocationRow(
-                          leading: const Icon(
-                            Icons.flag,
-                            color: Colors.red,
-                            size: 22,
-                          ),
+                        final bool isLoading =
+                            snapshot.connectionState == ConnectionState.waiting;
+                        final String address =
+                            widget.walkStateManager.destinationBuildingName ??
+                                (snapshot.data ?? '로딩 중...');
+                        return _buildLocationInfo(
+                          icon: Icons.flag,
+                          iconColor: Colors.red,
                           label: '목적지',
-                          address: snapshot.data ?? '로딩 중...',
-                          isLoading: snapshot.connectionState ==
-                              ConnectionState.waiting,
+                          address: address,
+                          isLoading: isLoading,
+                          onTap: isLoading
+                              ? null
+                              : () {
+                                  final initial = widget.walkStateManager
+                                          .destinationBuildingName ??
+                                      (snapshot.data ?? '');
+                                  _promptEditLocationName(
+                                    title: '목적지 이름 수정',
+                                    initialValue: initial,
+                                    onSave: (value) {
+                                      widget.walkStateManager
+                                          .setDestinationBuildingName(value);
+                                      setState(() {});
+                                    },
+                                  );
+                                },
                         );
                       },
                     ),
@@ -1318,39 +1456,36 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              // 우측: 경로 스냅샷 이미지
-              SizedBox(
-                width: 180,
-                child: AspectRatio(
-                  aspectRatio: 3 / 2,
-                  child: widget.walkStateManager.routeSnapshotPng != null
-                      ? GestureDetector(
-                          onTap: () => _showFullScreenRouteSnapshot(
-                              widget.walkStateManager.routeSnapshotPng!),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.memory(
-                              widget.walkStateManager.routeSnapshotPng!,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2)),
-                          ),
-                          child: const Text(
-                            '경로 이미지를 준비 중...',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                        ),
+              if (widget.walkStateManager.routeSnapshotPng != null)
+                GestureDetector(
+                  onTap: () => _showFullScreenRouteSnapshot(
+                      widget.walkStateManager.routeSnapshotPng!),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      widget.walkStateManager.routeSnapshotPng!,
+                      width: 180,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 180,
+                  height: 120,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: const Text(
+                    '경로 이미지를 준비 중...',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ),
-              ),
             ],
           ),
         ],
@@ -1358,23 +1493,16 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  /// 산책 일기 헤더용 시간/거리 정보 (우측 정렬)
+  /// 산책 일기 헤더용 시간 정보만 표시 (목적지 도착 화면과 동일 스타일)
   Widget _buildDiaryTimeDistanceInfo() {
     final duration =
         widget.walkStateManager.actualDurationInMinutes ?? _recordedDurationMin;
-    final straightLineMeters = widget.walkStateManager.walkDistance; // m
+    if (duration == null) return const SizedBox.shrink();
 
-    if (duration == null &&
-        straightLineMeters == null &&
-        _recordedDistanceKm == null) {
-      return const SizedBox.shrink();
-    }
-
-    List<Widget> info = [];
-
-    if (duration != null) {
-      final String durationText = duration <= 0 ? '1분 미만' : '${duration}분';
-      info.addAll([
+    final String durationText = duration <= 0 ? '1분 미만' : '${duration}분';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         const Icon(Icons.access_time, color: Colors.white70, size: 16),
         const SizedBox(width: 4),
         Text(
@@ -1385,50 +1513,11 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-      ]);
-    }
-
-    if (straightLineMeters != null || _recordedDistanceKm != null) {
-      if (info.isNotEmpty) {
-        info.addAll([
-          const SizedBox(width: 12),
-          Text('•', style: TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(width: 12),
-        ]);
-      }
-      final distanceText = _formatDistanceText(
-        kilometers: _recordedDistanceKm,
-        meters: _recordedDistanceKm == null ? straightLineMeters : null,
-      );
-      info.addAll([
-        const Icon(Icons.straighten, color: Colors.white70, size: 16),
-        const SizedBox(width: 4),
-        Text(
-          distanceText,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]);
-    }
-
-    return Row(mainAxisSize: MainAxisSize.min, children: info);
+      ],
+    );
   }
 
-  /// 거리 표시 포맷터: km 값이 우선, 없으면 m 값 사용. 1000m 이상은 km로 표시.
-  String _formatDistanceText({double? kilometers, double? meters}) {
-    if (kilometers != null) {
-      if (kilometers >= 1.0) return '${kilometers.toStringAsFixed(1)}km';
-      return '${(kilometers * 1000).round()}m';
-    }
-    if (meters != null) {
-      if (meters >= 1000.0) return '${(meters / 1000).toStringAsFixed(1)}km';
-      return '${meters.round()}m';
-    }
-    return '';
-  }
+  // 거리 표시 포맷터는 공유 UI 단에서만 사용되어 현재 일기 화면에서는 제거했습니다.
 
   /// 전체 화면 경로 스냅샷 보기
   void _showFullScreenRouteSnapshot(Uint8List pngBytes) {
@@ -1459,69 +1548,69 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  Widget _buildLocationRow({
-    required Widget leading,
+  /// 위치 정보 카드 위젯 (포즈 추천 화면과 동일)
+  Widget _buildLocationInfo({
+    required IconData icon,
+    required Color iconColor,
     required String label,
     required String address,
     required bool isLoading,
+    VoidCallback? onTap,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        leading,
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final content = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
+              Icon(icon, color: iconColor, size: 18),
+              const SizedBox(width: 6),
               Text(
                 label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 2),
-              isLoading
-                  ? Row(
-                      children: [
-                        SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '주소를 불러오는 중...',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      address,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 13,
-                        height: 1.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
+              // 산책일기 화면에서는 연필 아이콘을 표시하지 않습니다 (요청사항)
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          isLoading
+              ? SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  address,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+        ],
+      ),
     );
+
+    return onTap != null
+        ? InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: content,
+          )
+        : content;
   }
 }

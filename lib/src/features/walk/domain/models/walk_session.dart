@@ -29,7 +29,8 @@ class WalkSession {
   // 메타 정보
   final int? totalDuration; // 총 소요 시간 (분)
   final double? totalDistance; // 총 이동 거리 (km)
-  final String? locationName; // 위치명 (예: "서울 강남구")
+  final String? locationName; // 목적지 이름 (예: "서울 강남구" 또는 사용자가 지정한 이름)
+  final String? customStartName; // 사용자 지정 출발지 이름
 
   WalkSession({
     required this.id,
@@ -48,6 +49,7 @@ class WalkSession {
     this.totalDuration,
     this.totalDistance,
     this.locationName,
+    this.customStartName,
   });
 
   /// WalkStateManager의 데이터로부터 WalkSession 생성
@@ -68,6 +70,7 @@ class WalkSession {
     DateTime? endTime,
     int? totalDuration,
     double? totalDistance,
+    String? customStartName,
   }) {
     return WalkSession(
       id: id,
@@ -86,6 +89,7 @@ class WalkSession {
       totalDuration: totalDuration, // 전달받은 총 소요 시간 사용
       totalDistance: totalDistance,
       locationName: locationName,
+      customStartName: customStartName,
     );
   }
 
@@ -153,6 +157,7 @@ class WalkSession {
           ? (data['totalDistance'] as num).toDouble()
           : double.tryParse(data['totalDistance']?.toString() ?? ''),
       locationName: data['locationName']?.toString(),
+      customStartName: data['customStartName']?.toString(),
     );
   }
 
@@ -183,6 +188,7 @@ class WalkSession {
       'totalDuration': totalDuration,
       'totalDistance': totalDistance,
       'locationName': locationName,
+      'customStartName': customStartName,
     };
   }
 
@@ -235,6 +241,7 @@ class WalkSession {
     String? walkReflection,
     int? totalDuration,
     String? locationName,
+    String? customStartName,
   }) {
     return WalkSession(
       id: id ?? this.id,
@@ -252,6 +259,7 @@ class WalkSession {
       walkReflection: walkReflection ?? this.walkReflection,
       totalDuration: totalDuration ?? this.totalDuration,
       locationName: locationName ?? this.locationName,
+      customStartName: customStartName ?? this.customStartName,
     );
   }
 }

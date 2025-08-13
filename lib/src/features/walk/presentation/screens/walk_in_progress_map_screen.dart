@@ -173,7 +173,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   void _maybeAddFootprint(LatLng current) {
     if (_footprintIcon == null) return; // 아이콘이 아직 준비되지 않은 경우
 
-    const double minDistanceMeters = 3.0;
+    const double minDistanceMeters = 2.0;
     if (_lastFootprintPosition != null) {
       final double d = Geolocator.distanceBetween(
         _lastFootprintPosition!.latitude,
@@ -480,7 +480,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     _positionStreamSubscription = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
+      distanceFilter: 5,
     )).listen((Position position) async {
       if (!mounted || _isProcessingEvent) return;
 

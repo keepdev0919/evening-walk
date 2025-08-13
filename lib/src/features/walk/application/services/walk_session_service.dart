@@ -73,6 +73,7 @@ class WalkSessionService {
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
         totalDuration: walkStateManager.actualDurationInMinutes, // 실제 소요 시간 설정
         totalDistance: walkStateManager.accumulatedDistanceKm, // 누적 이동 거리(km)
+        customStartName: walkStateManager.customStartName,
       );
 
       // Firestore에 저장 전 디버깅
@@ -85,7 +86,8 @@ class WalkSessionService {
 
       await docRef.set(firestoreData);
 
-      LogService.info('Walk', 'WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
+      LogService.info(
+          'Walk', 'WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
     } catch (e) {
       LogService.error('Walk', 'WalkSessionService: 산책 세션 저장 중 오류 발생', e);
@@ -125,7 +127,7 @@ class WalkSessionService {
               doc.data() as Map<String, dynamic>, doc.id))
           .toList();
 
-      LogService.info('Walk', 
+      LogService.info('Walk',
           'WalkSessionService: ${walkSessions.length}개의 산책 세션을 Firebase에서 최신순으로 가져왔습니다.');
       return walkSessions;
     } catch (e) {
@@ -172,7 +174,7 @@ class WalkSessionService {
         LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return null;
       }
-      
+
       final doc = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -183,7 +185,8 @@ class WalkSessionService {
       if (doc.exists && doc.data() != null) {
         return WalkSession.fromFirestore(doc.data()!, doc.id);
       } else {
-        LogService.info('Walk', 'WalkSessionService: 세션 ID $sessionId를 찾을 수 없음');
+        LogService.info(
+            'Walk', 'WalkSessionService: 세션 ID $sessionId를 찾을 수 없음');
         return null;
       }
     } catch (e) {
@@ -201,7 +204,7 @@ class WalkSessionService {
         LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return false;
       }
-      
+
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -225,7 +228,7 @@ class WalkSessionService {
         LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return false;
       }
-      
+
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -322,13 +325,15 @@ class WalkSessionService {
         endTime: walkStateManager.actualEndTime,
         totalDuration: walkStateManager.actualDurationInMinutes,
         totalDistance: walkStateManager.accumulatedDistanceKm,
+        customStartName: walkStateManager.customStartName,
       );
 
       // Firestore에 즉시 저장
       final firestoreData = walkSession.toFirestore();
       await docRef.set(firestoreData);
 
-      LogService.info('Walk', 'WalkSessionService: 산책 세션 즉시 저장 완료 - ID: ${docRef.id}');
+      LogService.info(
+          'Walk', 'WalkSessionService: 산책 세션 즉시 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
     } catch (e) {
       LogService.error('Walk', 'WalkSessionService: 산책 세션 즉시 저장 중 오류 발생', e);

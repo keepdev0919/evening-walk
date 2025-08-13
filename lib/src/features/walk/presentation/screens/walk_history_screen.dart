@@ -502,6 +502,11 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
     if (session.locationName != null && session.locationName!.isNotEmpty) {
       walkStateManager.setDestinationBuildingName(session.locationName);
     }
+    // 출발지 사용자 지정 이름 복원
+    if (session.customStartName != null &&
+        session.customStartName!.isNotEmpty) {
+      walkStateManager.setCustomStartName(session.customStartName);
+    }
     walkStateManager.setWaypointQuestion(session.waypointQuestion);
     walkStateManager.saveAnswerAndPhoto(
       answer: session.waypointAnswer,
