@@ -867,21 +867,29 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0, vertical: 4.0),
+                          horizontal: 12.0, vertical: 6.0),
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12.0),
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(16.0),
                         border: Border.all(
-                          color: Colors.blueAccent.withValues(alpha: 0.4),
-                          width: 1,
+                          color: Colors.blueAccent.withValues(alpha: 0.8),
+                          width: 2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         widget.mode == WalkMode.roundTrip ? '왕복' : '편도',
                         style: const TextStyle(
                             color: Colors.blueAccent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5),
                       ),
                     ),
                   ),

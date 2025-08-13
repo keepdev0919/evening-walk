@@ -260,29 +260,43 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                                 color: Colors.white.withValues(alpha: 0.2),
                               ),
                             ),
-                            child: TextField(
-                              controller: answerEditController,
-                              readOnly: !isEditingAnswer,
-                              maxLines: 4,
-                              style: TextStyle(
-                                color: isEditingAnswer
-                                    ? Colors.white
-                                    : Colors.white70,
-                                fontSize: 14,
-                                height: 1.4,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: isEditingAnswer
-                                    ? '(답변을 입력하거나 수정하세요)'
-                                    : null,
-                                hintStyle: const TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 13,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.all(12),
-                              ),
-                            ),
+                            child: answerEditController.text.trim().isEmpty && !isEditingAnswer
+                                ? Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    child: const Text(
+                                      '답변을 남기지 않았어요.',
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 14,
+                                        fontStyle: FontStyle.italic,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  )
+                                : TextField(
+                                    controller: answerEditController,
+                                    readOnly: !isEditingAnswer,
+                                    maxLines: 4,
+                                    style: TextStyle(
+                                      color: isEditingAnswer
+                                          ? Colors.white
+                                          : Colors.white70,
+                                      fontSize: 14,
+                                      height: 1.4,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: isEditingAnswer
+                                          ? '(답변을 입력하거나 수정하세요)'
+                                          : null,
+                                      hintStyle: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 13,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.all(12),
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: 8),
                           _buildAnswerEditButtons(),

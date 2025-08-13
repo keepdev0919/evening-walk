@@ -3,7 +3,9 @@
     "allow": [
       "Bash(claude help)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter pub:*)"
+      "Bash(flutter pub:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
