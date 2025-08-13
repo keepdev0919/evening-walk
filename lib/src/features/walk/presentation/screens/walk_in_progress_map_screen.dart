@@ -135,6 +135,14 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     return a;
   }
 
+  /// 산책 메이트에 따른 이모지를 반환합니다.
+  String _getMateEmoji(String mate) {
+    if (mate == '혼자') return '🌙';
+    if (mate == '연인') return '💕';
+    if (mate.startsWith('친구')) return '👫';
+    return '🚶'; // 기본값
+  }
+
   /// 보조 함수: 두 지점 사이의 진행방향(bearing, 0~360°)을 계산합니다.
   double _bearingBetween(LatLng from, LatLng to) {
     final double lat1 = from.latitude * math.pi / 180.0;
@@ -855,7 +863,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     _updateOverlayPositions();
                   },
                 ),
-          // 산책 모드 표시 (AppBar 바로 아래)
+          // 산책 모드 및 메이트 정보 표시 (AppBar 바로 아래)
           if (!_isLoading)
             Positioned(
               top: 0,
@@ -864,34 +872,77 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               child: SafeArea(
                 child: Container(
                   margin: const EdgeInsets.only(top: 5, left: 20, right: 20),
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 6.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(16.0),
-                        border: Border.all(
-                          color: Colors.blueAccent.withValues(alpha: 0.8),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 산책 메이트 정보 표시
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 6.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(
+                            color: Colors.green.withValues(alpha: 0.8),
+                            width: 2,
                           ),
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _getMateEmoji(widget.selectedMate),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.selectedMate,
+                              style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(
-                        widget.mode == WalkMode.roundTrip ? '왕복' : '편도',
-                        style: const TextStyle(
-                            color: Colors.blueAccent,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5),
+                      const SizedBox(width: 10),
+                      // 산책 모드 표시
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 6.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(
+                            color: Colors.blueAccent.withValues(alpha: 0.8),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          widget.mode == WalkMode.roundTrip ? '왕복' : '편도',
+                          style: const TextStyle(
+                              color: Colors.blueAccent,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),

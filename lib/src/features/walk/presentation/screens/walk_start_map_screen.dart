@@ -544,39 +544,48 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           fontWeight: FontWeight.bold,
                           fontSize: 18)),
                   const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      {'label': '🌙혼자', 'value': '혼자'},
-                      {'label': '💕연인', 'value': '연인'},
-                      {'label': '👫친구', 'value': '친구'},
-                    ].map((opt) {
-                      final String label = opt['label'] as String;
-                      final String value = opt['value'] as String;
-                      final bool selected = mate == value;
-                      return ChoiceChip(
-                        label: Text(
-                          label,
-                          style: TextStyle(
-                            color: selected ? Colors.white : Colors.black,
-                            fontWeight:
-                                selected ? FontWeight.bold : FontWeight.w600,
+                  Theme(
+                    data: Theme.of(ctx).copyWith(
+                      chipTheme: Theme.of(ctx).chipTheme.copyWith(
+                            backgroundColor: Colors.transparent,
+                            selectedColor: Colors.blue.withValues(alpha: 0.8),
                           ),
-                        ),
-                        selected: selected,
-                        selectedColor: Colors.blue.withValues(alpha: 0.8),
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        side: BorderSide(
-                          color: selected ? Colors.blue : Colors.white54,
-                          width: 1.5,
-                        ),
-                        onSelected: (_) => setInner(() {
-                          mate = value;
-                          if (value != '친구') friendGroup = null;
-                        }),
-                      );
-                    }).toList(),
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        {'label': '🌙혼자', 'value': '혼자'},
+                        {'label': '💕연인', 'value': '연인'},
+                        {'label': '👫친구', 'value': '친구'},
+                      ].map((opt) {
+                        final String label = opt['label'] as String;
+                        final String value = opt['value'] as String;
+                        final bool selected = mate == value;
+                        return ChoiceChip(
+                          label: Text(
+                            label,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight:
+                                  selected ? FontWeight.bold : FontWeight.w600,
+                            ),
+                          ),
+                          selected: selected,
+                          backgroundColor: selected
+                              ? Colors.blue.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.8),
+                          side: BorderSide(
+                            color: selected ? Colors.blue : Colors.white54,
+                            width: 1.0,
+                          ),
+                          onSelected: (_) => setInner(() {
+                            mate = value;
+                            if (value != '친구') friendGroup = null;
+                          }),
+                        );
+                      }).toList(),
+                    ),
                   ),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
@@ -590,22 +599,21 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                   label: Text(
                                     '2명',
                                     style: TextStyle(
-                                      color: friendGroup == 'two'
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontWeight: friendGroup == 'two'
+                                          ? FontWeight.bold
+                                          : FontWeight.w600,
                                     ),
                                   ),
                                   selected: friendGroup == 'two',
-                                  selectedColor:
-                                      Colors.blue.withValues(alpha: 0.8),
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.1),
+                                  backgroundColor: friendGroup == 'two'
+                                      ? Colors.blue.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.8),
                                   side: BorderSide(
                                     color: friendGroup == 'two'
                                         ? Colors.blue
                                         : Colors.white54,
-                                    width: 1.5,
+                                    width: 1.0,
                                   ),
                                   onSelected: (_) => setInner(() {
                                     friendGroup = 'two';
@@ -615,22 +623,21 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                   label: Text(
                                     '여러명',
                                     style: TextStyle(
-                                      color: friendGroup == 'many'
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontWeight: friendGroup == 'many'
+                                          ? FontWeight.bold
+                                          : FontWeight.w600,
                                     ),
                                   ),
                                   selected: friendGroup == 'many',
-                                  selectedColor:
-                                      Colors.blue.withValues(alpha: 0.8),
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.1),
+                                  backgroundColor: friendGroup == 'many'
+                                      ? Colors.blue.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.8),
                                   side: BorderSide(
                                     color: friendGroup == 'many'
                                         ? Colors.blue
                                         : Colors.white54,
-                                    width: 1.5,
+                                    width: 1.0,
                                   ),
                                   onSelected: (_) => setInner(() {
                                     friendGroup = 'many';

@@ -3,7 +3,7 @@ import 'package:video_player/video_player.dart';
 import 'package:walk/src/core/services/log_service.dart';
 
 /// 배경 영상을 재생하는 위젯
-/// 자동으로 루프 재생되며, 음소거 상태로 재생됩니다.
+/// 0.5배속으로 느리게 루프 재생되며, 음소거 상태로 재생됩니다.
 class VideoBackground extends StatefulWidget {
   final String videoPath;
   final Widget? child;
@@ -52,9 +52,10 @@ class _VideoBackgroundState extends State<VideoBackground> {
           _isInitialized = true;
         });
 
-        // 음소거 및 루프 설정
+        // 음소거, 루프, 0.5배속 설정 (7초 → 14초)
         await _controller.setVolume(0.0);
         await _controller.setLooping(true);
+        await _controller.setPlaybackSpeed(0.5);
         await _controller.play();
       }
     } catch (e) {

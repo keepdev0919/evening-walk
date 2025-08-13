@@ -18,102 +18,110 @@ class Onboarding extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          '저녁산책',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        centerTitle: true,
-      ),
       body: VideoBackground(
         videoPath: 'assets/videos/walking_video.mp4',
         child: Stack(
           fit: StackFit.expand,
           children: [
             // 콘텐츠
-            SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 16),
-                      // 메인 카피
-                      Text(
-                        '환영합니다!\n저녁 공기를 마시며, 가볍게 걸어볼까요?',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          height: 1.35,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.8),
-                              blurRadius: 8,
-                              offset: const Offset(2, 2),
-                            ),
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 4,
-                              offset: const Offset(1, 1),
-                            ),
-                          ],
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 상단 여백
+                    const Spacer(flex: 3),
+                    
+                    // 메인 카피
+                    Text(
+                      '저녁 산책에 오신 것을 \n환영합니다!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        height: 1.3,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.8),
+                            blurRadius: 8,
+                            offset: const Offset(2, 2),
+                          ),
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 서브 타이틀
+                    Text(
+                      '간단한 3단계로 특별한 산책을 시작해보세요',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        height: 1.4,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // StepCard들 (간격 최소화)
+                    _StepCard(
+                      step: '1',
+                      title: '목적지 선택',
+                      icon: '🚩',
+                      description: '목적지를 직접 고르거나, 추천 받아보세요',
+                    ),
+                    const SizedBox(height: 12),
+                    _StepCard(
+                      step: '2',
+                      title: '산책 설정',
+                      icon: '🚶‍♂️',
+                      description: '산책 메이트와 왕복/편도를 선택하세요',
+                    ),
+                    const SizedBox(height: 12),
+                    _StepCard(
+                      step: '3',
+                      title: '미션 & 기록',
+                      icon: '📝',
+                      description: '경유지 미션을 하고 목적지에서 사진 촬영!',
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 시작 버튼
+                    GestureDetector(
+                      onTap: () => _goHome(context),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        margin: const EdgeInsets.symmetric(horizontal: 32),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white, width: 0.8),
+                        ),
+                        child: const Text(
+                          '첫 산책 시작하기',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // 안내 카드
-                      _OnboardCard(
-                        title: '산책 경로',
-                        emoji: '🗺️',
-                        description: '출발지 → 경유지 → 목적지를 따라 \n가볍게 다녀오면 끝!',
-                      ),
-                      const SizedBox(height: 12),
-                      _OnboardCard(
-                        title: '포즈 추천',
-                        emoji: '✨',
-                        description: '목적지에서 랜덤 포즈를 추천해드려요. \n사진 촬영으로 추억을 남겨요.',
-                      ),
-                      const SizedBox(height: 12),
-                      _OnboardCard(
-                        title: '산책 일기',
-                        emoji: '📒',
-                        description: '시간과 경로를 기록하고 \n짧은 소감을 남겨보세요.',
-                      ),
-                      const SizedBox(height: 28),
-                      // 시작 버튼 (홈 스타일)
-                      GestureDetector(
-                        onTap: () => _goHome(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 60, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: const Text(
-                            '시작하기',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 120),
-                    ],
-                  ),
+                    ),
+
+                    // 하단 여백
+                    const Spacer(flex: 3),
+                  ],
                 ),
               ),
             ),
@@ -124,52 +132,88 @@ class Onboarding extends StatelessWidget {
   }
 }
 
-/// 온보딩 카드 위젯: 간단한 안내 항목 하나를 표시
-class _OnboardCard extends StatelessWidget {
+/// 단계별 안내 카드 위젯
+class _StepCard extends StatelessWidget {
+  final String step;
+  final String icon;
   final String title;
   final String description;
-  final String emoji;
 
-  const _OnboardCard({
+  const _StepCard({
+    required this.step,
+    required this.icon,
     required this.title,
     required this.description,
-    required this.emoji,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 10),
+          // 단계 번호 원형 배지
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.4),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 0.7),
+            ),
+            child: Center(
+              child: Text(
+                step,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 텍스트 영역
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  children: [
+                    Text(icon, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    height: 1.35,
+                    color: Colors.white.withValues(alpha: 1),
+                    fontSize: 14,
+                    height: 1.3,
                   ),
                 ),
               ],

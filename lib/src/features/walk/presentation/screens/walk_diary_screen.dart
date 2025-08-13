@@ -260,7 +260,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                                 color: Colors.white.withValues(alpha: 0.2),
                               ),
                             ),
-                            child: answerEditController.text.trim().isEmpty && !isEditingAnswer
+                            child: answerEditController.text.trim().isEmpty &&
+                                    !isEditingAnswer
                                 ? Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(12),
@@ -1017,20 +1018,20 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 Navigator.of(context).pop();
                 widget.onWalkCompleted(true);
 
-                // returnRoute가 지정되어 있으면 해당 화면으로, 없으면 홈화면으로
+                // 홈화면에서 성공 스낵바를 보여주기 위해 arguments로 메시지 전달
                 if (widget.returnRoute != null) {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     widget.returnRoute!,
                     (route) => false,
+                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다.'},
                   );
                 } else {
                   Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/',
+                    '/homescreen',
                     (route) => false,
+                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다.'},
                   );
                 }
-
-                // 성공 스낵바 제거 (요청에 따라 알림 표시 없음)
               } else {
                 ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
               }
@@ -1052,20 +1053,20 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 Navigator.of(context).pop();
                 widget.onWalkCompleted(true);
 
-                // returnRoute가 지정되어 있으면 해당 화면으로, 없으면 홈화면으로
+                // 홈화면에서 성공 스낵바를 보여주기 위해 arguments로 메시지 전달
                 if (widget.returnRoute != null) {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     widget.returnRoute!,
                     (route) => false,
+                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다. ✨'},
                   );
                 } else {
                   Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/',
+                    '/homescreen',
                     (route) => false,
+                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다. ✨'},
                   );
                 }
-
-                // 성공 스낵바 제거 (요청에 따라 알림 표시 없음)
 
                 if (widget.walkStateManager.photoPath != null) {
                   uploadProvider.startBackgroundUpload(

@@ -32,11 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
   final String _apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   InfoStatus _locationStatus = InfoStatus.loading;
   InfoStatus _weatherStatus = InfoStatus.loading;
+  
+  // 스낵바 중복 표시 방지
+  bool _hasShownSnackBar = false;
 
   @override
   void initState() {
     super.initState();
     _determinePosition();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // 스낵바 메시지가 있는지 확인하고 표시 (중복 방지)
+    if (!_hasShownSnackBar) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        final successMessage = args['showSuccessMessage'] as String?;
+        if (successMessage != null) {
+          _hasShownSnackBar = true;
+          // 다음 프레임에서 스낵바 표시 (빌드 완료 후)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(successMessage),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          });
+        }
+      }
+    }
   }
 
   // 위치 정보 재시도 메서드

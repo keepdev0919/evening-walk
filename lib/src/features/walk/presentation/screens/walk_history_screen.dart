@@ -545,9 +545,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
             SnackBar(
               content: Row(
                 children: const [
-                  Text('✅', style: TextStyle(fontSize: 16)),
-                  SizedBox(width: 8),
-                  Text('산책 기록이 삭제되었습니다.'),
+                  Text('산책 기록이 삭제되었습니다. ✨'),
                 ],
               ),
               backgroundColor: Colors.black.withValues(alpha: 0.6),

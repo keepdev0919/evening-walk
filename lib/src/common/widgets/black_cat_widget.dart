@@ -85,41 +85,41 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
   String _getCatTextByWeather(String weatherCondition) {
     switch (weatherCondition.toLowerCase()) {
       case 'clear':
-        return '산책하기 딱 좋은 날이냥 !';
+        return '산책하기 딱 좋은 날이냥 !🐾';
       case 'clouds':
       case 'broken clouds':
       case 'overcast clouds':
-        return '하늘에 솜사탕 보러가자냥 !';
+        return '하늘에 솜사탕 보러가자냥 !🐾';
       case 'few clouds':
       case 'scattered clouds':
-        return '선선해서 걷기 좋다냥 ~';
+        return '선선해서 걷기 좋다냥 ~🐾';
       case 'rain':
       case 'light rain':
       case 'moderate rain':
       case 'drizzle':
-        return '비 산책 너무 낭만있다냥..';
+        return '비 산책 너무 낭만있다냥..🐾';
       case 'heavy rain':
       case 'extreme rain':
-        return '비가 너무 많이 온다냥...';
+        return '비가 너무 많이 온다냥...🐾';
       case 'thunderstorm':
-        return '천둥소리가 무섭다냥...';
+        return '천둥소리가 무섭다냥...🐾';
       case 'snow':
-        return '추워도 눈구경 가자냥 !';
+        return '추워도 눈구경 가자냥 !🐾';
       case 'mist':
       case 'fog':
       case 'haze':
-        return '신비로운 구름 산책이다냥 !';
+        return '신비로운 구름 산책이다냥 !🐾';
       default:
-        return '같이 산책가는거냥 ?';
+        return '같이 산책가는거냥 ?🐾';
     }
   }
 
   /// 고양이 클릭 시 랜덤 화남 텍스트 반환
   String _getRandomAngryCatText() {
     final List<String> angryCatTexts = [
-      '츄르안줄꺼면 건들지말라냥~',
+      '츄르안줄꺼면 건들지말라냥 !',
       '함부로 만지는 거 아니다냥 !',
-      '인내심을 시험하지 말라냥 !',
+      '내 인내심을 시험하지 말라냥!',
       '그 손 좀 치워보라냥 !',
       '간지럽다냥..',
       '자꾸 귀찮게 하면 할퀸다냥..',
