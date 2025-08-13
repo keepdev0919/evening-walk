@@ -7,6 +7,7 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 // import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
+import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
@@ -65,6 +66,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   Marker? _currentLocationMarker;
   Marker? _destinationMarker;
   Marker? _waypointMarker;
+  // 사용자의 이동 경로에 남길 발자국(🐾) 마커들
+  final List<Marker> _footprintMarkers = [];
+  BitmapDescriptor? _footprintIcon;
+  LatLng? _lastFootprintPosition;
 
   /// 산책 상태를 관리하는 매니저 인스턴스입니다.
   late WalkStateManager _walkStateManager;
@@ -121,7 +126,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// 이동 방향 계산 및 소스 스위칭을 위한 보조 상태값
   Position? _lastPositionForCourse; // 이전 GPS 위치 (bearing 계산용)
-  bool _preferCourse = false; // 속도 조건을 만족하면 진행방향(course)을 우선 사용
 
   /// 보조 함수: 각도를 0~360도로 정규화합니다.
   double _normalizeDegrees(double angle) {
@@ -161,6 +165,40 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (speedMetersPerSecond >= 1.4) return 0.25; // 보통 보행
     if (speedMetersPerSecond >= 0.8) return 0.15; // 느린 보행
     return 0.10; // 정지/아주 느림: 더 안정적으로
+  }
+
+  /// 사용자의 이동 경로에 발자국(🐾) 마커를 일정 간격으로 추가합니다.
+  /// - 역할: 마지막 발자국과의 거리가 임계값 이상일 때만 새 마커를 추가하여 성능과 가독성 유지
+  /// - 임계값: 10m 기본 (지도 distanceFilter와 유사하게 설정)
+  void _maybeAddFootprint(LatLng current) {
+    if (_footprintIcon == null) return; // 아이콘이 아직 준비되지 않은 경우
+
+    const double minDistanceMeters = 3.0;
+    if (_lastFootprintPosition != null) {
+      final double d = Geolocator.distanceBetween(
+        _lastFootprintPosition!.latitude,
+        _lastFootprintPosition!.longitude,
+        current.latitude,
+        current.longitude,
+      );
+      if (d < minDistanceMeters) return;
+    }
+
+    _lastFootprintPosition = current;
+    final String markerId =
+        'footprint_${DateTime.now().millisecondsSinceEpoch}';
+    _footprintMarkers.add(
+      Marker(
+        markerId: MarkerId(markerId),
+        position: current,
+        icon: _footprintIcon!,
+        anchor: const Offset(0.5, 0.5),
+        zIndex: 1.0,
+      ),
+    );
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _updateOverlayPosition() async {
@@ -407,6 +445,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     }
     // final LatLng? waypoint = _walkStateManager.waypointLocation;
 
+    // 발자국 아이콘 프리로드
+    _footprintIcon ??= await MapMarkerCreator.createFootprintMarkerBitmap(
+      canvasSize: 56.0,
+      emojiSize: 40.0,
+    );
+
     setState(() {
       _currentPosition = widget.startLocation;
       _currentLocationMarker = null; // Lottie로 대체
@@ -436,6 +480,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
+
+      // 발자국 추가: 일정 거리 이상 이동했을 때만 마커를 추가하여 과도한 표시 방지
+      _maybeAddFootprint(_currentPosition!);
 
       // --- 방향 스위칭 + 보정 로직 ---
       // 1) 디바이스 컴퍼스(자기 센서) 각도: flutter_compass 우선 사용
@@ -492,19 +539,28 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       switch (eventSignal) {
         case "one_way_completed":
           _positionStreamSubscription?.cancel();
-
-          // 편도 완료: 먼저 포즈 추천 화면 표시
-          await _generateAndSaveRouteSnapshot();
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PoseRecommendationScreen(
-                walkStateManager: _walkStateManager,
-              ),
-            ),
+          // 편도 완료: 목적지 도착 다이얼로그 표시 후 분기 처리
+          final bool? wantsToSeeEvent =
+              await DestinationDialog.showDestinationArrivalDialog(
+            context: context,
           );
 
-          // 포즈 추천 완료 후 세션 업데이트
+          // 경로 스냅샷 저장
+          await _generateAndSaveRouteSnapshot();
+
+          // 사용자가 이벤트 확인을 선택한 경우에만 포즈 추천 화면으로 이동
+          if (wantsToSeeEvent == true) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PoseRecommendationScreen(
+                  walkStateManager: _walkStateManager,
+                ),
+              ),
+            );
+          }
+
+          // 포즈 추천(선택적) 완료 후 세션 업데이트
           if (_walkStateManager.savedSessionId != null) {
             final walkSessionService = WalkSessionService();
             await walkSessionService.updateWalkSession(
@@ -653,6 +709,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (_destinationMarker != null) allMarkers.add(_destinationMarker!);
     // 경유지 마커가 있으면 추가합니다.
     if (_waypointMarker != null) allMarkers.add(_waypointMarker!);
+    // 발자국(🐾) 마커들을 추가합니다.
+    allMarkers.addAll(_footprintMarkers);
 
     return Scaffold(
       // AppBar 영역까지 body를 확장합니다.

@@ -326,4 +326,37 @@ class MapMarkerCreator {
         await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
+
+  /// 발자국(🐾) 이모지를 그려서 Google Maps 마커로 사용할 비트맵을 생성합니다.
+  /// 지도 위에 사용자의 이동 경로를 따라 작은 발자국 마커를 찍는 용도로 사용합니다.
+  static Future<BitmapDescriptor> createFootprintMarkerBitmap({
+    double canvasSize = 64.0,
+    double emojiSize = 44.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    // 투명 배경 위에 이모지를 중앙 정렬로 그림
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: const TextSpan(
+        text: '🐾',
+        style: TextStyle(
+          fontSize: 44.0,
+        ),
+      ),
+    );
+    textPainter.layout();
+    final double dx = (canvasSize - textPainter.width) / 2.0;
+    final double dy = (canvasSize - textPainter.height) / 2.0;
+    textPainter.paint(canvas, Offset(dx, dy));
+
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(canvasSize.toInt(), canvasSize.toInt());
+    final ByteData? byteData =
+        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List uint8List = byteData!.buffer.asUint8List();
+    return BitmapDescriptor.fromBytes(uint8List);
+  }
 }
