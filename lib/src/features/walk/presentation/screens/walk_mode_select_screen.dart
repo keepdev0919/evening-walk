@@ -4,13 +4,13 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 import 'package:walk/src/shared/widgets/black_cat_widget.dart';
 
 /// 산책 방식 선택 화면
-/// - 사용자에게 "되돌아오기"(왕복) / "목적지까지"(편도) 중 하나를 선택하게 합니다.
+/// - 사용자에게 "왕복" / "편도" 중 하나를 선택하게 합니다.
 class WalkModeSelectScreen extends StatelessWidget {
   const WalkModeSelectScreen({super.key});
 
   Future<void> _confirmAndGo(BuildContext context, String mode) async {
     final isRoundTrip = mode == 'round_trip';
-    final title = isRoundTrip ? '되돌아오기로 진행할까요?' : '목적지까지로 진행할까요?';
+    final title = isRoundTrip ? '왕복으로 진행할까요?' : '편도로 진행할까요?';
     final desc = isRoundTrip
         ? '경로: 출발지 → 목적지 → 출발지\n돌아오면 자동으로 완료돼요.'
         : '경로: 출발지 → 목적지\n도착하면 바로 완료돼요.';
@@ -102,14 +102,14 @@ class WalkModeSelectScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _ModeCard(
                     emoji: '↩️',
-                    title: '되돌아오기',
+                    title: '왕복',
                     desc: '"출발지 → 목적지 → 출발지"\n돌아오면 자동으로 완료해요',
                     onTap: () => _confirmAndGo(context, 'round_trip'),
                   ),
                   const SizedBox(height: 14),
                   _ModeCard(
                     emoji: '➡️',
-                    title: '목적지까지',
+                    title: '편도',
                     desc: '"출발지 → 목적지"\n도착하면 바로 완료해요',
                     onTap: () => _confirmAndGo(context, 'one_way'),
                   ),

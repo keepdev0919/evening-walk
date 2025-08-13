@@ -116,10 +116,10 @@ class LoginPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 30),
+                      // const SizedBox(height: 10),
                       // 중앙 문구 (홈과 유사 톤)
                       Text(
-                        '저녁 공기를 마시며,\n가볍게 걸어볼까요?',
+                        '처음 오신 걸 환영해요! \n저녁 공기를 마시며,\n가볍게 걸어볼까요?',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
@@ -144,7 +144,8 @@ class LoginPage extends StatelessWidget {
                       const SizedBox(height: 40),
                       // 로그인 버튼 영역 - 투명한 컨테이너로 감쌈
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(20),
@@ -157,27 +158,27 @@ class LoginPage extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                            Center(
-                              child: GestureDetector(
-                                onTap: () =>
-                                    handleLogin(context, signInWithKakao),
-                                child: Image.asset(
-                                  'assets/images/kakao_login.png',
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      handleLogin(context, signInWithKakao),
+                                  child: Image.asset(
+                                    'assets/images/kakao_login.png',
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Center(
-                              child: GestureDetector(
-                                onTap: () =>
-                                    handleLogin(context, signInWithGoogle),
-                                child: Image.asset(
-                                  'assets/images/google_login.png',
-                                  width: 200,
+                              const SizedBox(height: 16),
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      handleLogin(context, signInWithGoogle),
+                                  child: Image.asset(
+                                    'assets/images/google_login.png',
+                                    width: 200,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
                           ),
                         ),
                       ),

@@ -51,7 +51,7 @@ class WalkStateManager {
   bool _destinationEventOccurred = false;
   bool _startReturnEventOccurred = false; // 출발지 복귀 이벤트 상태 추가
   bool _isReturningHome = false; // 목적지에서 출발지로 돌아가는 중인지 여부
-  WalkMode _mode = WalkMode.roundTrip; // 기본은 되돌아오기
+  WalkMode _mode = WalkMode.roundTrip; // 기본은 왕복
 
   // 실제 산책 시간 추적
   DateTime? _actualStartTime;
@@ -386,20 +386,27 @@ class WalkStateManager {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
         // 한국 주소 형식: 시/도 구/군 동 (상세 주소 제외)
-        String address = '';
-
-        if (place.administrativeArea != null &&
-            place.administrativeArea!.isNotEmpty) {
-          address += '${place.administrativeArea} ';
-        }
-        if (place.locality != null && place.locality!.isNotEmpty) {
-          address += '${place.locality} ';
-        }
-        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
-          address += place.subLocality!;
+        // 일부 단말/지역에서 '.' 같은 플레이스홀더가 올 수 있어 필터링 처리
+        String _sanitize(String? value) {
+          if (value == null) return '';
+          final trimmed = value.trim();
+          if (trimmed.isEmpty) return '';
+          if (trimmed == '.' || trimmed == '·' || trimmed == '-') return '';
+          return trimmed;
         }
 
-        return address.trim().isNotEmpty ? address.trim() : '알 수 없는 위치';
+        final String administrativeArea = _sanitize(place.administrativeArea);
+        final String locality = _sanitize(place.locality);
+        final String subLocality = _sanitize(place.subLocality);
+
+        final List<String> parts = [
+          if (administrativeArea.isNotEmpty) administrativeArea,
+          if (locality.isNotEmpty) locality,
+          if (subLocality.isNotEmpty) subLocality,
+        ];
+
+        final String address = parts.join(' ').trim();
+        return address.isNotEmpty ? address : '알 수 없는 위치';
       }
     } catch (e) {
       LogService.error('WalkState', '주소 변환 실패', e);

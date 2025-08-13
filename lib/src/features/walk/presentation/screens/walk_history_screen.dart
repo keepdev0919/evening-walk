@@ -95,19 +95,6 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
               ),
             ),
           ),
-          // 어두운 오버레이 (가독성을 위해)
-          // Container(
-          //   decoration: BoxDecoration(
-          //     gradient: LinearGradient(
-          //       begin: Alignment.topCenter,
-          //       end: Alignment.bottomCenter,
-          //       colors: [
-          //         Colors.black.withOpacity(0.3), // 상단은 조금 어둡게
-          //         Colors.black.withOpacity(0.6), // 하단은 더 어둡게
-          //       ],
-          //     ),
-          //   ),
-          // ),
           // 콘텐츠
           Scaffold(
             backgroundColor: Colors.transparent,

@@ -215,94 +215,104 @@ class _ProfileState extends State<Profile> {
                     }
 
                     return SafeArea(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 20), // AppBar 공간 확보
-                            GestureDetector(
-                              onTap: _pickImage,
-                              child: Column(
-                                children: [
-                                  // 프로필 이미지 표시
-                                  CircleAvatar(
-                                    radius: 60,
-                                    backgroundColor: Colors.white54,
-                                    backgroundImage: _image != null
-                                        ? FileImage(_image!)
-                                        : (userData['profileImageUrl'] != null
-                                            ? NetworkImage(
-                                                userData['profileImageUrl'])
-                                            : null) as ImageProvider?,
-                                    child: _image == null &&
-                                            userData['profileImageUrl'] == null
-                                        ? const Icon(Icons.person,
-                                            size: 60, color: Colors.white)
-                                        : null,
-                                  ),
-                                  // 수정 모드일 때 '이미지 변경' 텍스트 표시
-                                  if (_isEditing)
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 12.0),
-                                      child: Text('이미지 변경',
-                                          style: TextStyle(
-                                              color: Colors.blueAccent,
-                                              fontSize: 16)),
-                                    )
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            // 각 정보 필드를 생성합니다.
-                            _buildInfoField('닉네임', _nicknameController),
-                            _buildInfoField('나이', _ageController,
-                                keyboardType: TextInputType.number),
-                            _buildRegionField('지역', _regionController),
-                            _buildGenderField('성별', _sexController),
-                            _buildInfoField('이메일', _emailController,
-                                keyboardType: TextInputType.emailAddress),
-                            if (!widget.isOnboarding) ...[
-                              const SizedBox(height: 16),
-                              // 로그아웃 버튼 (온보딩 모드에서는 숨김)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 4.0, horizontal: 20.0),
-                                  child: OutlinedButton.icon(
-                                    icon: const Icon(Icons.logout,
-                                        color: Colors.white70, size: 18),
-                                    label: const Text(
-                                      '로그아웃',
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          if (!_isEditing) {
+                            _showEditHintSnackBar();
+                          }
+                        },
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 20), // AppBar 공간 확보
+                              GestureDetector(
+                                onTap: _pickImage,
+                                child: Column(
+                                  children: [
+                                    // 프로필 이미지 표시
+                                    CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor: Colors.white54,
+                                      backgroundImage: _image != null
+                                          ? FileImage(_image!)
+                                          : (userData['profileImageUrl'] != null
+                                              ? NetworkImage(
+                                                  userData['profileImageUrl'])
+                                              : null) as ImageProvider?,
+                                      child: _image == null &&
+                                              userData['profileImageUrl'] ==
+                                                  null
+                                          ? const Icon(Icons.person,
+                                              size: 60, color: Colors.white)
+                                          : null,
                                     ),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor:
-                                          Colors.white.withOpacity(0.08),
-                                      side: BorderSide(
-                                          color:
-                                              Colors.white.withOpacity(0.25)),
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ).copyWith(
-                                      overlayColor:
-                                          const MaterialStatePropertyAll(
-                                        Color.fromRGBO(255, 255, 255, 0.12),
-                                      ),
-                                    ),
-                                    onPressed: _confirmAndLogout,
-                                  ),
+                                    // 수정 모드일 때 '이미지 변경' 텍스트 표시
+                                    if (_isEditing)
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 12.0),
+                                        child: Text('이미지 변경',
+                                            style: TextStyle(
+                                                color: Colors.blueAccent,
+                                                fontSize: 16)),
+                                      )
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 30),
+                              // 각 정보 필드를 생성합니다.
+                              _buildInfoField('닉네임', _nicknameController),
+                              _buildInfoField('나이', _ageController,
+                                  keyboardType: TextInputType.number),
+                              _buildRegionField('지역', _regionController),
+                              _buildGenderField('성별', _sexController),
+                              _buildInfoField('이메일', _emailController,
+                                  keyboardType: TextInputType.emailAddress),
+                              if (!widget.isOnboarding) ...[
+                                const SizedBox(height: 16),
+                                // 로그아웃 버튼 (온보딩 모드에서는 숨김)
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4.0, horizontal: 20.0),
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.logout,
+                                          color: Colors.white70, size: 18),
+                                      label: const Text(
+                                        '로그아웃',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.white,
+                                        backgroundColor:
+                                            Colors.white.withOpacity(0.08),
+                                        side: BorderSide(
+                                            color:
+                                                Colors.white.withOpacity(0.25)),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ).copyWith(
+                                        overlayColor:
+                                            const MaterialStatePropertyAll(
+                                          Color.fromRGBO(255, 255, 255, 0.12),
+                                        ),
+                                      ),
+                                      onPressed: _confirmAndLogout,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     );
@@ -379,6 +389,22 @@ class _ProfileState extends State<Profile> {
   /// 실제 로그아웃 처리 (서비스 호출)
   Future<void> _performLogout() async {
     await AuthLogoutService.signOut();
+  }
+
+  /// 편집 모드가 아닐 때 편집 안내 스낵바를 표시합니다.
+  /// 역할: 사용자가 화면을 터치하면 우측 상단 연필 아이콘을 안내합니다.
+  void _showEditHintSnackBar() {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('오른쪽 위 연필 아이콘을 누르면 편집할 수 있어요.'),
+        backgroundColor: Colors.black.withOpacity(0.6),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   /// 사용자 정보 필드를 생성하는 위젯입니다.

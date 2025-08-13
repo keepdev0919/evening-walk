@@ -713,34 +713,46 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
           const SizedBox(height: 12),
           AspectRatio(
             aspectRatio: 4 / 3,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(
-                    File(_userPhotoPath!),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.black.withOpacity(0.3),
-                        child: const Center(
-                          child: Text(
-                            '사진을 불러올 수 없습니다',
-                            style: TextStyle(color: Colors.white70),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 사진 카드 (목적지 화면과 동일한 테두리/반경 재사용)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.file(
+                          File(_userPhotoPath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.black.withOpacity(0.3),
+                              child: const Center(
+                                child: Text(
+                                  '사진을 불러올 수 없습니다',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // 살짝 어둡게 보이도록 오버레이 (일관 유지)
+                        IgnorePointer(
+                          child: Container(
+                            color: Colors.black.withOpacity(0.18),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                  // 살짝 어둡게 보이도록 오버레이
-                  IgnorePointer(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.18),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

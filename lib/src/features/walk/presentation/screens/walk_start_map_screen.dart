@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 // 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -29,7 +30,8 @@ class WalkStartMapScreen extends StatefulWidget {
   State<WalkStartMapScreen> createState() => _WalkStartMapScreenState();
 }
 
-class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
+class _WalkStartMapScreenState extends State<WalkStartMapScreen>
+    with TickerProviderStateMixin {
   // --- 지도 및 위치 관련 변수 ---
   /// Google Map 컨트롤러. 지도 제어에 사용됩니다.
   late GoogleMapController mapController;
@@ -70,13 +72,93 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
   /// Google Maps API 키입니다. .env 파일에서 로드됩니다.
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
 
+  // --- 방향(컴퍼스) 관련 ---
+  double? _currentHeading; // 현재 각도(도)
+  late AnimationController _headingAnimationController;
+  late Animation<double> _headingAnimation; // 라디안 단위
+  StreamSubscription<CompassEvent>? _compassSubscription;
+  StreamSubscription<Position>? _positionStreamSubscription;
+
   @override
   void initState() {
     super.initState();
     // 현재 사용자 정보를 가져옵니다.
     // _user = FirebaseAuth.instance.currentUser;
     // 현재 위치를 결정하고 지도를 초기화합니다.
+    _headingAnimationController = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    _headingAnimation = Tween<double>(begin: 0.0, end: 0.0)
+        .animate(_headingAnimationController);
+
+    // 기기 바라보는 방향(자기 센서) 구독
+    _compassSubscription = FlutterCompass.events?.listen((event) {
+      final heading = event.heading; // 0~360, null 가능
+      if (heading != null) {
+        _updateUserHeading(heading);
+      }
+    });
+    // 위치 스트림 구독: 오버레이 좌표 최신화 및 heading 보조값
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5,
+      ),
+    ).listen((pos) async {
+      if (!mounted) return;
+      _currentPosition = LatLng(pos.latitude, pos.longitude);
+      await _updateOverlayPosition();
+      final double? gHeading =
+          (pos.heading >= 0 && pos.heading <= 360) ? pos.heading : null;
+      if (gHeading != null) {
+        _updateUserHeading(gHeading);
+      }
+    });
     _determinePosition();
+  }
+
+  @override
+  void dispose() {
+    _compassSubscription?.cancel();
+    _positionStreamSubscription?.cancel();
+    _headingAnimationController.dispose();
+    super.dispose();
+  }
+
+  // --- 방향 보조 함수들 ---
+  // 각도 정규화/보간은 현재 로직에서 직접 처리되어 사용하지 않음 (정리)
+
+  // 사용하지 않는 보간 함수는 제거 (경량화)
+
+  void _updateUserHeading(double newHeading) {
+    if (_currentHeading == null) {
+      _currentHeading = newHeading;
+      _headingAnimation = Tween<double>(
+        begin: newHeading * (3.14159 / 180),
+        end: newHeading * (3.14159 / 180),
+      ).animate(_headingAnimationController);
+      if (mounted) setState(() {});
+      return;
+    }
+
+    double angleDiff = (newHeading - _currentHeading!).abs();
+    if (angleDiff > 180) angleDiff = 360 - angleDiff;
+    if (angleDiff <= 3) return; // 작은 변화 무시
+
+    double fromAngle = _currentHeading! * (3.14159 / 180);
+    double toAngle = newHeading * (3.14159 / 180);
+    if ((newHeading - _currentHeading!).abs() > 180) {
+      if (_currentHeading! > newHeading) {
+        toAngle += 2 * 3.14159;
+      } else {
+        fromAngle += 2 * 3.14159;
+      }
+    }
+    _headingAnimation = Tween<double>(begin: fromAngle, end: toAngle).animate(
+      CurvedAnimation(
+          parent: _headingAnimationController, curve: Curves.easeInOut),
+    );
+    _currentHeading = newHeading;
+    _headingAnimationController.forward(from: 0.0);
   }
 
   /// 지도가 생성될 때 호출되는 콜백 함수입니다.
@@ -832,6 +914,47 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen> {
                     animate: true,
                     fit: BoxFit.contain,
                   ),
+                ),
+              ),
+            ),
+          // 방향 화살표 (폰이 바라보는 방향)
+          if (!_isLoading &&
+              _userOverlayOffset != null &&
+              _currentHeading != null)
+            Positioned(
+              left: _userOverlayOffset!.dx + (_overlayWidth / 2) - 20,
+              top: _userOverlayOffset!.dy - (_overlayHeight / 2) - 8,
+              child: IgnorePointer(
+                ignoring: true,
+                child: AnimatedBuilder(
+                  animation: _headingAnimation,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      alignment: Alignment.center,
+                      angle: _headingAnimation.value,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.blue.withOpacity(0.9),
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              offset: const Offset(0, 1),
+                              blurRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.navigation,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

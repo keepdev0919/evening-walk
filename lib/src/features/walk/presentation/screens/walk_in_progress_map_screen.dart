@@ -7,6 +7,7 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 // import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
@@ -114,6 +115,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   double? _currentHeading; // 현재 방향 (도 단위)
   late AnimationController _headingAnimationController;
   late Animation<double> _headingAnimation;
+  // 디바이스 자기 센서(컴퍼스)에서 읽은 각도 (0~360)
+  double? _deviceCompassHeading;
+  StreamSubscription<CompassEvent>? _compassSubscription;
 
   /// 이동 방향 계산 및 소스 스위칭을 위한 보조 상태값
   Position? _lastPositionForCourse; // 이전 GPS 위치 (bearing 계산용)
@@ -240,6 +244,15 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           parent: _headingAnimationController, curve: Curves.easeInOut),
     );
 
+    // 컴퍼스(자기 센서) 구독: 기기가 바라보는 방향을 항상 우선 사용
+    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
+      final double? heading = event.heading; // 0~360 (null 가능)
+      if (heading == null) return;
+      _deviceCompassHeading = heading;
+      // 지도 위치 업데이트 루프와 독립적으로도 방향 애니메이션을 부드럽게 유지
+      _updateUserHeading(heading);
+    });
+
     // 현재 사용자 정보를 가져옵니다.
     // _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
@@ -255,6 +268,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     WidgetsBinding.instance.removeObserver(this); // 옵저버 해제
     // 위젯이 dispose될 때 위치 스트림 구독을 취소하여 리소스 누수를 방지합니다.
     _positionStreamSubscription?.cancel();
+    _compassSubscription?.cancel();
     // 방향 애니메이션 컨트롤러 해제
     _headingAnimationController.dispose();
     super.dispose();
@@ -424,11 +438,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       });
 
       // --- 방향 스위칭 + 보정 로직 ---
-      // 1) 나침반(컴퍼스) 각도 (Geolocator의 heading은 non-nullable이므로 범위로만 판정)
-      final double? compassHeading =
-          (position.heading >= 0 && position.heading <= 360)
+      // 1) 디바이스 컴퍼스(자기 센서) 각도: flutter_compass 우선 사용
+      final double? compassHeading = _deviceCompassHeading ??
+          ((position.heading >= 0 && position.heading <= 360)
               ? position.heading
-              : null;
+              : null);
 
       // 2) 이동 진행방향(course) 계산: 이전 위치 대비 bearing
       double? courseHeading;
@@ -448,17 +462,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         }
       }
 
-      // 3) 스위칭 규칙: 속도가 충분하고 course가 있으면 course 우선, 저속이면 compass 우선
-      if (position.speed >= 1.4 && courseHeading != null) {
-        _preferCourse = true;
-      } else if (position.speed <= 0.8) {
-        _preferCourse = false;
-      }
-
-      // 4) 후보 각도 선택
-      final double? targetHeading = _preferCourse
-          ? (courseHeading ?? compassHeading)
-          : (compassHeading ?? courseHeading);
+      // 3) 후보 각도 선택: 항상 기기 바라보는 방향(compass) 우선, 없으면 course 사용
+      final double? targetHeading = compassHeading ?? courseHeading;
 
       // 5) 보정: 최단 각도 보간(EMA 느낌) 후 애니메이션에 전달
       if (targetHeading != null) {
@@ -771,7 +776,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         ),
                       ),
                       child: Text(
-                        widget.mode == WalkMode.roundTrip ? '되돌아오기' : '목적지까지',
+                        widget.mode == WalkMode.roundTrip ? '왕복' : '편도',
                         style: const TextStyle(
                             color: Colors.blueAccent,
                             fontSize: 14,

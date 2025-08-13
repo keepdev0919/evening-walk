@@ -1195,24 +1195,31 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         children: [
           // 제목(좌) + 시간/거리 정보(우)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Text('🗺️', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 6),
-                  Text(
-                    '산책 경로',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
+              const Expanded(
+                child: Row(
+                  children: [
+                    Text('🗺️', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 6),
+                    Text(
+                      '산책 경로',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              _buildDiaryTimeDistanceInfo(),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildDiaryTimeDistanceInfo(),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1266,36 +1273,38 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               ),
               const SizedBox(width: 16),
               // 우측: 경로 스냅샷 이미지
-              if (widget.walkStateManager.routeSnapshotPng != null)
-                GestureDetector(
-                  onTap: () => _showFullScreenRouteSnapshot(
-                      widget.walkStateManager.routeSnapshotPng!),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      widget.walkStateManager.routeSnapshotPng!,
-                      width: 180,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  width: 180,
-                  height: 120,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: const Text(
-                    '경로 이미지를 준비 중...',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
+              SizedBox(
+                width: 180,
+                child: AspectRatio(
+                  aspectRatio: 3 / 2,
+                  child: widget.walkStateManager.routeSnapshotPng != null
+                      ? GestureDetector(
+                          onTap: () => _showFullScreenRouteSnapshot(
+                              widget.walkStateManager.routeSnapshotPng!),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              widget.walkStateManager.routeSnapshotPng!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2)),
+                          ),
+                          child: const Text(
+                            '경로 이미지를 준비 중...',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ),
                 ),
+              ),
             ],
           ),
         ],
@@ -1440,11 +1449,15 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          '주소를 불러오는 중...',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            '주소를 불러오는 중...',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -1456,6 +1469,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                         fontSize: 13,
                         height: 1.3,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
             ],
           ),
