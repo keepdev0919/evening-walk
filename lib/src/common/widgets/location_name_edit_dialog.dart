@@ -38,7 +38,10 @@ Future<void> showLocationNameEditDialog({
         children: [
           const Text(
             '공유/일기에 표시될 이름이에요',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           StatefulBuilder(

@@ -742,9 +742,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         final String number = safe(p.subThoroughfare); // 번지
         final String street = safe(p.street); // 일부 기기에서 상위 행정구역 포함
 
-        // 표시 파츠: 시/도(region) 포함 + 시(cityA) + 구/군(cityB) + 동(district)
+        // 표시 파츠: 시/도(region) 제외, 시(cityA) + 구/군(cityB) + 동(district)
         final List<String> parts = [];
-        if (region.isNotEmpty) parts.add(region);
         if (cityA.isNotEmpty) parts.add(cityA);
         if (cityB.isNotEmpty && cityB != cityA && !cityA.contains(cityB)) {
           parts.add(cityB);
