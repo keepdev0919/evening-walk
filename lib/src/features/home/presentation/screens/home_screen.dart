@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
 
-import 'package:walk/src/features/walk/presentation/screens/walk_mode_select_screen.dart';
+import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../../common/widgets/black_cat_widget.dart';
@@ -456,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          const WalkModeSelectScreen()),
+                                          const WalkStartMapScreen()),
                                 );
                               },
                               child: Container(
