@@ -166,6 +166,61 @@ class _ProfileState extends State<Profile> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
+          // 사용방법(온보딩) 안내 아이콘
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            tooltip: '사용 방법 보기',
+            onPressed: () async {
+              final goOnboarding = await showDialog<bool>(
+                context: context,
+                barrierDismissible: true,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: Colors.black.withValues(alpha: 0.9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Colors.white24, width: 1),
+                  ),
+                  title: const Text(
+                    '이용 안내 보기',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  content: const Text(
+                    '저녁산책의 사용 방법을 \n다시 보시겠어요?',
+                    style: TextStyle(
+                        color: Colors.white70,
+                        height: 1.3,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('취소',
+                          style: TextStyle(color: Colors.white70)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.blueAccent.withValues(alpha: 0.9),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('확인'),
+                    ),
+                  ],
+                ),
+              );
+              if (goOnboarding == true && mounted) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const Onboarding()),
+                );
+              }
+            },
+          ),
           // 수정/저장 버튼
           IconButton(
             icon:
@@ -246,7 +301,24 @@ class _ProfileState extends State<Profile> {
                             children: [
                               const SizedBox(height: 20), // AppBar 공간 확보
                               GestureDetector(
-                                onTap: _pickImage,
+                                onTap: () {
+                                  if (_isEditing) {
+                                    _pickImage();
+                                  } else {
+                                    final String? url =
+                                        (userData['profileImageUrl']
+                                            as String?);
+                                    if (_image != null) {
+                                      _showFullScreenProfileImage(
+                                        filePath: _image!.path,
+                                      );
+                                    } else if (url != null && url.isNotEmpty) {
+                                      _showFullScreenProfileImage(
+                                        imageUrl: url,
+                                      );
+                                    }
+                                  }
+                                },
                                 child: Column(
                                   children: [
                                     // 프로필 이미지 표시
@@ -287,7 +359,7 @@ class _ProfileState extends State<Profile> {
                               _buildGenderField('성별', _sexController),
                               _buildInfoField('이메일', _emailController,
                                   keyboardType: TextInputType.emailAddress),
-                              if (!widget.isOnboarding) ...[
+                              if (!widget.isOnboarding && !_isEditing) ...[
                                 const SizedBox(height: 16),
                                 // 로그아웃 버튼 (온보딩 모드에서는 숨김)
                                 Align(
@@ -310,8 +382,8 @@ class _ProfileState extends State<Profile> {
                                           ),
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: Colors.white,
-                                            backgroundColor:
-                                                Colors.white.withValues(alpha: 0.08),
+                                            backgroundColor: Colors.white
+                                                .withValues(alpha: 0.08),
                                             side: BorderSide(
                                                 color: Colors.white
                                                     .withValues(alpha: 0.25)),
@@ -344,6 +416,42 @@ class _ProfileState extends State<Profile> {
                   },
                 ),
         ],
+      ),
+    );
+  }
+
+  /// 프로필 이미지를 전체 화면으로 보여주는 다이얼로그를 띄웁니다.
+  void _showFullScreenProfileImage({String? imageUrl, String? filePath}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: (filePath != null)
+                  ? Image.file(
+                      File(filePath),
+                      fit: BoxFit.contain,
+                    )
+                  : (imageUrl != null)
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.contain,
+                        )
+                      : const SizedBox.shrink(),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

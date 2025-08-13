@@ -361,4 +361,38 @@ class MapMarkerCreator {
     final Uint8List uint8List = byteData!.buffer.asUint8List();
     return BitmapDescriptor.fromBytes(uint8List);
   }
+
+  /// 작은 점(원형) 마커 비트맵을 생성합니다. 경로를 촘촘히 시각화하는 보조 용도입니다.
+  static Future<BitmapDescriptor> createDotMarkerBitmap({
+    double diameter = 12.0,
+    Color color = Colors.white,
+    double alpha = 0.85,
+    Color borderColor = Colors.black54,
+    double borderWidth = 1.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final double radius = diameter / 2.0;
+    final Paint fill = Paint()
+      ..color = color.withOpacity(alpha)
+      ..isAntiAlias = true;
+    final Paint stroke = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth
+      ..isAntiAlias = true;
+
+    canvas.drawCircle(Offset(radius, radius), radius, fill);
+    canvas.drawCircle(
+        Offset(radius, radius), radius - (borderWidth / 2.0), stroke);
+
+    final ui.Image img = await pictureRecorder
+        .endRecording()
+        .toImage(diameter.toInt(), diameter.toInt());
+    final ByteData? byteData =
+        await img.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List bytes = byteData!.buffer.asUint8List();
+    return BitmapDescriptor.fromBytes(bytes);
+  }
 }

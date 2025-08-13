@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/common/widgets/black_cat_widget.dart';
@@ -14,7 +15,7 @@ class WalkModeSelectScreen extends StatelessWidget {
     final title = isRoundTrip ? '왕복' : '편도';
     final desc = isRoundTrip
         ? '"출발지 → 목적지 → 출발지"\n돌아오면 산책이 완료돼요'
-        : '"출발지 → 목적지" 도착하면 \n바로 산책이 완료돼요';
+        : '"출발지 → 목적지" 도착시 \n바로 산책이 완료돼요';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -100,7 +101,7 @@ class WalkModeSelectScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 80),
                   const Text(
                     '어떤 방식으로 걸어볼까요?',
                     textAlign: TextAlign.center,
@@ -136,6 +137,14 @@ class WalkModeSelectScreen extends StatelessWidget {
                 final double screenHeight = constraints.maxHeight;
                 final double catWidth = screenWidth * 0.28 * 2;
                 final double bottomPadding = screenHeight * 0.06;
+                // 말풍선 텍스트를 두 가지 중 랜덤으로 선택
+                final List<String> bubbleCandidates = [
+                  '왕복.. 편도.. 무슨말이냥? 🐾',
+                  '나는 보기 드문 산책냥이라냥..',
+                  '밥먹으니 졸립다냥..🐾'
+                ];
+                final String bubbleText = bubbleCandidates[
+                    math.Random().nextInt(bubbleCandidates.length)];
                 return Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
@@ -144,9 +153,9 @@ class WalkModeSelectScreen extends StatelessWidget {
                       offset: Offset(-screenWidth * 0.23, 0),
                       child: BlackCatWidget(
                         width: catWidth,
-                        bubbleMaxWidth: catWidth * 0.8,
+                        bubbleMaxWidth: catWidth * 0.9,
                         screenType: 'selectMate',
-                        defaultText: '기분 좋은 선택이냥! 🐾',
+                        defaultText: bubbleText,
                       ),
                     ),
                   ),

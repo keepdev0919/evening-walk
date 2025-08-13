@@ -339,6 +339,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       _selectedAddress = address;
       _isManualSelection = true;
     });
+
+    // 목적지 이름 편집 입력값을 현재 주소로 동기화
+    if (_destNameController == null) {
+      _destNameController = TextEditingController(text: _selectedAddress);
+    } else {
+      _destNameController!.text = _selectedAddress;
+    }
     _showDestinationBottomSheet();
   }
 
@@ -525,7 +532,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           child: Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: Colors.black.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(20.0),
               border: Border.all(color: Colors.white24, width: 1.5),
             ),
@@ -648,6 +655,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           _selectedDestination = placeLocation;
           _selectedAddress = placeName;
         });
+
+        // 목적지 이름 편집 입력값을 현재 주소로 동기화
+        if (_destNameController == null) {
+          _destNameController = TextEditingController(text: _selectedAddress);
+        } else {
+          _destNameController!.text = _selectedAddress;
+        }
 
         mapController.animateCamera(CameraUpdate.newLatLng(placeLocation));
         _showDestinationBottomSheet();
@@ -942,18 +956,30 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                   style: TextStyle(
                                     color: Colors.blue,
                                   )),
-                              TextSpan(text: '은 보통 15분, '),
+                              TextSpan(text: '은 보통 '),
+                              TextSpan(
+                                  text: '15',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                  )),
+                              TextSpan(
+                                text: '분, ',
+                              ),
                               TextSpan(
                                   text: '빨간 원',
                                   style: TextStyle(color: Colors.red)),
-                              TextSpan(text: '은 보통 30분 정도의 산책거리에요'),
+                              TextSpan(text: '은 \n보통 '),
+                              TextSpan(
+                                  text: '30',
+                                  style: TextStyle(color: Colors.red)),
+                              TextSpan(text: '분 정도의 산책거리에요'),
                             ],
                           ),
                           textAlign: TextAlign.center,
                         ),
                         backgroundColor: Colors.black.withValues(alpha: 0.8),
                         behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
+                        duration: Duration(seconds: 3),
                       ),
                     );
                   },

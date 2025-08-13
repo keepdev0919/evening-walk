@@ -69,6 +69,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   // 사용자의 이동 경로에 남길 발자국(🐾) 마커들
   final List<Marker> _footprintMarkers = [];
   BitmapDescriptor? _footprintIcon;
+  BitmapDescriptor? _dotIcon;
   LatLng? _lastFootprintPosition;
 
   /// 산책 상태를 관리하는 매니저 인스턴스입니다.
@@ -167,13 +168,14 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     return 0.10; // 정지/아주 느림: 더 안정적으로
   }
 
-  /// 사용자의 이동 경로에 발자국(🐾) 마커를 일정 간격으로 추가합니다.
-  /// - 역할: 마지막 발자국과의 거리가 임계값 이상일 때만 새 마커를 추가하여 성능과 가독성 유지
-  /// - 임계값: 10m 기본 (지도 distanceFilter와 유사하게 설정)
+  /// 사용자의 이동 경로에 발자국(🐾)/점(.) 마커를 추가합니다.
+  /// - 발자국: 10m 간격
+  /// - 점: 2m 간격으로 보조 시각화
   void _maybeAddFootprint(LatLng current) {
     if (_footprintIcon == null) return; // 아이콘이 아직 준비되지 않은 경우
 
-    const double minDistanceMeters = 2.0;
+    const double footprintDistance = 10.0;
+    const double dotDistance = 2.0;
     if (_lastFootprintPosition != null) {
       final double d = Geolocator.distanceBetween(
         _lastFootprintPosition!.latitude,
@@ -181,7 +183,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         current.latitude,
         current.longitude,
       );
-      if (d < minDistanceMeters) return;
+      // 2m 이상 이동했으면 작은 점을 찍어 경로 보조
+      if (d >= dotDistance) {
+        _addDotMarker(current);
+      }
+      // 10m 이상일 때만 발자국을 추가
+      if (d < footprintDistance) return;
     }
 
     _lastFootprintPosition = current;
@@ -196,9 +203,37 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         zIndex: 1.0,
       ),
     );
+
     if (mounted) {
       setState(() {});
     }
+  }
+
+  /// 2m 간격 보조용 점(.) 마커를 추가합니다.
+  Future<void> _ensureDotIcon() async {
+    if (_dotIcon != null) return;
+    _dotIcon = await MapMarkerCreator.createDotMarkerBitmap(
+      diameter: 10.0,
+      color: Colors.white,
+      alpha: 0.85,
+      borderColor: Colors.black45,
+      borderWidth: 1.0,
+    );
+  }
+
+  void _addDotMarker(LatLng position) async {
+    await _ensureDotIcon();
+    if (_dotIcon == null) return;
+    final String markerId = 'dot_${DateTime.now().millisecondsSinceEpoch}';
+    _footprintMarkers.add(
+      Marker(
+        markerId: MarkerId(markerId),
+        position: position,
+        icon: _dotIcon!,
+        anchor: const Offset(0.5, 0.5),
+        zIndex: 0.9,
+      ),
+    );
   }
 
   Future<void> _updateOverlayPosition() async {

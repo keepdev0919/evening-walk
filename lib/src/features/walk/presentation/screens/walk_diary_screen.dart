@@ -130,6 +130,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           // 저장된 총시간이 없으면 카드와 동일하게 종료-시작 기반 계산값 사용
           _recordedDurationMin =
               session.totalDuration ?? session.durationInMinutes; // 분 단위
+          // 저장된 사용자 지정 위치명 복원 (뒤로가기 후 재진입 시 유지)
+          widget.walkStateManager
+              .setDestinationBuildingName(session.locationName);
+          widget.walkStateManager.setCustomStartName(session.customStartName);
         });
       }
     } catch (_) {}
@@ -987,6 +991,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   'waypointAnswer': answerEditController.text.trim().isEmpty
                       ? null
                       : answerEditController.text.trim(),
+                  // 사용자 지정 위치명도 함께 업데이트하여 히스토리에서 반영되도록 함
+                  'locationName':
+                      widget.walkStateManager.destinationBuildingName,
+                  'customStartName': widget.walkStateManager.customStartName,
                   'updatedAt': DateTime.now().toIso8601String(),
                 },
               );

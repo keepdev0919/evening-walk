@@ -167,23 +167,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
           (route) => false,
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.refresh,
-            color: Colors.white,
-            size: 24,
-            shadows: [
-              Shadow(
-                blurRadius: 4.0,
-                color: Colors.black54,
-                offset: Offset(1.0, 1.0),
-              ),
-            ],
-          ),
-          onPressed: _loadWalkSessions,
-        ),
-      ],
+      actions: const [],
     );
   }
 
