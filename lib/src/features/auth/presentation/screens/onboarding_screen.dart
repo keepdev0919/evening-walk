@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:walk/src/shared/widgets/video_background.dart';
+import 'package:walk/src/common/widgets/video_background.dart';
 
 /// 온보딩 화면
 /// 역할: 첫 로그인 후 간단한 안내를 보여주고 홈으로 진입시키는 화면

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/shared/widgets/black_cat_widget.dart';
+import 'package:walk/src/common/widgets/black_cat_widget.dart';
 
 /// 산책 방식 선택 화면
 /// - 사용자에게 "왕복" / "편도" 중 하나를 선택하게 합니다.

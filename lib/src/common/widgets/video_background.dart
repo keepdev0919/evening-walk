@@ -31,11 +31,12 @@ class _VideoBackgroundState extends State<VideoBackground> {
   Future<void> _initializeVideo() async {
     try {
       _controller = VideoPlayerController.asset(widget.videoPath);
-      
+
       // 초기화 전에 에러 리스너 추가
       _controller.addListener(() {
         if (_controller.value.hasError) {
-          LogService.error('UI', 'VideoBackground: 재생 중 에러 - ${_controller.value.errorDescription}');
+          LogService.error('UI',
+              'VideoBackground: 재생 중 에러 - ${_controller.value.errorDescription}');
           if (mounted) {
             setState(() {
               _isInitialized = false;
@@ -43,14 +44,14 @@ class _VideoBackgroundState extends State<VideoBackground> {
           }
         }
       });
-      
+
       await _controller.initialize();
-      
+
       if (mounted) {
         setState(() {
           _isInitialized = true;
         });
-        
+
         // 음소거 및 루프 설정
         await _controller.setVolume(0.0);
         await _controller.setLooping(true);
@@ -88,7 +89,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
               ),
             ),
           ),
-        
+
         // 영상이 준비된 경우 영상 재생
         if (_isInitialized)
           SizedBox.expand(
@@ -101,7 +102,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
               ),
             ),
           ),
-        
+
         // 자식 위젯 (UI 요소들)
         if (widget.child != null) widget.child!,
       ],

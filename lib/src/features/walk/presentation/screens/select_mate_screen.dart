@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import '../../../../shared/widgets/black_cat_widget.dart';
+import '../../../../common/widgets/black_cat_widget.dart';
 
 // 친구 메이트 선택 시 인원 구분을 위한 타입
 enum FriendGroupType { two, many }

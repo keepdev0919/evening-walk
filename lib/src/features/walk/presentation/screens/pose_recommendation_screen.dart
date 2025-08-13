@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:walk/src/common/widgets/location_name_edit_dialog.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/features/walk/application/services/pose_image_service.dart';
 import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
@@ -474,7 +475,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           final initial =
                               widget.walkStateManager.customStartName ??
                                   preloadedStart;
-                          _promptEditLocationName(
+                          showLocationNameEditDialog(
+                            context: context,
                             title: '출발지 이름 수정',
                             initialValue: initial,
                             onSave: (value) {
@@ -505,7 +507,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                                     final initial = widget
                                             .walkStateManager.customStartName ??
                                         (snapshot.data ?? '');
-                                    _promptEditLocationName(
+                                    showLocationNameEditDialog(
+                                      context: context,
                                       title: '출발지 이름 수정',
                                       initialValue: initial,
                                       onSave: (value) {
@@ -530,7 +533,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           final initial =
                               widget.walkStateManager.destinationBuildingName ??
                                   preloadedDest;
-                          _promptEditLocationName(
+                          showLocationNameEditDialog(
+                            context: context,
                             title: '목적지 이름 수정',
                             initialValue: initial,
                             onSave: (value) {
@@ -562,7 +566,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                                     final initial = widget.walkStateManager
                                             .destinationBuildingName ??
                                         (snapshot.data ?? '');
-                                    _promptEditLocationName(
+                                    showLocationNameEditDialog(
+                                      context: context,
                                       title: '목적지 이름 수정',
                                       initialValue: initial,
                                       onSave: (value) {
@@ -680,114 +685,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 위치 이름 편집 다이얼로그
-  Future<void> _promptEditLocationName({
-    required String title,
-    required String initialValue,
-    required ValueChanged<String?> onSave,
-  }) async {
-    final controller = TextEditingController(text: initialValue);
-    await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.9),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white54, width: 1),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.edit, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '공유/일기에 표시될 이름이에요',
-              style: TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              textInputAction: TextInputAction.done,
-              maxLength: 24,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.06),
-                hintText: '예) OO공원 입구',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon:
-                    const Icon(Icons.place_outlined, color: Colors.white70),
-                suffixIcon: controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
-                        onPressed: () {
-                          controller.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: Colors.white54, width: 1.2),
-                ),
-                counterStyle:
-                    const TextStyle(color: Colors.white38, fontSize: 11),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              onSave(null); // 기본 주소 사용
-              Navigator.of(ctx).pop();
-            },
-            child:
-                const Text('기본 주소 사용', style: TextStyle(color: Colors.white70)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('취소', style: TextStyle(color: Colors.white70)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              onSave(text.isEmpty ? null : text);
-              Navigator.of(ctx).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent.withValues(alpha: 0.9),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('저장'),
-          )
-        ],
-      ),
-    );
-  }
+  // 개별 구현 제거: 공통 다이얼로그 사용
 
   /// 위치 정보 카드
   Widget _buildLocationInfo({

@@ -424,29 +424,61 @@ class WalkStateManager {
           return t;
         }
 
-        final String region = safeString(placeMark.administrativeArea); // 시/도
-        final String cityA = safeString(placeMark.locality); // 시/군/구 (기기별 편차)
+        final String country = safeString(placeMark.country);
+        final String region =
+            safeString(placeMark.administrativeArea); // 시/도 (표시 제외)
+        final String cityA = safeString(placeMark.locality); // 시
         final String cityB =
-            safeString(placeMark.subAdministrativeArea); // 시/군/구 보조
+            safeString(placeMark.subAdministrativeArea); // 구/군 (기기별 편차)
         final String district = safeString(placeMark.subLocality); // 동/읍/면
+        final String road = safeString(placeMark.thoroughfare); // 도로명
+        final String number = safeString(placeMark.subThoroughfare); // 번지
         final String street =
-            safeString(placeMark.street); // 도로명 + 번지까지 포함될 수 있음
-        final String road = safeString(placeMark.thoroughfare);
-        final String number = safeString(placeMark.subThoroughfare);
+            safeString(placeMark.street); // 일부 기기에서 전체 주소가 들어올 수 있음
 
+        // 파츠 구성: 국가/시도(region)는 표시하지 않고 시-구/군-동 순으로 조합
         final List<String> parts = [];
-        if (region.isNotEmpty) parts.add(region);
-        if (cityA.isNotEmpty) parts.add(cityA);
-        if (cityB.isNotEmpty && cityB != cityA) parts.add(cityB);
-        if (district.isNotEmpty) parts.add(district);
-
-        String tail = street;
-        if (tail.isEmpty) {
-          tail = [road, number].where((e) => e.trim().isNotEmpty).join(' ');
+        if (cityA.isNotEmpty) parts.add(cityA); // 수원시
+        if (cityB.isNotEmpty &&
+            cityB != cityA &&
+            !cityA.contains(cityB) &&
+            !cityB.contains(cityA)) {
+          parts.add(cityB); // 영통구
         }
+        if (district.isNotEmpty) parts.add(district); // 영통동
+
+        // 도로명 + 번지 우선. 없으면 street 사용하되 상위 행정구역/국가명이 포함되어 있으면 제거
+        String tail = '';
+        if (road.isNotEmpty) {
+          tail = number.isNotEmpty ? '$road $number' : road;
+        } else if (street.isNotEmpty) {
+          String sanitized = street;
+          for (final token in [country, region, cityA, cityB, district]) {
+            if (token.isNotEmpty) {
+              sanitized = sanitized.replaceAll(token, '');
+            }
+          }
+          sanitized = sanitized.replaceAll(RegExp(r'\s+'), ' ').trim();
+          // 너무 짧거나 상위 행정구역과 동일하면 무시 (region 제외)
+          if (sanitized.isNotEmpty &&
+              sanitized != cityA &&
+              sanitized != cityB &&
+              sanitized != district) {
+            tail = sanitized;
+          }
+        }
+
         if (tail.isNotEmpty) parts.add(tail);
 
-        final String address = parts.join(' ').trim();
+        // 중복 제거 (입력 순서 유지)
+        final List<String> deduped = [];
+        for (final p in parts) {
+          if (p.isEmpty) continue;
+          if (!deduped.contains(p)) deduped.add(p);
+        }
+
+        final String address =
+            deduped.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
         return address.isNotEmpty ? address : '알 수 없는 위치';
       }
     } catch (e) {

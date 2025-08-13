@@ -26,7 +26,8 @@ class MapMarkerCreator {
           imageUrl = userDoc.data()?['profileImageUrl'];
         }
       } catch (e) {
-        LogService.error('Walk', 'Failed to fetch user data for profile marker', e);
+        LogService.error(
+            'Walk', 'Failed to fetch user data for profile marker', e);
       }
     }
 
@@ -341,9 +342,9 @@ class MapMarkerCreator {
     final TextPainter textPainter = TextPainter(
       textDirection: TextDirection.ltr,
       text: const TextSpan(
-        text: '🐾',
+        text: '👣',
         style: TextStyle(
-          fontSize: 44.0,
+          fontSize: 40.0,
         ),
       ),
     );

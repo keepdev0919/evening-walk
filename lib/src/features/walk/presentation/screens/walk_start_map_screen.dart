@@ -725,27 +725,62 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       );
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
-        final String region = (p.administrativeArea ?? '').trim(); // 경기도
-        final String cityA = (p.locality ?? '').trim(); // 수원시
-        final String cityB = (p.subAdministrativeArea ?? '').trim(); // 수원시/구/군
-        final String district = (p.subLocality ?? '').trim(); // 영통구/동
-        final String street = (p.street ?? '').trim(); // 도로명 + 번지까지 합쳐질 수도 있음
-        final String road = (p.thoroughfare ?? '').trim();
-        final String number = (p.subThoroughfare ?? '').trim();
+        String safe(String? v) {
+          if (v == null) return '';
+          final t = v.trim();
+          if (t.isEmpty) return '';
+          if (t == '.' || t == '·' || t == '-') return '';
+          return t;
+        }
 
+        final String country = safe(p.country); // 대한민국 등
+        final String region = safe(p.administrativeArea); // 경기도
+        final String cityA = safe(p.locality); // 용인시/수원시 등 (시)
+        final String cityB = safe(p.subAdministrativeArea); // 기흥구/영통구 등 (구/군)
+        final String district = safe(p.subLocality); // 영덕동/영통동 등 (동)
+        final String road = safe(p.thoroughfare); // 도로명
+        final String number = safe(p.subThoroughfare); // 번지
+        final String street = safe(p.street); // 일부 기기에서 상위 행정구역 포함
+
+        // 표시 파츠: 시/도(region) 포함 + 시(cityA) + 구/군(cityB) + 동(district)
         final List<String> parts = [];
         if (region.isNotEmpty) parts.add(region);
         if (cityA.isNotEmpty) parts.add(cityA);
-        if (cityB.isNotEmpty && cityB != cityA) parts.add(cityB);
+        if (cityB.isNotEmpty && cityB != cityA && !cityA.contains(cityB)) {
+          parts.add(cityB);
+        }
         if (district.isNotEmpty) parts.add(district);
 
-        String tail = street;
-        if (tail.isEmpty) {
-          tail = [road, number].where((e) => e.trim().isNotEmpty).join(' ');
+        // 도로명 + 번지 우선. 없으면 street 정리해서 사용
+        String tail = '';
+        if (road.isNotEmpty) {
+          tail = number.isNotEmpty ? '$road $number' : road;
+        } else if (street.isNotEmpty) {
+          String sanitized = street;
+          for (final token in [country, region, cityA, cityB, district]) {
+            if (token.isNotEmpty) {
+              sanitized = sanitized.replaceAll(token, '');
+            }
+          }
+          sanitized = sanitized.replaceAll(RegExp(r'\s+'), ' ').trim();
+          if (sanitized.isNotEmpty &&
+              sanitized != cityA &&
+              sanitized != cityB &&
+              sanitized != district) {
+            tail = sanitized;
+          }
         }
-        if (tail.trim().isNotEmpty) parts.add(tail.trim());
 
-        if (parts.isNotEmpty) return parts.join(' ');
+        if (tail.isNotEmpty) parts.add(tail);
+
+        // 중복 제거 유지
+        final List<String> deduped = [];
+        for (final p in parts) {
+          if (p.isEmpty) continue;
+          if (!deduped.contains(p)) deduped.add(p);
+        }
+
+        if (deduped.isNotEmpty) return deduped.join(' ');
       }
     } catch (_) {}
     return '주소 미확인 지점';

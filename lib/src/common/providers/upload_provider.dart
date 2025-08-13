@@ -32,8 +32,6 @@ class UploadProvider extends ChangeNotifier {
     );
     notifyListeners();
 
-    // 조용한 백그라운드 업로드 시작 (토스트 메시지 제거)
-
     try {
       // 사진 업로드 수행
       final uploadedUrl = await _photoUploadService.uploadDestinationPhoto(
@@ -55,8 +53,6 @@ class UploadProvider extends ChangeNotifier {
 
         // Firestore의 세션 데이터 업데이트
         await _updateSessionPhotoUrl(sessionId, uploadedUrl);
-
-        // 백그라운드 업로드 완료 (조용히 처리)
       } else {
         // 업로드 실패 (URL이 null)
         _handleUploadFailure(sessionId, '사진 업로드에 실패했습니다.');
@@ -75,8 +71,6 @@ class UploadProvider extends ChangeNotifier {
     if (currentState != null && currentState.isUploading) {
       _uploadStates[sessionId] = currentState.copyWith(progress: progress);
       notifyListeners();
-
-      // 백그라운드 업로드이므로 진행률 토스트는 표시하지 않음
     }
   }
 

@@ -8,7 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_mode_select_screen.dart';
 import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
-import '../../../../shared/widgets/black_cat_widget.dart';
+import '../../../../common/widgets/black_cat_widget.dart';
 import 'package:walk/src/core/services/log_service.dart';
 
 // 상태 구분용 enum
@@ -106,7 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
         timeLimit: const Duration(seconds: 15), // GPS 타임아웃 설정
       );
 
-      LogService.info('UI', 'HomeScreen: GPS 위치 획득 완료 - lat: ${position.latitude}, lon: ${position.longitude}');
+      LogService.info('UI',
+          'HomeScreen: GPS 위치 획득 완료 - lat: ${position.latitude}, lon: ${position.longitude}');
 
       // 위치 정보와 날씨 정보를 병렬로 처리 (더 빠른 로딩)
       await Future.wait([
@@ -131,7 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // 위도경도로 주소 가져오기
   Future<void> _getAddressFromLatLng(Position position) async {
     try {
-      LogService.debug('UI', 'HomeScreen: 위치 정보 요청 시작 - lat: ${position.latitude}, lon: ${position.longitude}');
+      LogService.debug('UI',
+          'HomeScreen: 위치 정보 요청 시작 - lat: ${position.latitude}, lon: ${position.longitude}');
 
       // Timeout 설정으로 무한 대기 방지
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -147,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        LogService.info('UI', 'HomeScreen: 위치 정보 성공 - locality: ${place.locality}, subLocality: ${place.subLocality}');
+        LogService.info('UI',
+            'HomeScreen: 위치 정보 성공 - locality: ${place.locality}, subLocality: ${place.subLocality}');
 
         // locality와 subLocality 조합으로 더 구체적인 위치 정보 제공
         List<String> locationParts = [];
@@ -200,7 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _getWeather(double lat, double lon) async {
     try {
       LogService.info('UI', 'HomeScreen: 날씨 API 호출 시작 - lat: $lat, lon: $lon');
-      LogService.debug('UI', 'HomeScreen: API Key 존재 여부: ${_apiKey.isNotEmpty}');
+      LogService.debug(
+          'UI', 'HomeScreen: API Key 존재 여부: ${_apiKey.isNotEmpty}');
 
       if (_apiKey.isEmpty) {
         LogService.warning('UI', 'HomeScreen: OpenWeather API 키가 설정되지 않음');
@@ -222,7 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
 
-      LogService.debug('UI', 'HomeScreen: 날씨 API 응답 상태 코드: ${response.statusCode}');
+      LogService.debug(
+          'UI', 'HomeScreen: 날씨 API 응답 상태 코드: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -234,7 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
           final weatherMain = data['weather'][0]['main']; // 날씨 상태
           final temperature = data['main']['temp'].round(); // 온도
 
-          LogService.info('UI', 'HomeScreen: 날씨 정보 파싱 성공 - 상태: $weatherMain, 온도: ${temperature}°C');
+          LogService.info('UI',
+              'HomeScreen: 날씨 정보 파싱 성공 - 상태: $weatherMain, 온도: ${temperature}°C');
 
           setState(() {
             _weather = '${_getWeatherEmoji(weatherMain)} ${temperature}°C';
@@ -249,7 +255,8 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
       } else {
-        LogService.error('UI', 'HomeScreen: 날씨 API HTTP 오류 - 상태 코드: ${response.statusCode}, 응답: ${response.body}');
+        LogService.error('UI',
+            'HomeScreen: 날씨 API HTTP 오류 - 상태 코드: ${response.statusCode}, 응답: ${response.body}');
         setState(() {
           _weather = '🌤️ API 오류';
           _weatherStatus = InfoStatus.error;

@@ -96,10 +96,11 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
       case 'rain':
       case 'light rain':
       case 'moderate rain':
-      case 'heavy rain':
-      case 'extreme rain':
       case 'drizzle':
         return '비 산책 너무 낭만있다냥..';
+      case 'heavy rain':
+      case 'extreme rain':
+        return '비가 너무 많이 온다냥...';
       case 'thunderstorm':
         return '천둥소리가 무섭다냥...';
       case 'snow':
@@ -221,10 +222,10 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
               catAnimation,
               // 화남 이모지 (우측 상단에 위치)
               if (_isAngry)
-                Positioned(
+                const Positioned(
                   top: -3,
                   right: 72,
-                  child: const Text(
+                  child: Text(
                     '💢',
                     style: TextStyle(fontSize: 12),
                   ),
