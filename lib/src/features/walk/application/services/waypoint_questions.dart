@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 산책 메이트 유형에 따라 경유지 질문을 제공하는 역할을 담당하는 클래스.
 class WaypointQuestionProvider {
@@ -30,11 +31,11 @@ class WaypointQuestionProvider {
       String? friendManyJson;
       try {
         friendTwoJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_two.json');
+            'lib/src/features/walk/application/data/walk_question/friend_questions_two_talk.json');
       } catch (_) {}
       try {
         friendManyJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_many.json');
+            'lib/src/features/walk/application/data/walk_question/friend_questions_many_talk.json');
       } catch (_) {}
 
       _loadedQuestions['혼자'] = List<String>.from(json.decode(aloneJson));
@@ -49,9 +50,9 @@ class WaypointQuestionProvider {
       }
       _isLoaded = true;
 
-      print('WaypointQuestionProvider: 질문 파일 로드 완료.');
+      LogService.info('Walk', 'WaypointQuestionProvider: 질문 파일 로드 완료.');
     } catch (e) {
-      print('WaypointQuestionProvider: 질문 파일 로드 실패: $e');
+      LogService.error('Walk', 'WaypointQuestionProvider: 질문 파일 로드 실패', e);
     }
   }
 
@@ -72,7 +73,7 @@ class WaypointQuestionProvider {
     }
 
     if (!_isLoaded) {
-      print('WaypointQuestionProvider: 질문이 로드되지 않아 질문을 반환할 수 없습니다.');
+      LogService.warning('Walk', 'WaypointQuestionProvider: 질문이 로드되지 않아 질문을 반환할 수 없습니다.');
       return null;
     }
 

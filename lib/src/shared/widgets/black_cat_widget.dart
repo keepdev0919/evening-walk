@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'dart:math';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 공용 검은 고양이 애니메이션 위젯
 /// 홈 화면과 산책 메이트 선택 화면에서 재사용
@@ -130,12 +131,12 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
 
   /// 고양이 클릭 처리
   void _handleTap() {
-    print('고양이 클릭됨! 화면 타입: ${widget.screenType}');
+    LogService.debug('UI', '고양이 클릭됨! 화면 타입: ${widget.screenType}');
     setState(() {
       _currentText = _getRandomAngryCatText();
       _isAngry = true;
     });
-    print('텍스트 변경됨: $_currentText, 화남: $_isAngry');
+    LogService.debug('UI', '텍스트 변경됨: $_currentText, 화남: $_isAngry');
 
     // 복구 시간 통일 (모든 화면 2초)
     const duration = Duration(seconds: 2);
@@ -148,7 +149,7 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
           _currentText = _originalText;
           _isAngry = false;
         });
-        print('텍스트 복원됨: $_currentText, 화남: $_isAngry');
+        LogService.debug('UI', '텍스트 복원됨: $_currentText, 화남: $_isAngry');
       }
     });
   }
@@ -256,7 +257,7 @@ class _CatBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: Colors.white, width: 1.5),
             ),
@@ -287,7 +288,7 @@ class _CatBubble extends StatelessWidget {
 class _CatBubbleTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final fill = Paint()..color = Colors.black.withOpacity(0.4);
+    final fill = Paint()..color = Colors.black.withValues(alpha: 0.4);
     final border = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke

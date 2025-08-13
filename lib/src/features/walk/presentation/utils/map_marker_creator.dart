@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:walk/src/core/services/log_service.dart';
 
 //walk_in_progress에서 사용합니다.
 /// 프로필 이미지, 선물 상자, 깃발 모양의 마커를 생성하는 기능을 제공합니다.
@@ -25,7 +26,7 @@ class MapMarkerCreator {
           imageUrl = userDoc.data()?['profileImageUrl'];
         }
       } catch (e) {
-        print("Failed to fetch user data for profile marker: $e");
+        LogService.error('Walk', 'Failed to fetch user data for profile marker', e);
       }
     }
 
@@ -54,7 +55,7 @@ class MapMarkerCreator {
         final ui.FrameInfo frameInfo = await codec.getNextFrame();
         avatarImage = frameInfo.image;
       } catch (e) {
-        print('Error loading profile image for marker: $e');
+        LogService.error('Walk', 'Error loading profile image for marker', e);
       }
     }
 

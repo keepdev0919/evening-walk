@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'dart:typed_data';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
@@ -226,8 +225,7 @@ class WalkStateManager {
     _accumulatedDistanceMeters = 0.0;
     _lastUserLocation = null;
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
-    print(
-        'WalkStateManager: 산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
+    LogService.walkState('산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
   }
 
   // 목적지에서 출발지로 돌아가기 시작
@@ -376,9 +374,9 @@ class WalkStateManager {
     _waypointLocation = waypoint;
     _destinationLocation = destination;
     LogService.walkState(' 위치 정보 복원 완료');
-    print('출발지: $_startLocation');
-    print('경유지: $_waypointLocation');
-    print('목적지: $_destinationLocation');
+    LogService.walkState('출발지: $_startLocation');
+    LogService.walkState('경유지: $_waypointLocation');
+    LogService.walkState('목적지: $_destinationLocation');
   }
 
   /// 좌표를 주소로 변환하는 메소드
@@ -390,9 +388,9 @@ class WalkStateManager {
       );
 
       if (placemarks.isNotEmpty) {
-        final PlaceMark = placemarks.first;
+        final placeMark = placemarks.first;
         // 일부 단말/지역에서 '.' 같은 플레이스홀더가 올 수 있어 필터링 처리
-        String _s(String? v) {
+        String safeString(String? v) {
           if (v == null) return '';
           final t = v.trim();
           if (t.isEmpty) return '';
@@ -400,13 +398,13 @@ class WalkStateManager {
           return t;
         }
 
-        final String region = _s(PlaceMark.administrativeArea); // 시/도
-        final String cityA = _s(PlaceMark.locality); // 시/군/구 (기기별 편차)
-        final String cityB = _s(PlaceMark.subAdministrativeArea); // 시/군/구 보조
-        final String district = _s(PlaceMark.subLocality); // 동/읍/면
-        final String street = _s(PlaceMark.street); // 도로명 + 번지까지 포함될 수 있음
-        final String road = _s(PlaceMark.thoroughfare);
-        final String number = _s(PlaceMark.subThoroughfare);
+        final String region = safeString(placeMark.administrativeArea); // 시/도
+        final String cityA = safeString(placeMark.locality); // 시/군/구 (기기별 편차)
+        final String cityB = safeString(placeMark.subAdministrativeArea); // 시/군/구 보조
+        final String district = safeString(placeMark.subLocality); // 동/읍/면
+        final String street = safeString(placeMark.street); // 도로명 + 번지까지 포함될 수 있음
+        final String road = safeString(placeMark.thoroughfare);
+        final String number = safeString(placeMark.subThoroughfare);
 
         final List<String> parts = [];
         if (region.isNotEmpty) parts.add(region);
@@ -446,8 +444,8 @@ class WalkStateManager {
   /// 목적지 주소 가져오기 (건물명이 있으면 우선 표시)
   Future<String> getDestinationLocationAddress() async {
     LogService.walkState(' getDestinationLocationAddress 호출');
-    print('_destinationLocation: $_destinationLocation');
-    print('_destinationBuildingName: $_destinationBuildingName');
+    LogService.walkState('_destinationLocation: $_destinationLocation');
+    LogService.walkState('_destinationBuildingName: $_destinationBuildingName');
 
     if (_destinationLocation == null) return '목적지 정보 없음';
 
@@ -467,7 +465,9 @@ class WalkStateManager {
   void updateSpeechBubbleState(LatLng currentPosition) {
     if (_startLocation == null ||
         _destinationLocation == null ||
-        _waypointLocation == null) return;
+        _waypointLocation == null) {
+      return;
+    }
 
     final SpeechBubbleState? newState =
         _calculateSpeechBubbleState(currentPosition);
@@ -482,7 +482,9 @@ class WalkStateManager {
   SpeechBubbleState? _calculateSpeechBubbleState(LatLng currentPosition) {
     if (_startLocation == null ||
         _destinationLocation == null ||
-        _waypointLocation == null) return null;
+        _waypointLocation == null) {
+      return null;
+    }
 
     final double distanceToStart = Geolocator.distanceBetween(
       currentPosition.latitude,

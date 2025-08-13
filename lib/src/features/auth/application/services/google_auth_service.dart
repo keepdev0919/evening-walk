@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 Future<bool> signInWithGoogle() async {
   try {
@@ -14,7 +15,7 @@ Future<bool> signInWithGoogle() async {
 
     if (googleUser == null) {
       // 로그인 취소됨
-      print('❌ 로그인 취소됨');
+      LogService.info('Auth', '로그인 취소됨');
       return false;
     }
 
@@ -36,7 +37,7 @@ Future<bool> signInWithGoogle() async {
 
     if (user == null) return false;
 
-    print('✅ 로그인 성공: ${user.displayName}');
+    LogService.info('Auth', '로그인 성공: ${user.displayName}');
 
     // ✅ Firestore에 저장 (legacy profileImage → profileImageUrl 마이그레이션 포함)
     final userDoc =
@@ -67,7 +68,7 @@ Future<bool> signInWithGoogle() async {
 
     return true;
   } catch (e) {
-    print('🔥 Google 로그인 중 오류 발생: $e');
+    LogService.error('Auth', 'Google 로그인 중 오류 발생', e);
     return false;
   }
 }

@@ -8,6 +8,7 @@ import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.da
 import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
 import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
 import 'package:walk/src/features/walk/presentation/screens/pose_recommendation_screen.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 class DebugModeButtons extends StatelessWidget {
   final bool isLoading;
@@ -79,7 +80,7 @@ class DebugModeButtons extends StatelessWidget {
                       SnackBar(
                         content: const Text(
                             '경유지 질문 생성에 실패했습니다. 경유지가 없거나 다른 이벤트가 발생했습니다.'),
-                        backgroundColor: Colors.black.withOpacity(0.6),
+                        backgroundColor: Colors.black.withValues(alpha: 0.6),
                       ),
                     );
                   }
@@ -88,13 +89,13 @@ class DebugModeButtons extends StatelessWidget {
                     SnackBar(
                       content:
                           const Text('WalkStateManager 또는 현재 위치가 초기화되지 않았습니다.'),
-                      backgroundColor: Colors.black.withOpacity(0.6),
+                      backgroundColor: Colors.black.withValues(alpha: 0.6),
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.withOpacity(0.8),
+                backgroundColor: Colors.orange.withValues(alpha: 0.8),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text('경유지 도착', style: TextStyle(fontSize: 12)),
@@ -154,7 +155,7 @@ class DebugModeButtons extends StatelessWidget {
                                         walkStateManager.accumulatedDistanceKm,
                                   },
                                 );
-                                print('디버그: 출발지 복귀 완료 시간 업데이트 완료');
+                                LogService.debug('Walk', '디버그: 출발지 복귀 완료 시간 업데이트 완료');
                               }
 
                               // 2. 산책 완료 알림 다이얼로그 표시
@@ -176,7 +177,7 @@ class DebugModeButtons extends StatelessWidget {
                                       sessionId:
                                           walkStateManager.savedSessionId,
                                       onWalkCompleted: (completed) {
-                                        print('디버그: 산책이 완전히 완료되었습니다!');
+                                        LogService.info('Walk', '디버그: 산책이 완전히 완료되었습니다!');
                                       },
                                     ),
                                   ),
@@ -261,7 +262,7 @@ class DebugModeButtons extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('목적지 도착 이벤트 처리에 실패했습니다.'),
-                        backgroundColor: Colors.black.withOpacity(0.6),
+                        backgroundColor: Colors.black.withValues(alpha: 0.6),
                       ),
                     );
                   }
@@ -269,13 +270,13 @@ class DebugModeButtons extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('현재 위치를 알 수 없어 목적지 도착을 강제할 수 없습니다.'),
-                      backgroundColor: Colors.black.withOpacity(0.6),
+                      backgroundColor: Colors.black.withValues(alpha: 0.6),
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.8),
+                backgroundColor: Colors.red.withValues(alpha: 0.8),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text('목적지 도착', style: TextStyle(fontSize: 12)),
@@ -301,7 +302,7 @@ class DebugModeButtons extends StatelessWidget {
                           walkStateManager.savedSessionId!,
                           {'endTime': DateTime.now().toIso8601String()},
                         );
-                        print('디버그: 출발지 복귀 완료 시간 업데이트 완룼');
+                        LogService.debug('Walk', '디버그: 출발지 복귀 완료 시간 업데이트 완룼');
                       }
 
                       // 2. 산책 완료 알림 다이얼로그 표시
@@ -320,7 +321,7 @@ class DebugModeButtons extends StatelessWidget {
                               walkStateManager: walkStateManager,
                               sessionId: walkStateManager.savedSessionId,
                               onWalkCompleted: (completed) {
-                                print('디버그: 산책이 완전히 완료되었습니다!');
+                                LogService.info('Walk', '디버그: 산책이 완전히 완료되었습니다!');
                               },
                             ),
                           ),
@@ -336,7 +337,7 @@ class DebugModeButtons extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text('출발지 복귀 이벤트 처리에 실패했습니다.'),
-                          backgroundColor: Colors.black.withOpacity(0.6),
+                          backgroundColor: Colors.black.withValues(alpha: 0.6),
                         ),
                       );
                     }
@@ -345,13 +346,13 @@ class DebugModeButtons extends StatelessWidget {
                       SnackBar(
                         content:
                             const Text('현재 위치를 알 수 없어 출발지 복귀를 강제할 수 없습니다.'),
-                        backgroundColor: Colors.black.withOpacity(0.6),
+                        backgroundColor: Colors.black.withValues(alpha: 0.6),
                       ),
                     );
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.withOpacity(0.8),
+                  backgroundColor: Colors.green.withValues(alpha: 0.8),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
@@ -363,7 +364,7 @@ class DebugModeButtons extends StatelessWidget {
                 _showSpeechBubbleTestDialog(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.withOpacity(0.8),
+                backgroundColor: Colors.purple.withValues(alpha: 0.8),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text('말풍선 테스트', style: TextStyle(fontSize: 12)),
@@ -383,7 +384,7 @@ class DebugModeButtons extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('말풍선 상태 테스트'),
-          backgroundColor: Colors.black.withOpacity(0.9),
+          backgroundColor: Colors.black.withValues(alpha: 0.9),
           titleTextStyle: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -403,7 +404,7 @@ class DebugModeButtons extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('말풍선 설정: ${state.message}'),
-                          backgroundColor: Colors.purple.withOpacity(0.8),
+                          backgroundColor: Colors.purple.withValues(alpha: 0.8),
                           duration: const Duration(seconds: 2),
                         ),
                       );
@@ -442,17 +443,17 @@ class DebugModeButtons extends StatelessWidget {
   Color _getButtonColor(SpeechBubbleState state) {
     switch (state) {
       case SpeechBubbleState.toWaypoint:
-        return Colors.blue.withOpacity(0.8);
+        return Colors.blue.withValues(alpha: 0.8);
       case SpeechBubbleState.almostWaypoint:
-        return Colors.orange.withOpacity(0.8);
+        return Colors.orange.withValues(alpha: 0.8);
       case SpeechBubbleState.waypointEventCompleted:
-        return Colors.yellow.withOpacity(0.8); // 경유지 이벤트 완료 후 노란색
+        return Colors.yellow.withValues(alpha: 0.8); // 경유지 이벤트 완료 후 노란색
       case SpeechBubbleState.almostDestination:
-        return Colors.red.withOpacity(0.8);
+        return Colors.red.withValues(alpha: 0.8);
       case SpeechBubbleState.returning:
-        return Colors.green.withOpacity(0.8);
+        return Colors.green.withValues(alpha: 0.8);
       case SpeechBubbleState.almostHome:
-        return Colors.purple.withOpacity(0.8);
+        return Colors.purple.withValues(alpha: 0.8);
     }
   }
 }

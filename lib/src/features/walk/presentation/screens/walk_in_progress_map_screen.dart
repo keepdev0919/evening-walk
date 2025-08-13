@@ -956,12 +956,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               offset: const Offset(0, 2),
                               blurRadius: 8,
                               spreadRadius: 0,
@@ -1009,12 +1009,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               offset: const Offset(0, 2),
                               blurRadius: 8,
                               spreadRadius: 0,
@@ -1063,12 +1063,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               offset: const Offset(0, 2),
                               blurRadius: 8,
                               spreadRadius: 0,
@@ -1175,11 +1175,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         height: 20,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.blue.withOpacity(0.9),
+                          color: Colors.blue.withValues(alpha: 0.9),
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               offset: const Offset(0, 1),
                               blurRadius: 3,
                             ),

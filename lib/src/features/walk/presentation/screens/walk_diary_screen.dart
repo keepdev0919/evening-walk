@@ -82,7 +82,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.25),
+        color: Colors.black.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white24, width: 0.8),
       ),

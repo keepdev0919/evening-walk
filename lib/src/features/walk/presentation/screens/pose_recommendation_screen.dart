@@ -297,7 +297,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            backgroundColor: Colors.black.withOpacity(0.85),
+            backgroundColor: Colors.black.withValues(alpha: 0.85),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: const BorderSide(color: Colors.white54, width: 1),
@@ -358,8 +358,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.3),
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.3),
                 ],
               ),
             ),
@@ -417,9 +417,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,9 +505,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   height: 120,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
+                    color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: const Text(
                     '경로 이미지를 준비 중...',
@@ -597,7 +597,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -623,14 +623,14 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     strokeWidth: 2,
                   ),
                 )
               : Text(
                   address,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 11,
                     height: 1.3,
                   ),
@@ -647,9 +647,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,7 +673,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.white24, width: 0.8),
                   ),
@@ -736,9 +736,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,7 +768,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -780,7 +780,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               child: const Center(
                                 child: Text(
                                   '사진을 불러올 수 없습니다',
@@ -793,7 +793,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                         // 살짝 어둡게 보이도록 오버레이 (일관 유지)
                         IgnorePointer(
                           child: Container(
-                            color: Colors.black.withOpacity(0.18),
+                            color: Colors.black.withValues(alpha: 0.18),
                           ),
                         ),
                       ],
@@ -871,8 +871,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.4),
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withValues(alpha: 0.4),
+                  Colors.black.withValues(alpha: 0.7),
                 ],
               ),
             ),
@@ -954,9 +954,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         width: double.infinity,
         height: AppConstants.defaultImageHeightLarge,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: _isLoadingPose
             ? const Center(
@@ -997,7 +997,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           // 추천 포즈 이미지도 배경과 조화롭게 살짝 어둡게
                           IgnorePointer(
                             child: Container(
-                              color: Colors.black.withOpacity(0.12),
+                              color: Colors.black.withValues(alpha: 0.12),
                             ),
                           ),
                         ],
@@ -1032,9 +1032,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             width: double.infinity,
             height: AppConstants.defaultImageHeightLarge,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: _isLoadingPhoto
                 ? const Center(
@@ -1103,7 +1103,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 ),
                 onPressed: _userPhotoPath == null ? _takePhoto : _retakePhoto,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.withOpacity(0.8),
+                  backgroundColor: Colors.blue.withValues(alpha: 0.8),
                   padding:
                       const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
                   shape: RoundedRectangleBorder(
@@ -1172,12 +1172,12 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             ),
             onPressed: _onSharePressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withOpacity(0.7),
+              backgroundColor: Colors.blue.withValues(alpha: 0.7),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.blue.withOpacity(0.3)),
+                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -1199,12 +1199,12 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             ),
             onPressed: _onCompletePressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withOpacity(0.8),
+              backgroundColor: Colors.green.withValues(alpha: 0.8),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.green.withOpacity(0.3)),
+                side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -1219,12 +1219,12 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1289,7 +1289,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.9),
+          backgroundColor: Colors.black.withValues(alpha: 0.9),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Colors.white54, width: 1),
@@ -1319,7 +1319,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.8),
+                backgroundColor: Colors.red.withValues(alpha: 0.8),
                 foregroundColor: Colors.white,
               ),
               child: const Text('삭제'),
@@ -1346,7 +1346,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         duration: AppConstants.snackBarDuration,
       ),
@@ -1358,7 +1358,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
         duration: AppConstants.errorSnackBarDuration,
       ),
     );

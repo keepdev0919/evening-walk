@@ -16,6 +16,7 @@ import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/select_mate_screen.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:walk/src/core/services/log_service.dart';
 // 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -257,7 +258,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
 
     // 바닥 그림자(말풍선 핀 느낌의 기준점 강조)
     final Paint shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.15)
+      ..color = Colors.black.withValues(alpha: 0.15)
       ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 4);
     canvas.drawCircle(
         Offset(size * 0.5, size * 0.98), size * 0.06, shadowPaint);
@@ -280,7 +281,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.'),
-          backgroundColor: Colors.black.withOpacity(0.6),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
           shape:
@@ -312,7 +313,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
               ],
             ),
           ),
-          backgroundColor: Colors.black.withOpacity(0.6),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
@@ -360,7 +361,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
             child: Container(
               padding: const EdgeInsets.all(16.0), // 패딩
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7), // 반투명 검정 배경
+                color: Colors.black.withValues(alpha: 0.7), // 반투명 검정 배경
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(20)),
                 border: Border.all(color: Colors.white54, width: 1), // 얇은 테두리
@@ -393,7 +394,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white24, width: 1),
                       ),
@@ -403,7 +404,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            '목적지 이름(선택)',
+                            '목적지 이름 수정(선택)',
                             style:
                                 TextStyle(color: Colors.white70, fontSize: 12),
                           ),
@@ -434,8 +435,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         _confirmDestination();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF4A90E2).withOpacity(0.8), // 부드러운 블루
+                        backgroundColor: const Color(0xFF4A90E2)
+                            .withValues(alpha: 0.8), // 부드러운 블루
                         foregroundColor: Colors.white, // 텍스트 색상
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25), // 둥근 모서리
@@ -489,7 +490,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                   color: Colors.white,
                 ),
               ),
-              backgroundColor: Colors.black.withOpacity(0.6),
+              backgroundColor: Colors.black.withValues(alpha: 0.6),
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
             ),
@@ -524,7 +525,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           child: Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20.0),
               border: Border.all(color: Colors.white24, width: 1.5),
             ),
@@ -547,7 +548,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF87CEEB).withOpacity(0.9),
+                    backgroundColor:
+                        const Color(0xFF87CEEB).withValues(alpha: 0.9),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -568,7 +570,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6B9D).withOpacity(0.8),
+                    backgroundColor:
+                        const Color(0xFFFF6B9D).withValues(alpha: 0.8),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -615,7 +618,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           color: Colors.white,
         ),
       ),
-      backgroundColor: Colors.black.withOpacity(0.6),
+      backgroundColor: Colors.black.withValues(alpha: 0.6),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
     );
@@ -663,7 +666,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -709,7 +712,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         }
       }
     } catch (e) {
-      print('Google Places API error: $e');
+      LogService.error('Walk', 'Google Places API error', e);
     }
     return null;
   }
@@ -773,15 +776,15 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
             : Container(
                 margin: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -799,7 +802,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 child: const Text(
@@ -836,7 +839,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       center: _currentPosition!,
                       radius: 850, // 850미터 반경
                       fillColor: const Color(0xFF87CEEB)
-                          .withOpacity(0.15), // 스카이 블루 채우기
+                          .withValues(alpha: 0.15), // 스카이 블루 채우기
                       strokeColor: const Color(0xFF4A90E2), // 부드러운 파란색 테두리
                       strokeWidth: 3, // 테두리 두께 약간 증가
                     ),
@@ -846,7 +849,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       center: _currentPosition!,
                       radius: 1700, // 1700미터 반경
                       fillColor: const Color(0xFFFFB6C1)
-                          .withOpacity(0.15), // 라이트 핑크 채우기
+                          .withValues(alpha: 0.15), // 라이트 핑크 채우기
                       strokeColor: const Color(0xFFFF6B9D), // 부드러운 핑크 테두리
                       strokeWidth: 3,
                     ),
@@ -866,10 +869,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.15), // 상단 은은한 오버레이
+                      Colors.black.withValues(alpha: 0.15), // 상단 은은한 오버레이
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black.withOpacity(0.1), // 하단 은은한 오버레이
+                      Colors.black.withValues(alpha: 0.1), // 하단 은은한 오버레이
                     ],
                     stops: const [0.0, 0.2, 0.8, 1.0],
                   ),
@@ -885,7 +888,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 child: GestureDetector(
@@ -914,7 +917,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        backgroundColor: Colors.black.withOpacity(0.8),
+                        backgroundColor: Colors.black.withValues(alpha: 0.8),
                         behavior: SnackBarBehavior.floating,
                         duration: Duration(seconds: 2),
                       ),
@@ -985,11 +988,11 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         height: 20,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.blue.withOpacity(0.9),
+                          color: Colors.blue.withValues(alpha: 0.9),
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               offset: const Offset(0, 1),
                               blurRadius: 3,
                             ),
@@ -1033,7 +1036,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12.0, vertical: 8.0),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: const Text(
@@ -1047,7 +1050,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                 const SizedBox(width: 8),
                 FloatingActionButton(
                   onPressed: _showRandomDestinationDialog,
-                  backgroundColor: const Color(0xFF4A90E2).withOpacity(0.9),
+                  backgroundColor:
+                      const Color(0xFF4A90E2).withValues(alpha: 0.9),
                   tooltip: '랜덤 목적지',
                   child: const Icon(
                     Icons.explore,
@@ -1075,10 +1079,11 @@ class _StartBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+            border:
+                Border.all(color: Colors.grey.withValues(alpha: 0.3), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 offset: const Offset(0, 2),
                 blurRadius: 8,
               ),
@@ -1107,7 +1112,7 @@ class _StartBubbleTailPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final fill = Paint()..color = Colors.white;
     final border = Paint()
-      ..color = Colors.grey.withOpacity(0.3)
+      ..color = Colors.grey.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 

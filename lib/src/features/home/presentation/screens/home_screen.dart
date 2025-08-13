@@ -9,6 +9,7 @@ import 'package:walk/src/features/walk/presentation/screens/walk_mode_select_scr
 import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../../shared/widgets/black_cat_widget.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 // 상태 구분용 enum
 enum InfoStatus { loading, success, error }
@@ -50,13 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // 위치 권한 및 날씨 정보 가져오기
   Future<void> _determinePosition() async {
     try {
-      print('HomeScreen: 위치 권한 확인 시작');
+      LogService.info('UI', 'HomeScreen: 위치 권한 확인 시작');
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      print('HomeScreen: 위치 서비스 활성화 상태: $serviceEnabled');
+      LogService.debug('UI', 'HomeScreen: 위치 서비스 활성화 상태: $serviceEnabled');
 
       if (!serviceEnabled) {
-        print('HomeScreen: 위치 서비스가 비활성화됨');
+        LogService.warning('UI', 'HomeScreen: 위치 서비스가 비활성화됨');
         setState(() {
           _location = '위치 서비스 꺼짐';
           _locationStatus = InfoStatus.error;
@@ -65,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
-      print('HomeScreen: 현재 위치 권한 상태: $permission');
+      LogService.debug('UI', 'HomeScreen: 현재 위치 권한 상태: $permission');
 
       if (permission == LocationPermission.denied) {
-        print('HomeScreen: 위치 권한 요청 중...');
+        LogService.info('UI', 'HomeScreen: 위치 권한 요청 중...');
         permission = await Geolocator.requestPermission();
-        print('HomeScreen: 위치 권한 요청 결과: $permission');
+        LogService.debug('UI', 'HomeScreen: 위치 권한 요청 결과: $permission');
 
         if (permission == LocationPermission.denied) {
           setState(() {
@@ -82,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        print('HomeScreen: 위치 권한이 영구적으로 거부됨');
+        LogService.warning('UI', 'HomeScreen: 위치 권한이 영구적으로 거부됨');
         setState(() {
           _location = '위치 권한 영구 거부';
           _locationStatus = InfoStatus.error;
@@ -90,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
     } catch (e) {
-      print('HomeScreen: 위치 권한 확인 중 오류 발생: $e');
+      LogService.error('UI', 'HomeScreen: 위치 권한 확인 중 오류 발생', e);
       setState(() {
         _location = '권한 확인 오류';
         _locationStatus = InfoStatus.error;
@@ -99,14 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
-      print('HomeScreen: GPS 위치 요청 시작');
+      LogService.info('UI', 'HomeScreen: GPS 위치 요청 시작');
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium, // 정확도 조정으로 속도 향상
         timeLimit: const Duration(seconds: 15), // GPS 타임아웃 설정
       );
 
-      print(
-          'HomeScreen: GPS 위치 획득 완료 - lat: ${position.latitude}, lon: ${position.longitude}');
+      LogService.info('UI', 'HomeScreen: GPS 위치 획득 완료 - lat: ${position.latitude}, lon: ${position.longitude}');
 
       // 위치 정보와 날씨 정보를 병렬로 처리 (더 빠른 로딩)
       await Future.wait([
@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _getWeather(position.latitude, position.longitude),
       ]);
     } catch (e) {
-      print('HomeScreen: 위치/날씨 정보 가져오기 실패 - $e');
+      LogService.error('UI', 'HomeScreen: 위치/날씨 정보 가져오기 실패', e);
       setState(() {
         if (_locationStatus == InfoStatus.loading) {
           _location = '위치 정보 오류';
@@ -131,8 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // 위도경도로 주소 가져오기
   Future<void> _getAddressFromLatLng(Position position) async {
     try {
-      print(
-          'HomeScreen: 위치 정보 요청 시작 - lat: ${position.latitude}, lon: ${position.longitude}');
+      LogService.debug('UI', 'HomeScreen: 위치 정보 요청 시작 - lat: ${position.latitude}, lon: ${position.longitude}');
 
       // Timeout 설정으로 무한 대기 방지
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -141,15 +140,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          print('HomeScreen: Geocoding API 타임아웃');
+          LogService.warning('UI', 'HomeScreen: Geocoding API 타임아웃');
           throw Exception('위치 정보 요청 시간 초과');
         },
       );
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        print(
-            'HomeScreen: 위치 정보 성공 - locality: ${place.locality}, subLocality: ${place.subLocality}');
+        LogService.info('UI', 'HomeScreen: 위치 정보 성공 - locality: ${place.locality}, subLocality: ${place.subLocality}');
 
         // locality와 subLocality 조합으로 더 구체적인 위치 정보 제공
         List<String> locationParts = [];
@@ -183,14 +181,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _locationStatus = InfoStatus.success;
         });
       } else {
-        print('HomeScreen: Geocoding 결과가 비어있음');
+        LogService.warning('UI', 'HomeScreen: Geocoding 결과가 비어있음');
         setState(() {
           _location = '위치 정보 없음';
           _locationStatus = InfoStatus.error;
         });
       }
     } catch (e) {
-      print('HomeScreen: 위치 정보 가져오기 실패 - $e');
+      LogService.error('UI', 'HomeScreen: 위치 정보 가져오기 실패', e);
       setState(() {
         _location = '위치 정보 오류';
         _locationStatus = InfoStatus.error;
@@ -201,11 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // 날씨 API 호출
   Future<void> _getWeather(double lat, double lon) async {
     try {
-      print('HomeScreen: 날씨 API 호출 시작 - lat: $lat, lon: $lon');
-      print('HomeScreen: API Key 존재 여부: ${_apiKey.isNotEmpty}');
+      LogService.info('UI', 'HomeScreen: 날씨 API 호출 시작 - lat: $lat, lon: $lon');
+      LogService.debug('UI', 'HomeScreen: API Key 존재 여부: ${_apiKey.isNotEmpty}');
 
       if (_apiKey.isEmpty) {
-        print('HomeScreen: OpenWeather API 키가 설정되지 않음');
+        LogService.warning('UI', 'HomeScreen: OpenWeather API 키가 설정되지 않음');
         setState(() {
           _weather = '🌤️ API 키 없음';
           _weatherStatus = InfoStatus.error;
@@ -219,16 +217,16 @@ class _HomeScreenState extends State<HomeScreen> {
           .timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          print('HomeScreen: 날씨 API 타임아웃');
+          LogService.warning('UI', 'HomeScreen: 날씨 API 타임아웃');
           throw Exception('날씨 API 요청 시간 초과');
         },
       );
 
-      print('HomeScreen: 날씨 API 응답 상태 코드: ${response.statusCode}');
+      LogService.debug('UI', 'HomeScreen: 날씨 API 응답 상태 코드: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('HomeScreen: 날씨 API 응답 성공');
+        LogService.info('UI', 'HomeScreen: 날씨 API 응답 성공');
 
         if (data['weather'] != null &&
             data['weather'].isNotEmpty &&
@@ -236,8 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final weatherMain = data['weather'][0]['main']; // 날씨 상태
           final temperature = data['main']['temp'].round(); // 온도
 
-          print(
-              'HomeScreen: 날씨 정보 파싱 성공 - 상태: $weatherMain, 온도: ${temperature}°C');
+          LogService.info('UI', 'HomeScreen: 날씨 정보 파싱 성공 - 상태: $weatherMain, 온도: ${temperature}°C');
 
           setState(() {
             _weather = '${_getWeatherEmoji(weatherMain)} ${temperature}°C';
@@ -245,22 +242,21 @@ class _HomeScreenState extends State<HomeScreen> {
             _weatherCondition = weatherMain; // 날씨 상태 저장
           });
         } else {
-          print('HomeScreen: 날씨 API 응답 데이터 형식 오류');
+          LogService.error('UI', 'HomeScreen: 날씨 API 응답 데이터 형식 오류');
           setState(() {
             _weather = '🌤️ 날씨 데이터 오류';
             _weatherStatus = InfoStatus.error;
           });
         }
       } else {
-        print(
-            'HomeScreen: 날씨 API HTTP 오류 - 상태 코드: ${response.statusCode}, 응답: ${response.body}');
+        LogService.error('UI', 'HomeScreen: 날씨 API HTTP 오류 - 상태 코드: ${response.statusCode}, 응답: ${response.body}');
         setState(() {
           _weather = '🌤️ API 오류';
           _weatherStatus = InfoStatus.error;
         });
       }
     } catch (e) {
-      print('HomeScreen: 날씨 정보 가져오기 실패 - $e');
+      LogService.error('UI', 'HomeScreen: 날씨 정보 가져오기 실패', e);
       setState(() {
         _weather = '🌤️ 날씨 오류';
         _weatherStatus = InfoStatus.error;
@@ -359,12 +355,12 @@ class _HomeScreenState extends State<HomeScreen> {
             letterSpacing: 0.8,
             shadows: [
               Shadow(
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 blurRadius: 6,
                 offset: const Offset(1, 1),
               ),
               Shadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 3,
                 offset: const Offset(0.5, 0.5),
               ),
@@ -387,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: RefreshIndicator(
         onRefresh: _refreshLocationAndWeather,
         color: Colors.white,
-        backgroundColor: Colors.blue.withOpacity(0.8),
+        backgroundColor: Colors.blue.withValues(alpha: 0.8),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -429,12 +425,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 1.3,
                             shadows: [
                               Shadow(
-                                color: Colors.black.withOpacity(0.8),
+                                color: Colors.black.withValues(alpha: 0.8),
                                 blurRadius: 8,
                                 offset: const Offset(2, 2),
                               ),
                               Shadow(
-                                color: Colors.black.withOpacity(0.4),
+                                color: Colors.black.withValues(alpha: 0.4),
                                 blurRadius: 4,
                                 offset: const Offset(1, 1),
                               ),
@@ -462,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   vertical: 18,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
                                     color: Colors.white,
@@ -499,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   vertical: 18,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
                                     color: Colors.white,
@@ -660,7 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Pull-to-Refresh 기능 - 위치와 날씨 정보 새로고침
   Future<void> _refreshLocationAndWeather() async {
-    print('HomeScreen: Pull-to-refresh 시작');
+    LogService.info('UI', 'HomeScreen: Pull-to-refresh 시작');
 
     setState(() {
       _locationStatus = InfoStatus.loading;
@@ -669,9 +665,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       await _determinePosition();
-      print('HomeScreen: Pull-to-refresh 완료');
+      LogService.info('UI', 'HomeScreen: Pull-to-refresh 완료');
     } catch (e) {
-      print('HomeScreen: Pull-to-refresh 실패 - $e');
+      LogService.error('UI', 'HomeScreen: Pull-to-refresh 실패', e);
     }
   }
 }

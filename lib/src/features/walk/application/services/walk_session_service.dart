@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walk/src/features/walk/domain/models/walk_session.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:walk/src/core/services/log_service.dart';
 // import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
 
 /// 산책 세션 관리를 위한 Firebase 연동 서비스
@@ -19,13 +20,13 @@ class WalkSessionService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return null;
       }
 
       if (walkStateManager.startLocation == null ||
           walkStateManager.waypointLocation == null) {
-        print('WalkSessionService: 필수 위치 정보가 누락됨');
+        LogService.warning('Walk', 'WalkSessionService: 필수 위치 정보가 누락됨');
         return null;
       }
 
@@ -39,16 +40,16 @@ class WalkSessionService {
       // // 사진이 있으면 Firebase Storage에 업로드
       // String? uploadedPhotoUrl;
       // if (walkStateManager.photoPath != null) {
-      //   print('WalkSessionService: 사진 업로드 시작');
+      //   LogService.info('Walk', 'WalkSessionService: 사진 업로드 시작');
       //   uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
       //     filePath: walkStateManager.photoPath!,
       //     sessionId: docRef.id,
       //   );
 
       //   if (uploadedPhotoUrl != null) {
-      //     print('WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
+      //     LogService.info('Walk', 'WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
       //   } else {
-      //     print('WalkSessionService: 사진 업로드 실패');
+      //     LogService.info('Walk', 'WalkSessionService: 사진 업로드 실패');
       //   }
       // }
 
@@ -75,19 +76,19 @@ class WalkSessionService {
       );
 
       // Firestore에 저장 전 디버깅
-      print('WalkSessionService: 저장할 데이터 확인');
-      print('사용자 ID: ${user.uid}');
-      print('문서 ID: ${docRef.id}');
+      LogService.debug('Walk', 'WalkSessionService: 저장할 데이터 확인');
+      LogService.debug('Walk', '사용자 ID: ${user.uid}');
+      LogService.debug('Walk', '문서 ID: ${docRef.id}');
 
       final firestoreData = walkSession.toFirestore();
-      print('저장할 데이터: $firestoreData');
+      LogService.info('Walk', '저장할 데이터: $firestoreData');
 
       await docRef.set(firestoreData);
 
-      print('WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
+      LogService.info('Walk', 'WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      print('WalkSessionService: 산책 세션 저장 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 저장 중 오류 발생', e);
       return null;
     }
   }
@@ -101,7 +102,7 @@ class WalkSessionService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return [];
       }
 
@@ -124,11 +125,11 @@ class WalkSessionService {
               doc.data() as Map<String, dynamic>, doc.id))
           .toList();
 
-      print(
+      LogService.info('Walk', 
           'WalkSessionService: ${walkSessions.length}개의 산책 세션을 Firebase에서 최신순으로 가져왔습니다.');
       return walkSessions;
     } catch (e) {
-      print('WalkSessionService: 산책 세션 목록 가져오기 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 목록 가져오기 중 오류 발생', e);
       return [];
     }
   }
@@ -168,7 +169,7 @@ class WalkSessionService {
       // 현재 사용자의 세션인지 확인을 위해 userId 필요
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return null;
       }
       
@@ -182,11 +183,11 @@ class WalkSessionService {
       if (doc.exists && doc.data() != null) {
         return WalkSession.fromFirestore(doc.data()!, doc.id);
       } else {
-        print('WalkSessionService: 세션 ID $sessionId를 찾을 수 없음');
+        LogService.info('Walk', 'WalkSessionService: 세션 ID $sessionId를 찾을 수 없음');
         return null;
       }
     } catch (e) {
-      print('WalkSessionService: 산책 세션 가져오기 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 가져오기 중 오류 발생', e);
       return null;
     }
   }
@@ -197,7 +198,7 @@ class WalkSessionService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return false;
       }
       
@@ -208,10 +209,10 @@ class WalkSessionService {
           .doc(sessionId)
           .update(updates);
 
-      print('WalkSessionService: 세션 $sessionId 업데이트 완료');
+      LogService.info('Walk', 'WalkSessionService: 세션 $sessionId 업데이트 완료');
       return true;
     } catch (e) {
-      print('WalkSessionService: 산책 세션 업데이트 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 업데이트 중 오류 발생', e);
       return false;
     }
   }
@@ -221,7 +222,7 @@ class WalkSessionService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return false;
       }
       
@@ -232,10 +233,10 @@ class WalkSessionService {
           .doc(sessionId)
           .delete();
 
-      print('WalkSessionService: 세션 $sessionId 삭제 완료');
+      LogService.info('Walk', 'WalkSessionService: 세션 $sessionId 삭제 완료');
       return true;
     } catch (e) {
-      print('WalkSessionService: 산책 세션 삭제 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 삭제 중 오류 발생', e);
       return false;
     }
   }
@@ -270,7 +271,7 @@ class WalkSessionService {
         'totalDistance': totalDistance,
       };
     } catch (e) {
-      print('WalkSessionService: 사용자 통계 조회 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 사용자 통계 조회 중 오류 발생', e);
       return {'totalWalks': 0, 'totalDuration': 0, 'totalDistance': 0.0};
     }
   }
@@ -284,13 +285,13 @@ class WalkSessionService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('WalkSessionService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
         return null;
       }
 
       if (walkStateManager.startLocation == null ||
           walkStateManager.waypointLocation == null) {
-        print('WalkSessionService: 필수 위치 정보가 누락됨');
+        LogService.warning('Walk', 'WalkSessionService: 필수 위치 정보가 누락됨');
         return null;
       }
 
@@ -327,10 +328,10 @@ class WalkSessionService {
       final firestoreData = walkSession.toFirestore();
       await docRef.set(firestoreData);
 
-      print('WalkSessionService: 산책 세션 즉시 저장 완료 - ID: ${docRef.id}');
+      LogService.info('Walk', 'WalkSessionService: 산책 세션 즉시 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      print('WalkSessionService: 산책 세션 즉시 저장 중 오류 발생: $e');
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 즉시 저장 중 오류 발생', e);
       return null;
     }
   }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 Future<bool> signInWithKakao() async {
   try {
@@ -69,7 +70,7 @@ Future<bool> signInWithKakao() async {
 
     return true;
   } catch (e) {
-    print('❌ 카카오 로그인 실패: $e');
+    LogService.error('Auth', '카카오 로그인 실패', e);
     return false;
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 
 /// 통합 로깅 서비스
@@ -6,26 +7,27 @@ class LogService {
   // === 디버그 로그 (개발 모드에서만 출력) ===
   static void debug(String tag, String message) {
     if (kDebugMode) {
-      print('[DEBUG][$tag] $message');
+      developer.log('[DEBUG] $message', name: tag);
     }
   }
   
   // === 정보성 로그 ===
   static void info(String tag, String message) {
-    print('[INFO][$tag] $message');
+    if (kDebugMode) {
+      developer.log('[INFO] $message', name: tag);
+    }
   }
   
   // === 경고 로그 ===
   static void warning(String tag, String message) {
-    print('[WARNING][$tag] $message');
+    if (kDebugMode) {
+      developer.log('[WARNING] $message', name: tag, level: 900);
+    }
   }
   
   // === 에러 로그 (항상 출력) ===
   static void error(String tag, String message, [Object? error]) {
-    print('[ERROR][$tag] $message');
-    if (error != null) {
-      print('[ERROR][$tag] Exception: $error');
-    }
+    developer.log('[ERROR] $message', name: tag, level: 1000, error: error);
   }
   
   // === WalkStateManager 전용 로그 ===

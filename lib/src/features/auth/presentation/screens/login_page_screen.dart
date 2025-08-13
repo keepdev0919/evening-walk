@@ -69,7 +69,7 @@ class LoginPage extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('로그인에 실패했습니다.'),
-          backgroundColor: Colors.black.withOpacity(0.6),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
         ),
       );
     }
@@ -127,12 +127,12 @@ class LoginPage extends StatelessWidget {
                           height: 1.3,
                           shadows: [
                             Shadow(
-                              color: Colors.black.withOpacity(0.8),
+                              color: Colors.black.withValues(alpha: 0.8),
                               blurRadius: 8,
                               offset: const Offset(2, 2),
                             ),
                             Shadow(
-                              color: Colors.black.withOpacity(0.4),
+                              color: Colors.black.withValues(alpha: 0.4),
                               blurRadius: 4,
                               offset: const Offset(1, 1),
                             ),
@@ -144,10 +144,10 @@ class LoginPage extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 20),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),

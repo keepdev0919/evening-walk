@@ -1,5 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 사용자의 위치가 경유지에 도착했는지 여부를 확인하는 역할을 담당하는 클래스.
 class WaypointEventHandler {
@@ -26,7 +27,7 @@ class WaypointEventHandler {
 
     // 강제 이벤트 발생 플래그가 true이면 항상 도착한 것으로 간주합니다.
     if (forceWaypointEvent) {
-      print('WaypointEventHandler: 경유지 도착! (강제)');
+      LogService.info('Walk', 'WaypointEventHandler: 경유지 도착! (강제)');
       return true;
     }
 

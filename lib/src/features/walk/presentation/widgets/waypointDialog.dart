@@ -15,7 +15,7 @@ class WaypointDialogs {
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.7), // 배경색
+          backgroundColor: Colors.black.withValues(alpha: 0.7), // 배경색
           shape: RoundedRectangleBorder(
             // 모양
             borderRadius: BorderRadius.circular(20),
@@ -131,7 +131,7 @@ class WaypointDialogs {
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.7),
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),
@@ -190,7 +190,7 @@ class WaypointDialogs {
       barrierDismissible: true,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.8),
+          backgroundColor: Colors.black.withValues(alpha: 0.8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),
@@ -257,7 +257,7 @@ class WaypointDialogs {
       barrierDismissible: true,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.8),
+          backgroundColor: Colors.black.withValues(alpha: 0.8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: Colors.white54, width: 1),

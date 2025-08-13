@@ -86,7 +86,7 @@ class MyApp extends StatelessWidget {
               ),
             ),
             snackBarTheme: SnackBarThemeData(
-              backgroundColor: Colors.black.withOpacity(0.6),
+              backgroundColor: Colors.black.withValues(alpha: 0.6),
               behavior: SnackBarBehavior.floating,
               elevation: 0,
               shape: RoundedRectangleBorder(

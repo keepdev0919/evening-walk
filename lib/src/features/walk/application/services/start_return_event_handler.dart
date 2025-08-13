@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 사용자의 위치가 출발지에 복귀했는지 여부를 확인하는 역할을 담당하는 클래스.
 class StartReturnEventHandler {
@@ -14,7 +15,7 @@ class StartReturnEventHandler {
   }) {
     // 강제 이벤트 발생 플래그가 true이면 항상 도착한 것으로 간주합니다.
     if (forceStartReturnEvent) {
-      print('StartReturnEventHandler: 출발지 복귀 완료! (강제)');
+      LogService.info('Walk', 'StartReturnEventHandler: 출발지 복귀 완료! (강제)');
       return true;
     }
 
@@ -26,7 +27,7 @@ class StartReturnEventHandler {
       startLocation.longitude,
     );
 
-    print('StartReturnEventHandler: 출발지까지 거리: ${distance.toStringAsFixed(1)}m');
+    LogService.debug('Walk', 'StartReturnEventHandler: 출발지까지 거리: ${distance.toStringAsFixed(1)}m');
     return distance <= startReturnArrivalRadius;
   }
 }

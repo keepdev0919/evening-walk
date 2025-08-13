@@ -10,25 +10,36 @@ class WalkModeSelectScreen extends StatelessWidget {
 
   Future<void> _confirmAndGo(BuildContext context, String mode) async {
     final isRoundTrip = mode == 'round_trip';
-    final title = isRoundTrip ? '왕복으로 진행할까요?' : '편도로 진행할까요?';
+    // 다이얼로그 문구를 카드 문구와 통일
+    final title = isRoundTrip ? '왕복' : '편도';
     final desc = isRoundTrip
-        ? '경로: 출발지 → 목적지 → 출발지\n돌아오면 자동으로 완료돼요.'
-        : '경로: 출발지 → 목적지\n도착하면 바로 완료돼요.';
+        ? '"출발지 → 목적지 → 출발지"\n돌아오면 산책이 완료돼요'
+        : '"출발지 → 목적지" 도착하면 \n바로 산책이 완료돼요';
 
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.black.withOpacity(0.92),
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Colors.white24, width: 1),
         ),
-        title: Text(title,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700)),
-        content: Text(desc,
-            style: const TextStyle(color: Colors.white70, height: 1.4)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          desc,
+          style: const TextStyle(
+            color: Colors.white,
+            height: 1.4,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -37,7 +48,7 @@ class WalkModeSelectScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent.withOpacity(0.9),
+              backgroundColor: Colors.blueAccent.withValues(alpha: 0.9),
               foregroundColor: Colors.white,
             ),
             child: const Text('확인'),
@@ -103,14 +114,14 @@ class WalkModeSelectScreen extends StatelessWidget {
                   _ModeCard(
                     emoji: '↩️',
                     title: '왕복',
-                    desc: '"출발지 → 목적지 → 출발지"\n돌아오면 자동으로 완료해요',
+                    desc: '"출발지 → 목적지 → 출발지"\n돌아오면 산책이 완료돼요',
                     onTap: () => _confirmAndGo(context, 'round_trip'),
                   ),
                   const SizedBox(height: 14),
                   _ModeCard(
                     emoji: '➡️',
                     title: '편도',
-                    desc: '"출발지 → 목적지"\n도착하면 바로 완료해요',
+                    desc: '"출발지 → 목적지" 도착하면 \n바로 산책이 완료돼요',
                     onTap: () => _confirmAndGo(context, 'one_way'),
                   ),
                 ],
@@ -169,9 +180,9 @@ class _ModeCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.28),
+          color: Colors.black.withValues(alpha: 0.28),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,9 +205,10 @@ class _ModeCard extends StatelessWidget {
                   Text(
                     desc,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 16,
                       height: 1.35,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],

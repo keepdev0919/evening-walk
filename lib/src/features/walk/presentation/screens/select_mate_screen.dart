@@ -65,7 +65,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.7), // 반투명 검정 배경
+          backgroundColor: Colors.black.withValues(alpha: 0.7), // 반투명 검정 배경
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20), // 둥근 모서리
             side: const BorderSide(color: Colors.white54, width: 1), // 얇은 테두리
@@ -95,7 +95,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(false), // 취소
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.1), // 반투명 흰색 배경
+                backgroundColor: Colors.white.withValues(alpha: 0.1), // 반투명 흰색 배경
                 foregroundColor: Colors.white, // 텍스트 색상
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -111,7 +111,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true), // 확정
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2), // 반투명 흰색 배경
+                backgroundColor: Colors.white.withValues(alpha: 0.2), // 반투명 흰색 배경
                 foregroundColor: Colors.white, // 텍스트 색상
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -139,7 +139,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (ctx, setState) {
           return AlertDialog(
-            backgroundColor: Colors.black.withOpacity(0.7),
+            backgroundColor: Colors.black.withValues(alpha: 0.7),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: Colors.white54, width: 1),
@@ -167,7 +167,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: selected == FriendGroupType.two
                               ? Colors.blue
-                              : Colors.white.withOpacity(0.15),
+                              : Colors.white.withValues(alpha: 0.15),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -188,7 +188,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: selected == FriendGroupType.many
                               ? Colors.blue
-                              : Colors.white.withOpacity(0.15),
+                              : Colors.white.withValues(alpha: 0.15),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -209,7 +209,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(null), // 취소
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -224,9 +224,9 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
                     ? null
                     : () => Navigator.of(context).pop(selected), // 확정
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                  disabledBackgroundColor: Colors.white.withValues(alpha: 0.05),
                   disabledForegroundColor: Colors.white60,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -252,7 +252,7 @@ class _SelectMateScreenState extends State<SelectMateScreen> {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black.withOpacity(0.4),
+            backgroundColor: Colors.black.withValues(alpha: 0.4),
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(
               horizontal: isNarrow ? 24 : 60,

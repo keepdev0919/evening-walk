@@ -10,6 +10,7 @@ import '../widgets/gender_selector_widget.dart';
 import 'package:walk/src/features/auth/application/services/logout_service.dart';
 import 'package:walk/src/features/auth/presentation/screens/login_page_screen.dart';
 import 'package:walk/src/features/auth/presentation/screens/onboarding_screen.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
@@ -61,7 +62,7 @@ class _ProfileState extends State<Profile> {
           SnackBar(
             content: const Text('회원 정보를 입력해주세요'),
             duration: const Duration(seconds: 2),
-            backgroundColor: Colors.black.withOpacity(0.7),
+            backgroundColor: Colors.black.withValues(alpha: 0.7),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -116,8 +117,8 @@ class _ProfileState extends State<Profile> {
       'email': _emailController.text,
     };
 
-    print('저장할 지역 데이터: ${_regionController.text}'); // 디버그 로그
-    print('저장할 전체 데이터: $dataToUpdate'); // 디버그 로그
+    LogService.debug('UI', '저장할 지역 데이터: ${_regionController.text}');
+    LogService.debug('UI', '저장할 전체 데이터: $dataToUpdate');
 
     // 이미지 URL이 있으면 데이터에 추가합니다.
     if (imageUrl != null) {
@@ -137,7 +138,7 @@ class _ProfileState extends State<Profile> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('프로필이 업데이트되었습니다.'),
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -196,7 +197,7 @@ class _ProfileState extends State<Profile> {
           ),
           // 반투명 오버레이
           Container(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
           ),
           _user == null
               ? const Center(
@@ -310,10 +311,10 @@ class _ProfileState extends State<Profile> {
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: Colors.white,
                                             backgroundColor:
-                                                Colors.white.withOpacity(0.08),
+                                                Colors.white.withValues(alpha: 0.08),
                                             side: BorderSide(
                                                 color: Colors.white
-                                                    .withOpacity(0.25)),
+                                                    .withValues(alpha: 0.25)),
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 12, horizontal: 16),
                                             shape: RoundedRectangleBorder(
@@ -353,7 +354,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       barrierDismissible: true,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.black.withOpacity(0.92),
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Colors.white24, width: 1),
@@ -370,7 +371,7 @@ class _ProfileState extends State<Profile> {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
               foregroundColor: Colors.white,
             ),
             child: const Text('확인'),
@@ -390,7 +391,7 @@ class _ProfileState extends State<Profile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('로그아웃되었습니다.'),
-          backgroundColor: Colors.black.withOpacity(0.7),
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -404,7 +405,7 @@ class _ProfileState extends State<Profile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('로그아웃 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red.withOpacity(0.85),
+          backgroundColor: Colors.red.withValues(alpha: 0.85),
         ),
       );
     }
@@ -426,7 +427,7 @@ class _ProfileState extends State<Profile> {
     messenger.showSnackBar(
       SnackBar(
         content: const Text('오른쪽 위 연필 아이콘을 누르면 편집할 수 있어요.'),
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
       ),
@@ -444,7 +445,7 @@ class _ProfileState extends State<Profile> {
     SnackBar _sb(String msg) => SnackBar(
           content: Text(msg),
           duration: const Duration(seconds: 2),
-          backgroundColor: Colors.black.withOpacity(0.75),
+          backgroundColor: Colors.black.withValues(alpha: 0.75),
           behavior: SnackBarBehavior.floating,
         );
 
@@ -568,9 +569,9 @@ class _ProfileState extends State<Profile> {
               ? RegionSelectorWidget(
                   initialRegion: controller.text,
                   onRegionSelected: (region) {
-                    print('지역 선택됨: $region'); // 디버그 로그
+                    LogService.debug('UI', '지역 선택됨: $region');
                     controller.text = region;
-                    print('컨트롤러 업데이트됨: ${controller.text}'); // 디버그 로그
+                    LogService.debug('UI', '컨트롤러 업데이트됨: ${controller.text}');
                   },
                 )
               : Container(

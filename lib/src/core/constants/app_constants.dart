@@ -33,24 +33,24 @@ class AppConstants {
 /// 색상 관련 상수들
 class AppColors {
   // === 투명도가 있는 색상들 ===
-  static final Color backgroundOverlay = Colors.black.withOpacity(0.6);
-  static final Color backgroundOverlayLight = Colors.black.withOpacity(0.3);
-  static final Color backgroundOverlayDark = Colors.black.withOpacity(0.7);
-  static final Color backgroundOverlayVeryDark = Colors.black.withOpacity(0.8);
+  static final Color backgroundOverlay = Colors.black.withValues(alpha: 0.6);
+  static final Color backgroundOverlayLight = Colors.black.withValues(alpha: 0.3);
+  static final Color backgroundOverlayDark = Colors.black.withValues(alpha: 0.7);
+  static final Color backgroundOverlayVeryDark = Colors.black.withValues(alpha: 0.8);
   static final Color backgroundOverlayTransparent =
-      Colors.black.withOpacity(0.5);
+      Colors.black.withValues(alpha: 0.5);
 
-  static final Color whiteOverlay = Colors.white.withOpacity(0.2);
-  static final Color whiteOverlayLight = Colors.white.withOpacity(0.05);
-  static final Color whiteOverlayMedium = Colors.white.withOpacity(0.4);
-  static final Color whiteOverlayStrong = Colors.white.withOpacity(0.9);
+  static final Color whiteOverlay = Colors.white.withValues(alpha: 0.2);
+  static final Color whiteOverlayLight = Colors.white.withValues(alpha: 0.05);
+  static final Color whiteOverlayMedium = Colors.white.withValues(alpha: 0.4);
+  static final Color whiteOverlayStrong = Colors.white.withValues(alpha: 0.9);
 
-  static final Color blueOverlay = Colors.blue.withOpacity(0.7);
-  static final Color blueOverlayStrong = Colors.blue.withOpacity(0.8);
-  static final Color blueOverlayLight = Colors.blue.withOpacity(0.3);
+  static final Color blueOverlay = Colors.blue.withValues(alpha: 0.7);
+  static final Color blueOverlayStrong = Colors.blue.withValues(alpha: 0.8);
+  static final Color blueOverlayLight = Colors.blue.withValues(alpha: 0.3);
 
-  static final Color greenOverlay = Colors.green.withOpacity(0.8);
-  static final Color greenOverlayLight = Colors.green.withOpacity(0.3);
+  static final Color greenOverlay = Colors.green.withValues(alpha: 0.8);
+  static final Color greenOverlayLight = Colors.green.withValues(alpha: 0.3);
 
   // === 그라데이션 ===
   static final LinearGradient backgroundGradient = LinearGradient(
@@ -81,7 +81,7 @@ class AppStyles {
     border: Border.all(color: AppColors.whiteOverlay),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.2),
+        color: Colors.black.withValues(alpha: 0.2),
         blurRadius: 10,
         offset: const Offset(0, 3),
       ),
@@ -94,7 +94,7 @@ class AppStyles {
     border: Border.all(color: AppColors.whiteOverlayMedium, width: 1.5),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         blurRadius: 10,
         offset: const Offset(0, 3),
       ),
@@ -141,7 +141,7 @@ class AppStyles {
   );
 
   static TextStyle bodyStyle = TextStyle(
-    color: Colors.white.withOpacity(0.9),
+    color: Colors.white.withValues(alpha: 0.9),
     fontSize: 14,
     fontWeight: FontWeight.w500,
   );

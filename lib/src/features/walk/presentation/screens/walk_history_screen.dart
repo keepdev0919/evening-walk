@@ -200,7 +200,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3), // 다이얼로그 스타일 참고한 반투명 검정 배경
+        color: Colors.black.withValues(alpha: 0.3), // 다이얼로그 스타일 참고한 반투명 검정 배경
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white54,
@@ -325,8 +325,8 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.blue.withOpacity(0.8)
-                    : Colors.black.withOpacity(0.3),
+                    ? Colors.blue.withValues(alpha: 0.8)
+                    : Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected ? Colors.blue : Colors.white54,
@@ -335,7 +335,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: Colors.blue.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -561,7 +561,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                   Text('산책 기록이 삭제되었습니다.'),
                 ],
               ),
-              backgroundColor: Colors.black.withOpacity(0.6),
+              backgroundColor: Colors.black.withValues(alpha: 0.6),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -582,7 +582,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                   Expanded(child: Text('삭제에 실패했습니다. 다시 시도해주세요.')),
                 ],
               ),
-              backgroundColor: Colors.black.withOpacity(0.6),
+              backgroundColor: Colors.black.withValues(alpha: 0.6),
               duration: const Duration(seconds: 3),
             ),
           );
@@ -605,7 +605,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
                 ),
               ],
             ),
-            backgroundColor: Colors.black.withOpacity(0.6),
+            backgroundColor: Colors.black.withValues(alpha: 0.6),
             duration: const Duration(seconds: 3),
           ),
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 배경 영상을 재생하는 위젯
 /// 자동으로 루프 재생되며, 음소거 상태로 재생됩니다.
@@ -34,7 +35,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
       // 초기화 전에 에러 리스너 추가
       _controller.addListener(() {
         if (_controller.value.hasError) {
-          print('VideoBackground: 재생 중 에러 - ${_controller.value.errorDescription}');
+          LogService.error('UI', 'VideoBackground: 재생 중 에러 - ${_controller.value.errorDescription}');
           if (mounted) {
             setState(() {
               _isInitialized = false;
@@ -56,7 +57,7 @@ class _VideoBackgroundState extends State<VideoBackground> {
         await _controller.play();
       }
     } catch (e) {
-      print('VideoBackground: 영상 초기화 실패 - $e');
+      LogService.error('UI', 'VideoBackground: 영상 초기화 실패', e);
       // 영상 로딩 실패 시에도 fallback으로 처리
       if (mounted) {
         setState(() {

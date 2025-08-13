@@ -1,5 +1,6 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:math';
+import 'package:walk/src/core/services/log_service.dart';
 
 class PoseImageService {
   static Future<String?> fetchRandomImageUrl(String mate) async {
@@ -32,7 +33,7 @@ class PoseImageService {
         return await randomRef.getDownloadURL();
       }
     } catch (e) {
-      print('Error loading images from Firebase Storage: $e');
+      LogService.error('Walk', 'Error loading images from Firebase Storage', e);
     }
     return null;
   }

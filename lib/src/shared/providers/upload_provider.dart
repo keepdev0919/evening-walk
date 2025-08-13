@@ -3,6 +3,7 @@ import '../models/upload_state.dart';
 import '../services/toast_service.dart';
 import '../../features/walk/application/services/photo_upload_service.dart';
 import '../../features/walk/application/services/walk_session_service.dart';
+import '../../core/services/log_service.dart';
 
 /// 업로드 상태를 관리하는 Provider
 class UploadProvider extends ChangeNotifier {
@@ -97,7 +98,7 @@ class UploadProvider extends ChangeNotifier {
         'takenPhotoPath': photoUrl,
       });
     } catch (e) {
-      print('세션 사진 URL 업데이트 실패: $e');
+      LogService.error('Upload', '세션 사진 URL 업데이트 실패', e);
     }
   }
 

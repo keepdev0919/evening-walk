@@ -57,12 +57,12 @@ class Onboarding extends StatelessWidget {
                           height: 1.35,
                           shadows: [
                             Shadow(
-                              color: Colors.black.withOpacity(0.8),
+                              color: Colors.black.withValues(alpha: 0.8),
                               blurRadius: 8,
                               offset: const Offset(2, 2),
                             ),
                             Shadow(
-                              color: Colors.black.withOpacity(0.4),
+                              color: Colors.black.withValues(alpha: 0.4),
                               blurRadius: 4,
                               offset: const Offset(1, 1),
                             ),
@@ -96,7 +96,7 @@ class Onboarding extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 60, vertical: 16),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(color: Colors.white, width: 1.5),
                           ),
@@ -142,9 +142,9 @@ class _OnboardCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.25)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +167,7 @@ class _OnboardCard extends StatelessWidget {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                     height: 1.35,
                   ),

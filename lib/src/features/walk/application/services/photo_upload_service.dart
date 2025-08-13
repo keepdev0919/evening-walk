@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:walk/src/core/services/log_service.dart';
 
 /// 사진을 Firebase Storage에 업로드하는 서비스
 class PhotoUploadService {
@@ -22,13 +23,13 @@ class PhotoUploadService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('PhotoUploadService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'PhotoUploadService: 사용자가 로그인되지 않음');
         return null;
       }
 
       final file = File(filePath);
       if (!await file.exists()) {
-        print('PhotoUploadService: 파일이 존재하지 않음: $filePath');
+        LogService.info('Walk', 'PhotoUploadService: 파일이 존재하지 않음: $filePath');
         return null;
       }
 
@@ -36,7 +37,7 @@ class PhotoUploadService {
       final String fileName = '${sessionId}_destination.jpg';
       final String storagePath = 'user_photos/${user.uid}/$fileName';
 
-      print('PhotoUploadService: 업로드 시작 - $storagePath');
+      LogService.info('Walk', 'PhotoUploadService: 업로드 시작 - $storagePath');
 
       // Firebase Storage에 업로드
       final Reference ref = _storage.ref().child(storagePath);
@@ -55,7 +56,7 @@ class PhotoUploadService {
       // 업로드 진행률 모니터링
       uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
         final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        print('PhotoUploadService: 업로드 진행률: ${(progress * 100).toStringAsFixed(1)}%');
+        LogService.info('Walk', 'PhotoUploadService: 업로드 진행률: ${(progress * 100).toStringAsFixed(1)}%');
         
         // 진행률 콜백 호출
         if (onProgress != null) {
@@ -69,14 +70,14 @@ class PhotoUploadService {
       if (snapshot.state == TaskState.success) {
         // 다운로드 URL 획득
         final String downloadUrl = await ref.getDownloadURL();
-        print('PhotoUploadService: 업로드 완료 - URL: $downloadUrl');
+        LogService.info('Walk', 'PhotoUploadService: 업로드 완료 - URL: $downloadUrl');
         return downloadUrl;
       } else {
-        print('PhotoUploadService: 업로드 실패 - State: ${snapshot.state}');
+        LogService.info('Walk', 'PhotoUploadService: 업로드 실패 - State: ${snapshot.state}');
         return null;
       }
     } catch (e) {
-      print('PhotoUploadService: 사진 업로드 중 오류 발생: $e');
+      LogService.error('Walk', 'PhotoUploadService: 사진 업로드 중 오류 발생', e);
       return null;
     }
   }
@@ -90,7 +91,7 @@ class PhotoUploadService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('PhotoUploadService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'PhotoUploadService: 사용자가 로그인되지 않음');
         return false;
       }
 
@@ -99,10 +100,10 @@ class PhotoUploadService {
       
       // 삭제 실행
       await ref.delete();
-      print('PhotoUploadService: 사진 삭제 완료 - $photoUrl');
+      LogService.info('Walk', 'PhotoUploadService: 사진 삭제 완료 - $photoUrl');
       return true;
     } catch (e) {
-      print('PhotoUploadService: 사진 삭제 중 오류 발생: $e');
+      LogService.error('Walk', 'PhotoUploadService: 사진 삭제 중 오류 발생', e);
       return false;
     }
   }
@@ -114,7 +115,7 @@ class PhotoUploadService {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('PhotoUploadService: 사용자가 로그인되지 않음');
+        LogService.warning('Walk', 'PhotoUploadService: 사용자가 로그인되지 않음');
         return [];
       }
 
@@ -129,14 +130,14 @@ class PhotoUploadService {
           final String downloadUrl = await ref.getDownloadURL();
           photoUrls.add(downloadUrl);
         } catch (e) {
-          print('PhotoUploadService: URL 조회 실패 - ${ref.fullPath}: $e');
+          LogService.info('Walk', 'PhotoUploadService: URL 조회 실패 - ${ref.fullPath}: $e');
         }
       }
 
-      print('PhotoUploadService: ${photoUrls.length}개의 사진을 찾았습니다.');
+      LogService.info('Walk', 'PhotoUploadService: ${photoUrls.length}개의 사진을 찾았습니다.');
       return photoUrls;
     } catch (e) {
-      print('PhotoUploadService: 사진 목록 조회 중 오류 발생: $e');
+      LogService.error('Walk', 'PhotoUploadService: 사진 목록 조회 중 오류 발생', e);
       return [];
     }
   }
@@ -157,11 +158,11 @@ class PhotoUploadService {
       final int fileSizeBytes = await file.length();
       final double fileSizeMB = fileSizeBytes / (1024 * 1024);
       
-      print('PhotoUploadService: 파일 크기: ${fileSizeMB.toStringAsFixed(2)}MB');
+      LogService.info('Walk', 'PhotoUploadService: 파일 크기: ${fileSizeMB.toStringAsFixed(2)}MB');
       
       return fileSizeMB <= maxSizeMB;
     } catch (e) {
-      print('PhotoUploadService: 파일 크기 확인 중 오류 발생: $e');
+      LogService.error('Walk', 'PhotoUploadService: 파일 크기 확인 중 오류 발생', e);
       return false;
     }
   }
