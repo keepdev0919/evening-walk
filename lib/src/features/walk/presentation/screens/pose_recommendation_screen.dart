@@ -102,7 +102,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         });
       }
     } catch (e) {
-      _showErrorSnackBar('사진 촬영에 실패했습니다: $e');
+      _showErrorSnackBar('사진 촬영에 실패했습니다: $e ✨');
     } finally {
       setState(() {
         _isLoadingPhoto = false;
@@ -133,36 +133,52 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   /// 완료 버튼 - 세션 저장 후 출발지 복귀 감지 시작
   Future<void> _onCompletePressed() async {
     try {
-      // 1차 저장: 현재까지 수집된 모든 정보 저장 (소감 제외)
       final walkSessionService = WalkSessionService();
-      final sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
-        walkStateManager: widget.walkStateManager,
-        walkReflection: null, // 소감은 나중에 작성
-        locationName: widget.walkStateManager
-            .destinationBuildingName, // WalkStateManager에서 가져오기
-      );
 
-      if (sessionId != null) {
-        LogService.info('PoseRecommendation', '1차 산책 세션 저장 완료: $sessionId');
-        widget.walkStateManager.setSavedSessionId(sessionId);
-      } else {
-        LogService.warning('PoseRecommendation', '세션 저장 실패 - 그래도 출발지 복귀 감지 시작');
+      // 1) 세션이 없다면 새로 저장 (소감 제외)
+      String? sessionId = widget.walkStateManager.savedSessionId;
+      if (sessionId == null) {
+        sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
+          walkStateManager: widget.walkStateManager,
+          walkReflection: null,
+          locationName: widget.walkStateManager.destinationBuildingName,
+        );
+        if (sessionId != null) {
+          widget.walkStateManager.setSavedSessionId(sessionId);
+        }
       }
 
-      // 출발지 복귀 감지 시작
-      LogService.event('완료 버튼 클릭 - 출발지 복귀 감지 시작');
-      widget.walkStateManager.startReturningHome();
+      // 2) 종료 시간/총 시간/총 거리 업데이트 (완료 시점 기준)
+      final DateTime endTime = DateTime.now();
+      int? totalDuration;
+      final start = widget.walkStateManager.actualStartTime;
+      if (start != null) {
+        totalDuration = endTime.difference(start).inMinutes;
+      } else {
+        totalDuration = widget.walkStateManager.actualDurationInMinutes;
+      }
 
-      // 이전 화면(지도)으로 돌아가기
-      Navigator.pop(context);
+      if (sessionId != null) {
+        await walkSessionService.updateWalkSession(sessionId, {
+          'endTime': endTime.toIso8601String(),
+          'totalDuration': totalDuration,
+          'totalDistance': widget.walkStateManager.accumulatedDistanceKm,
+          'updatedAt': DateTime.now().toIso8601String(),
+        });
+      }
 
-      _showSuccessSnackBar('목적지 이벤트 완료! ✨');
+      // 3) 홈 화면으로 이동 (스택 제거)
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/homescreen',
+          (route) => false,
+          arguments: {'showSuccessMessage': '산책이 완료되어 일기에 저장되었습니다. ✨'},
+        );
+      }
     } catch (e) {
       LogService.error('PoseRecommendation', '완료 처리 중 오류', e);
-      // 오류가 있어도 출발지 복귀는 시작
-      widget.walkStateManager.startReturningHome();
-      Navigator.pop(context);
-      _showErrorSnackBar('완료 처리 중 일부 오류가 발생했습니다.');
+      if (!mounted) return;
+      _showErrorSnackBar('완료 처리 중 오류가 발생했습니다. 다시 시도해주세요. ✨');
     }
   }
 
@@ -289,7 +305,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       // 오버레이 제거
       overlayEntry.remove();
     } catch (e) {
-      _showErrorSnackBar('공유 중 오류가 발생했습니다: $e');
+      _showErrorSnackBar('공유 중 오류가 발생했습니다: $e ✨');
       LogService.error('PoseRecommendation', '공유 오류', e);
     } finally {
       // 로딩 다이얼로그 닫기
@@ -1051,6 +1067,13 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         ),
       ),
       centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.help_outline, color: Colors.white, size: 24),
+          tooltip: '도움말',
+          onPressed: _showHelpDialog,
+        )
+      ],
     );
   }
 
@@ -1060,74 +1083,117 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   Widget _buildPoseRecommendationSection() {
     return _buildSection(
       title: '💫 추천 포즈',
-      content: Container(
-        width: double.infinity,
-        height: AppConstants.defaultImageHeightLarge,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        ),
-        child: _isLoadingPose
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
-            : _recommendedPoseImageUrl != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: GestureDetector(
-                      onTap: () => _showFullScreenNetworkImage(
-                        _recommendedPoseImageUrl!,
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CachedNetworkImage(
-                            imageUrl: _recommendedPoseImageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(
-                                  color: Colors.white),
-                            ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.error_outline,
-                                      color: Colors.white70, size: 48),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    '이미지를 불러올 수 없습니다',
-                                    style: TextStyle(color: Colors.white70),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // 추천 포즈 이미지도 배경과 조화롭게 살짝 어둡게
-                          IgnorePointer(
-                            child: Container(
-                              color: Colors.black.withValues(alpha: 0.12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            height: AppConstants.defaultImageHeightLarge,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            ),
+            child: _isLoadingPose
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
                   )
-                : const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.photo_camera_outlined,
-                            color: Colors.white70, size: 48),
-                        SizedBox(height: 8),
-                        Text(
-                          '추천 포즈를 불러오는 중입니다...',
-                          style: TextStyle(color: Colors.white70),
+                : _recommendedPoseImageUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: GestureDetector(
+                          onTap: () => _showFullScreenNetworkImage(
+                            _recommendedPoseImageUrl!,
+                          ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: _recommendedPoseImageUrl!,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.error_outline,
+                                          color: Colors.white70, size: 48),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        '이미지를 불러올 수 없습니다',
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              IgnorePointer(
+                                child: Container(
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
+                      )
+                    : const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.photo_camera_outlined,
+                                color: Colors.white70, size: 48),
+                            SizedBox(height: 8),
+                            Text(
+                              '추천 포즈를 불러오는 중입니다...',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24, width: 1),
+        ),
+        title: const Text(
+          '도움말',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('1) 출발지 및 목적지 카드는 클릭하여 이름을 수정할 수 있어요.',
+                style: TextStyle(color: Colors.white70, height: 1.3)),
+            SizedBox(height: 8),
+            Text('2) 추천 포즈를 참고하여 사진을 찍어보세요.',
+                style: TextStyle(color: Colors.white70, height: 1.3)),
+            SizedBox(height: 8),
+            Text('3) 오늘의 산책 기록을 SNS에 공유해보세요!',
+                style: TextStyle(color: Colors.white70, height: 1.3)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('확인', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -1177,19 +1243,25 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           ),
                         ),
                       )
-                    : const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined,
-                                color: Colors.white70, size: 48),
-                            SizedBox(height: 8),
-                            Text(
-                              '추천 포즈를 참고해서 사진을 찍어보세요!',
-                              style: TextStyle(color: Colors.white70),
-                              textAlign: TextAlign.center,
+                    : GestureDetector(
+                        onTap: _takePhoto,
+                        behavior: HitTestBehavior.opaque,
+                        child: const SizedBox.expand(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo_outlined,
+                                    color: Colors.white70, size: 48),
+                                SizedBox(height: 8),
+                                Text(
+                                  '추천 포즈를 참고해서 사진을 찍어보세요!',
+                                  style: TextStyle(color: Colors.white70),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
           ),

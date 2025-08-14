@@ -8,7 +8,7 @@ import 'package:walk/src/features/walk/application/services/walk_state_manager.d
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
 import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
-import 'package:flutter_compass/flutter_compass.dart';
+// import 'package:flutter_compass/flutter_compass.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
@@ -18,10 +18,11 @@ import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.da
 import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
 import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
 import 'package:walk/src/core/services/log_service.dart';
-import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
-import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
-import 'dart:typed_data';
-import 'dart:math' as math;
+// import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
+// import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
+// import 'dart:typed_data';
+// import 'dart:math' as math;
+import 'package:walk/src/features/walk/presentation/utils/heading_controller.dart';
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.
@@ -33,7 +34,6 @@ class WalkInProgressMapScreen extends StatefulWidget {
   final LatLng destinationLocation;
   final String selectedMate;
   final String? destinationBuildingName;
-  final WalkMode mode;
 
   const WalkInProgressMapScreen({
     Key? key,
@@ -41,7 +41,6 @@ class WalkInProgressMapScreen extends StatefulWidget {
     required this.destinationLocation,
     required this.selectedMate,
     this.destinationBuildingName,
-    this.mode = WalkMode.roundTrip,
   }) : super(key: key);
 
   @override
@@ -55,6 +54,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   /// Google Map 컨트롤러. 지도 제어에 사용됩니다.
   late GoogleMapController mapController;
+  double _cameraBearing = 0.0; // 지도가 회전할 때 화살표 보정을 위한 값
 
   /// 사용자의 현재 위치를 저장하는 LatLng 객체입니다.
   LatLng? _currentPosition;
@@ -121,12 +121,15 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   double? _currentHeading; // 현재 방향 (도 단위)
   late AnimationController _headingAnimationController;
   late Animation<double> _headingAnimation;
+  HeadingController? _headingController;
+  StreamSubscription<double>? _headingSub;
   // 디바이스 자기 센서(컴퍼스)에서 읽은 각도 (0~360)
-  double? _deviceCompassHeading;
-  StreamSubscription<CompassEvent>? _compassSubscription;
+  // HeadingController로 대체 (남아있는 참조 제거)
+  // double? _deviceCompassHeading;
+  // StreamSubscription<CompassEvent>? _compassSubscription;
 
   /// 이동 방향 계산 및 소스 스위칭을 위한 보조 상태값
-  Position? _lastPositionForCourse; // 이전 GPS 위치 (bearing 계산용)
+  // Position? _lastPositionForCourse; // 이전 GPS 위치 (HeadingController로 대체)
 
   /// 보조 함수: 각도를 0~360도로 정규화합니다.
   double _normalizeDegrees(double angle) {
@@ -143,38 +146,15 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     return '🚶'; // 기본값
   }
 
-  /// 보조 함수: 두 지점 사이의 진행방향(bearing, 0~360°)을 계산합니다.
-  double _bearingBetween(LatLng from, LatLng to) {
-    final double lat1 = from.latitude * math.pi / 180.0;
-    final double lon1 = from.longitude * math.pi / 180.0;
-    final double lat2 = to.latitude * math.pi / 180.0;
-    final double lon2 = to.longitude * math.pi / 180.0;
-
-    final double dLon = lon2 - lon1;
-    final double y = math.sin(dLon) * math.cos(lat2);
-    final double x = math.cos(lat1) * math.sin(lat2) -
-        math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
-    final double brng = math.atan2(y, x);
-    return _normalizeDegrees(brng * 180.0 / math.pi);
-  }
+  // 진행방향 계산 로직은 HeadingController로 이동
 
   /// 보조 함수: 최단 회전 경로로 각도를 보간합니다. 반환값은 도 단위입니다.
-  double _lerpAngleShortestDegrees(double fromDeg, double toDeg, double t) {
-    double from = _normalizeDegrees(fromDeg);
-    double to = _normalizeDegrees(toDeg);
-    double diff = to - from;
-    if (diff > 180.0) diff -= 360.0;
-    if (diff < -180.0) diff += 360.0;
-    return _normalizeDegrees(from + diff * t);
-  }
+  // HeadingController 사용으로 미사용
+  // double _lerpAngleShortestDegrees(double fromDeg, double toDeg, double t) { ... }
 
   /// 속도에 따른 보간 민감도. 빠를수록 더 민감하게 반응.
-  double _alphaBySpeed(double speedMetersPerSecond) {
-    if (speedMetersPerSecond >= 2.0) return 0.35; // 달리기 수준
-    if (speedMetersPerSecond >= 1.4) return 0.25; // 보통 보행
-    if (speedMetersPerSecond >= 0.8) return 0.15; // 느린 보행
-    return 0.10; // 정지/아주 느림: 더 안정적으로
-  }
+  // HeadingController 사용으로 미사용
+  // double _alphaBySpeed(double speedMetersPerSecond) { ... }
 
   /// 사용자의 이동 경로에 발자국(🐾)/점(.) 마커를 추가합니다.
   /// - 발자국: 10m 간격
@@ -258,33 +238,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     } catch (_) {}
   }
 
-  /// 출발지-경유지-목적지 정적 지도 이미지를 생성하여 저장합니다.
-  Future<void> _generateAndSaveRouteSnapshot() async {
-    try {
-      final start = _walkStateManager.startLocation;
-      final waypoint = _walkStateManager.waypointLocation;
-      final dest = _walkStateManager.destinationLocation;
-      if (start == null || dest == null) return;
-      // 1) In-app 캡처 우선 시도
-      Uint8List? png = await InAppMapSnapshotService.captureRouteSnapshot(
-        context: context,
-        start: start,
-        waypoint: waypoint,
-        destination: dest,
-        width: 600,
-        height: 400,
-      );
-      // 2) 실패 시 Static Maps fallback
-      png ??= await RouteSnapshotService.generateRouteSnapshot(
-        start: start,
-        waypoint: waypoint,
-        destination: dest,
-        width: 600,
-        height: 400,
-      );
-      _walkStateManager.saveRouteSnapshot(png);
-    } catch (_) {}
-  }
+  // 목적지 스냅샷 저장 로직은 현재 플로우에서 사용하지 않음
 
   void _handleWaypointEventState(bool show, String? question, String? answer) {
     setState(() {
@@ -329,23 +283,22 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           parent: _headingAnimationController, curve: Curves.easeInOut),
     );
 
-    // 컴퍼스(자기 센서) 구독: 기기가 바라보는 방향을 항상 우선 사용
-    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
-      final double? heading = event.heading; // 0~360 (null 가능)
-      if (heading == null) return;
-      _deviceCompassHeading = heading;
-      // 지도 위치 업데이트 루프와 독립적으로도 방향 애니메이션을 부드럽게 유지
-      _updateUserHeading(heading);
-    });
+    // 컴퍼스 직접 구독 제거 (HeadingController 스트림으로 일원화)
 
     // 현재 사용자 정보를 가져옵니다.
     // _user = FirebaseAuth.instance.currentUser;
     // WalkStateManager를 초기화합니다.
     _walkStateManager = WalkStateManager();
-    _walkStateManager.setWalkMode(widget.mode);
 
     // 산책 초기화를 시작합니다.
     _initializeWalk();
+
+    // HeadingController 시작 및 구독
+    _headingController = HeadingController()..start();
+    _headingSub = _headingController!.stream.listen((deg) {
+      final double corrected = _normalizeDegrees(deg - _cameraBearing);
+      _updateUserHeading(corrected);
+    });
   }
 
   @override
@@ -353,8 +306,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     WidgetsBinding.instance.removeObserver(this); // 옵저버 해제
     // 위젯이 dispose될 때 위치 스트림 구독을 취소하여 리소스 누수를 방지합니다.
     _positionStreamSubscription?.cancel();
-    _compassSubscription?.cancel();
     // 방향 애니메이션 컨트롤러 해제
+    _headingSub?.cancel();
+    _headingController?.dispose();
     _headingAnimationController.dispose();
     super.dispose();
   }
@@ -535,44 +489,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       _maybeAddFootprint(_currentPosition!);
 
       // --- 방향 스위칭 + 보정 로직 ---
-      // 1) 디바이스 컴퍼스(자기 센서) 각도: flutter_compass 우선 사용
-      final double? compassHeading = _deviceCompassHeading ??
-          ((position.heading >= 0 && position.heading <= 360)
-              ? position.heading
-              : null);
+      // 방향 계산은 HeadingController로 일원화 (여기서는 오버레이/이벤트만 처리)
 
-      // 2) 이동 진행방향(course) 계산: 이전 위치 대비 bearing
-      double? courseHeading;
-      if (_lastPositionForCourse != null) {
-        final double movedMeters = Geolocator.distanceBetween(
-          _lastPositionForCourse!.latitude,
-          _lastPositionForCourse!.longitude,
-          position.latitude,
-          position.longitude,
-        );
-        if (movedMeters > 3.0) {
-          courseHeading = _bearingBetween(
-            LatLng(_lastPositionForCourse!.latitude,
-                _lastPositionForCourse!.longitude),
-            LatLng(position.latitude, position.longitude),
-          );
-        }
-      }
-
-      // 3) 후보 각도 선택: 항상 기기 바라보는 방향(compass) 우선, 없으면 course 사용
-      final double? targetHeading = compassHeading ?? courseHeading;
-
-      // 5) 보정: 최단 각도 보간(EMA 느낌) 후 애니메이션에 전달
-      if (targetHeading != null) {
-        final double fused = (_currentHeading == null)
-            ? targetHeading
-            : _lerpAngleShortestDegrees(
-                _currentHeading!, targetHeading, _alphaBySpeed(position.speed));
-        _updateUserHeading(fused);
-      }
-
-      // 6) 다음 회차를 위한 이전 위치 저장
-      _lastPositionForCourse = position;
+      // 진행방향 계산은 HeadingController에서 처리하므로 여기서는 저장 불필요
 
       await _updateOverlayPosition();
       await _updateOverlayPositions();
@@ -588,65 +507,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
       switch (eventSignal) {
         case "one_way_completed":
-          _positionStreamSubscription?.cancel();
-          // 편도 완료: 목적지 도착 다이얼로그 표시 후 분기 처리
-          final bool? wantsToSeeEvent =
-              await DestinationDialog.showDestinationArrivalDialog(
-            context: context,
-          );
-
-          // 경로 스냅샷 저장
-          await _generateAndSaveRouteSnapshot();
-
-          // 사용자가 이벤트 확인을 선택한 경우에만 포즈 추천 화면으로 이동
-          if (wantsToSeeEvent == true) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PoseRecommendationScreen(
-                  walkStateManager: _walkStateManager,
-                ),
-              ),
-            );
-          }
-
-          // 포즈 추천(선택적) 완료 후 세션 업데이트
-          if (_walkStateManager.savedSessionId != null) {
-            final walkSessionService = WalkSessionService();
-            await walkSessionService.updateWalkSession(
-              _walkStateManager.savedSessionId!,
-              {
-                'endTime': DateTime.now().toIso8601String(),
-                'totalDuration': _walkStateManager.actualDurationInMinutes,
-                'totalDistance': _walkStateManager.accumulatedDistanceKm,
-              },
-            );
-          }
-
-          // 완료 다이얼로그
-          final bool? shouldShowDiary =
-              await WalkCompletionDialog.showWalkCompletionDialog(
-            context: context,
-            savedSessionId: _walkStateManager.savedSessionId ?? '',
-          );
-
-          if (shouldShowDiary == true && context.mounted) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WalkDiaryScreen(
-                  walkStateManager: _walkStateManager,
-                  sessionId: _walkStateManager.savedSessionId,
-                  onWalkCompleted: (completed) {},
-                ),
-              ),
-            );
-          } else if (shouldShowDiary == false && context.mounted) {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/homescreen',
-              (route) => false,
-            );
-          }
+          // 단순화 플로우에서는 별도 처리 없음
           break;
         case "destination_reached":
           final bool? wantsToSeeEvent =
@@ -654,13 +515,13 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             context: context,
           );
 
-          if (wantsToSeeEvent == true) {
-            if (mounted) {
-              setState(() {
-                _showDestinationTeaseBubble = false; // 확인 시 숨김
-              });
-            }
-            await _generateAndSaveRouteSnapshot();
+          if (mounted) {
+            setState(() {
+              _showDestinationTeaseBubble = false;
+            });
+          }
+
+          if (wantsToSeeEvent == true && context.mounted) {
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -669,17 +530,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 ),
               ),
             );
-          } else {
-            // 나중에 버튼 선택 시에도 출발지 복귀 감지 시작
-            _walkStateManager.startReturningHome();
-
-            if (mounted) {
-              setState(() {
-                _showDestinationEventButton = true;
-                _showDestinationTeaseBubble = false; // 나중에 시 숨김
-              });
-            }
-            await _generateAndSaveRouteSnapshot();
           }
           break;
 
@@ -858,7 +708,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     zoom: 15.0,
                   ),
                   markers: allMarkers,
-                  onCameraMove: (_) {
+                  onCameraMove: (cam) {
+                    _cameraBearing = cam.bearing;
                     _updateOverlayPosition();
                     _updateOverlayPositions();
                   },
@@ -914,34 +765,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // 산책 모드 표시
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 6.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(
-                            color: Colors.blueAccent.withValues(alpha: 0.8),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          widget.mode == WalkMode.roundTrip ? '왕복' : '편도',
-                          style: const TextStyle(
-                              color: Colors.blueAccent,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5),
-                        ),
-                      ),
+                      // 단순화: 산책 모드 배지 제거
                     ],
                   ),
                 ),
@@ -978,7 +802,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
             },
             initialPoseImageUrl: _currentDestinationPoseImageUrl,
             initialTakenPhotoPath: _currentDestinationTakenPhotoPath,
-            walkMode: widget.mode, // 산책 모드 전달
+            // 단순화: 모드 전달 제거
           ),
           // 목적지 Lottie 애니메이션 오버레이
           if (!_isLoading && _destinationOverlayOffset != null)
@@ -1135,60 +959,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 ),
               ),
             ),
-          // 출발지 말풍선 (왕복 모드에서만 표시)
-          if (!_isLoading &&
-              _startOverlayOffset != null &&
-              widget.mode == WalkMode.roundTrip &&
-              _walkStateManager.isReturningHome)
-            Positioned(
-              left: _startOverlayOffset!.dx - 40,
-              top: _startOverlayOffset!.dy - _startOverlayHeight - 22,
-              child: IgnorePointer(
-                ignoring: true,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 200),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              offset: const Offset(0, 2),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: const Text(
-                          '집으로..!',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            height: 0.8,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      CustomPaint(
-                        size: const Size(20, 10),
-                        painter: SpeechBubbleTailPainter(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          // 출발지 말풍선 제거
           // 출발지 Lottie 애니메이션 오버레이 (편도/왕복 모드 모두 표시)
           if (!_isLoading && _startOverlayOffset != null)
             Positioned(

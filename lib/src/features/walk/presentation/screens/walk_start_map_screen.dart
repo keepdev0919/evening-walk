@@ -14,9 +14,9 @@ import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:flutter_compass/flutter_compass.dart';
+// import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/features/walk/presentation/utils/heading_controller.dart';
 // 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -25,8 +25,8 @@ import 'package:walk/src/core/services/log_service.dart';
 
 /// 산책 시작 전 목적지를 설정하는 지도 화면입니다.
 class WalkStartMapScreen extends StatefulWidget {
-  final WalkMode mode;
-  const WalkStartMapScreen({super.key, this.mode = WalkMode.roundTrip});
+  // 단순화 플로우: 왕복/편도 제거
+  const WalkStartMapScreen({super.key});
 
   @override
   State<WalkStartMapScreen> createState() => _WalkStartMapScreenState();
@@ -81,8 +81,18 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
   double? _currentHeading; // 현재 각도(도)
   late AnimationController _headingAnimationController;
   late Animation<double> _headingAnimation; // 라디안 단위
-  StreamSubscription<CompassEvent>? _compassSubscription;
+  // 컴퍼스 직접 구독 제거. HeadingController를 사용합니다.
+  // StreamSubscription<CompassEvent>? _compassSubscription; // deprecated
+  HeadingController? _headingController;
+  StreamSubscription<double>? _headingSub;
+  double _cameraBearing = 0.0;
   StreamSubscription<Position>? _positionStreamSubscription;
+
+  double _normalizeDegrees(double angle) {
+    double a = angle % 360.0;
+    if (a < 0) a += 360.0;
+    return a;
+  }
 
   @override
   void initState() {
@@ -95,12 +105,11 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     _headingAnimation = Tween<double>(begin: 0.0, end: 0.0)
         .animate(_headingAnimationController);
 
-    // 기기 바라보는 방향(자기 센서) 구독
-    _compassSubscription = FlutterCompass.events?.listen((event) {
-      final heading = event.heading; // 0~360, null 가능
-      if (heading != null) {
-        _updateUserHeading(heading);
-      }
+    // 통합 헤딩 컨트롤러 시작 및 구독 (지도의 bearing 보정 적용)
+    _headingController = HeadingController()..start();
+    _headingSub = _headingController!.stream.listen((deg) {
+      final double corrected = _normalizeDegrees(deg - _cameraBearing);
+      _updateUserHeading(corrected);
     });
     // 위치 스트림 구독: 오버레이 좌표 최신화 및 heading 보조값
     _positionStreamSubscription = Geolocator.getPositionStream(
@@ -112,18 +121,16 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       if (!mounted) return;
       _currentPosition = LatLng(pos.latitude, pos.longitude);
       await _updateOverlayPosition();
-      final double? gHeading =
-          (pos.heading >= 0 && pos.heading <= 360) ? pos.heading : null;
-      if (gHeading != null) {
-        _updateUserHeading(gHeading);
-      }
+      // 위치만 갱신. 방향은 HeadingController로 일원화
     });
     _determinePosition();
   }
 
   @override
   void dispose() {
-    _compassSubscription?.cancel();
+    // _compassSubscription?.cancel();
+    _headingSub?.cancel();
+    _headingController?.dispose();
     _positionStreamSubscription?.cancel();
     _headingAnimationController.dispose();
     super.dispose();
@@ -281,7 +288,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요.'),
+          content: const Text('현재 위치를 불러오는 중입니다. 잠시 후 다시 시도해주세요. ✨'),
           backgroundColor: Colors.black.withValues(alpha: 0.6),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
@@ -310,7 +317,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
               children: const [
                 TextSpan(text: '목적지는 최대 '),
                 TextSpan(text: '빨간원', style: TextStyle(color: Colors.red)),
-                TextSpan(text: '까지만 설정할 수 있습니다.'),
+                TextSpan(text: '까지만 설정할 수 있습니다. ✨'),
               ],
             ),
           ),
@@ -507,10 +514,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       ),
       backgroundColor: Colors.black.withValues(alpha: 0.8),
       builder: (ctx) {
-        return _MateAndModeSheet(
+        return _MateSheet(
           finalName: finalName,
-          initialMode: widget.mode,
-          onStart: (selectedMateLabel, selectedMode) {
+          onStart: (selectedMateLabel) {
             Navigator.pop(ctx);
             Navigator.push(
               context,
@@ -520,7 +526,6 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                   destinationLocation: _selectedDestination!,
                   selectedMate: selectedMateLabel,
                   destinationBuildingName: finalName,
-                  mode: selectedMode,
                 ),
               ),
             );
@@ -628,7 +633,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
 
     final SnackBar snackBar = SnackBar(
       content: const Text(
-        '주변 장소를 살펴보는 중이에요...',
+        '주변 장소를 살펴보는 중이에요... ✨',
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -683,7 +688,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text(
-          '추천할 만한 장소를 찾지 못했어요. 다시 시도해주세요.',
+          '추천할 만한 장소를 찾지 못했어요. 다시 시도해주세요. ✨',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -887,7 +892,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                   ),
                   onTap: _onMapTap, // 지도를 탭했을 때 호출될 콜백 함수
                   onCameraMove: (CameraPosition position) {
-                    // 카메라 이동 시 오버레이 위치 업데이트
+                    // 카메라 이동 시 오버레이 위치 업데이트 및 bearing 보정값 유지
+                    _cameraBearing = position.bearing;
                     _updateOverlayPosition();
                   },
                   circles: {
@@ -982,7 +988,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                               TextSpan(
                                   text: '30',
                                   style: TextStyle(color: Colors.red)),
-                              TextSpan(text: '분 정도의 산책거리에요'),
+                              TextSpan(text: '분 정도의 산책거리에요 ✨'),
                             ],
                           ),
                           textAlign: TextAlign.center,
@@ -1039,13 +1045,13 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                 ),
               ),
             ),
-          // 방향 화살표 (폰이 바라보는 방향)
+          // 방향 화살표 (폰이 바라보는 방향) - 사용자 위치 중심 정렬
           if (!_isLoading &&
               _userOverlayOffset != null &&
               _currentHeading != null)
             Positioned(
-              left: _userOverlayOffset!.dx + (_overlayWidth / 2) - 20,
-              top: _userOverlayOffset!.dy - (_overlayHeight / 2) - 8,
+              left: _userOverlayOffset!.dx - 12,
+              top: _userOverlayOffset!.dy - 12,
               child: IgnorePointer(
                 ignoring: true,
                 child: AnimatedBuilder(
@@ -1055,8 +1061,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       alignment: Alignment.center,
                       angle: _headingAnimation.value,
                       child: Container(
-                        width: 20,
-                        height: 20,
+                        width: 24,
+                        height: 24,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.blue.withValues(alpha: 0.9),
@@ -1072,7 +1078,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         child: const Icon(
                           Icons.navigation,
                           color: Colors.white,
-                          size: 14,
+                          size: 16,
                         ),
                       ),
                     );
@@ -1202,29 +1208,25 @@ class _StartBubbleTailPainter extends CustomPainter {
 }
 
 // 바텀시트 전용 독립 StatefulWidget: 내부 상태 유지(mate, friendGroup, selectedMode)
-class _MateAndModeSheet extends StatefulWidget {
+class _MateSheet extends StatefulWidget {
   final String finalName;
-  final WalkMode initialMode;
-  final void Function(String selectedMateLabel, WalkMode selectedMode) onStart;
-  const _MateAndModeSheet({
+  final void Function(String selectedMateLabel) onStart;
+  const _MateSheet({
     required this.finalName,
-    required this.initialMode,
     required this.onStart,
   });
 
   @override
-  State<_MateAndModeSheet> createState() => _MateAndModeSheetState();
+  State<_MateSheet> createState() => _MateSheetState();
 }
 
-class _MateAndModeSheetState extends State<_MateAndModeSheet> {
+class _MateSheetState extends State<_MateSheet> {
   String? mate; // '혼자' | '연인' | '친구'
   String? friendGroup; // 'two' | 'many'
-  late WalkMode selectedMode;
 
   @override
   void initState() {
     super.initState();
-    selectedMode = widget.initialMode;
   }
 
   @override
@@ -1363,51 +1365,7 @@ class _MateAndModeSheetState extends State<_MateAndModeSheet> {
                   : const SizedBox.shrink(),
             ),
             const SizedBox(height: 12),
-            const Text(
-              '산책 방식',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18),
-            ),
-            const SizedBox(height: 6),
-            ToggleButtons(
-              isSelected: [
-                selectedMode == WalkMode.roundTrip,
-                selectedMode == WalkMode.oneWay,
-              ],
-              onPressed: (i) => setState(() {
-                selectedMode = i == 0 ? WalkMode.roundTrip : WalkMode.oneWay;
-              }),
-              borderRadius: BorderRadius.circular(10),
-              selectedColor: Colors.white,
-              color: Colors.white,
-              fillColor: Colors.blue.withValues(alpha: 0.8),
-              selectedBorderColor: Colors.blue,
-              borderColor: Colors.white54,
-              borderWidth: 1.5,
-              children: const [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child:
-                      Text('왕복', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child:
-                      Text('편도', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              '왕복: 출발지 → 목적지 → 출발지 / 편도: 출발지 → 목적지',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-              ),
-            ),
+            // 단순화: 산책 방식 선택 제거
             const SizedBox(height: 10),
             Row(
               children: [
@@ -1434,7 +1392,7 @@ class _MateAndModeSheetState extends State<_MateAndModeSheet> {
                               }
                               return mate!;
                             }();
-                            widget.onStart(selectedMateLabel, selectedMode);
+                            widget.onStart(selectedMateLabel);
                           }
                         : null,
                     style: ElevatedButton.styleFrom(

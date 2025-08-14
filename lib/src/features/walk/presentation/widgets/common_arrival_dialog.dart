@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// 목적지/경유지 도착 다이얼로그의 공통 UI 컴포넌트
 class CommonArrivalDialog {
   /// 공통 도착 다이얼로그 표시
-  /// 
+  ///
   /// [title]: 다이얼로그 제목 (예: '목적지 도착!', '경유지 도착!')
   /// [icon]: 제목 앞에 표시할 아이콘
   /// [iconColor]: 아이콘 색상
@@ -18,8 +18,10 @@ class CommonArrivalDialog {
     required Color iconColor,
     required String message,
     required VoidCallback onEventConfirm,
+    VoidCallback? onMessageTap,
     VoidCallback? onLater,
     bool barrierDismissible = false,
+    String confirmLabel = '이벤트 확인',
   }) {
     return showDialog<T>(
       context: context,
@@ -45,10 +47,13 @@ class CommonArrivalDialog {
               ),
             ],
           ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.white70),
-            textAlign: TextAlign.center,
+          content: GestureDetector(
+            onTap: onMessageTap,
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: <Widget>[
@@ -58,7 +63,8 @@ class CommonArrivalDialog {
                   Navigator.of(dialogContext).pop(false); // false 반환
                   onLater();
                 },
-                child: const Text('나중에', style: TextStyle(color: Colors.white70)),
+                child:
+                    const Text('나중에', style: TextStyle(color: Colors.white70)),
               ),
             ElevatedButton(
               onPressed: () {
@@ -67,9 +73,10 @@ class CommonArrivalDialog {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               ),
-              child: const Text('이벤트 확인'),
+              child: Text(confirmLabel),
             ),
           ],
         );

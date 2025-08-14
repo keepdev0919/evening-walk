@@ -4,11 +4,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
 import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
-import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
-import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
-import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
+// import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
+// import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
+// import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
 import 'package:walk/src/features/walk/presentation/screens/pose_recommendation_screen.dart';
-import 'package:walk/src/core/services/log_service.dart';
+// import 'package:walk/src/core/services/log_service.dart';
 
 class DebugModeButtons extends StatelessWidget {
   final bool isLoading;
@@ -22,7 +22,7 @@ class DebugModeButtons extends StatelessWidget {
   final Function(String?) onPhotoTaken;
   final String? initialPoseImageUrl;
   final String? initialTakenPhotoPath;
-  final WalkMode walkMode; // 산책 모드 추가
+  // 단순화: 모드 제거
 
   const DebugModeButtons({
     Key? key,
@@ -37,7 +37,6 @@ class DebugModeButtons extends StatelessWidget {
     required this.onPhotoTaken,
     required this.initialPoseImageUrl,
     required this.initialTakenPhotoPath,
-    required this.walkMode, // 산책 모드 추가
   }) : super(key: key);
 
   @override
@@ -79,7 +78,7 @@ class DebugModeButtons extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
-                            '경유지 질문 생성에 실패했습니다. 경유지가 없거나 다른 이벤트가 발생했습니다.'),
+                            '경유지 질문 생성에 실패했습니다. 경유지가 없거나 다른 이벤트가 발생했습니다. ✨'),
                         backgroundColor: Colors.black.withValues(alpha: 0.6),
                       ),
                     );
@@ -87,8 +86,8 @@ class DebugModeButtons extends StatelessWidget {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          const Text('WalkStateManager 또는 현재 위치가 초기화되지 않았습니다.'),
+                      content: const Text(
+                          'WalkStateManager 또는 현재 위치가 초기화되지 않았습니다. ✨'),
                       backgroundColor: Colors.black.withValues(alpha: 0.6),
                     ),
                   );
@@ -113,15 +112,12 @@ class DebugModeButtons extends StatelessWidget {
                   if (!context.mounted) return;
 
                   if (result == 'destination_reached') {
-                    // 왕복 모드 처리
                     updateDestinationEventState(true);
                     final bool? wantsToSeeEvent =
                         await DestinationDialog.showDestinationArrivalDialog(
                       context: context,
                     );
-
-                    if (wantsToSeeEvent == true) {
-                      hideDestinationTeaseBubble();
+                    if (wantsToSeeEvent == true && context.mounted) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -130,138 +126,11 @@ class DebugModeButtons extends StatelessWidget {
                           ),
                         ),
                       );
-
-                      // 왕복 모드에서만 3초 후 자동으로 출발지 복귀 완료 처리
-                      if (walkMode == WalkMode.roundTrip) {
-                        Future.delayed(const Duration(seconds: 3), () async {
-                          if (currentPosition != null && context.mounted) {
-                            final result =
-                                await walkStateManager.updateUserLocation(
-                              currentPosition!,
-                              forceStartReturnEvent: true,
-                            );
-
-                            if (result == 'start_returned' && context.mounted) {
-                              // 1. 기존 세션에 완료 시간 업데이트
-                              if (walkStateManager.savedSessionId != null) {
-                                final walkSessionService = WalkSessionService();
-                                await walkSessionService.updateWalkSession(
-                                  walkStateManager.savedSessionId!,
-                                  {
-                                    'endTime': DateTime.now().toIso8601String(),
-                                    'totalDuration': walkStateManager
-                                        .actualDurationInMinutes,
-                                    'totalDistance':
-                                        walkStateManager.accumulatedDistanceKm,
-                                  },
-                                );
-                                LogService.debug('Walk', '디버그: 출발지 복귀 완료 시간 업데이트 완료');
-                              }
-
-                              // 2. 산책 완료 알림 다이얼로그 표시
-                              final bool? shouldShowDiary =
-                                  await WalkCompletionDialog
-                                      .showWalkCompletionDialog(
-                                context: context,
-                                savedSessionId:
-                                    walkStateManager.savedSessionId ?? '',
-                              );
-
-                              // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
-                              if (shouldShowDiary == true && context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => WalkDiaryScreen(
-                                      walkStateManager: walkStateManager,
-                                      sessionId:
-                                          walkStateManager.savedSessionId,
-                                      onWalkCompleted: (completed) {
-                                        LogService.info('Walk', '디버그: 산책이 완전히 완료되었습니다!');
-                                      },
-                                    ),
-                                  ),
-                                );
-                              } else if (shouldShowDiary == false &&
-                                  context.mounted) {
-                                // 4. '나중에' 선택 시 홈으로 이동
-                                Navigator.of(context).pushNamedAndRemoveUntil(
-                                  '/',
-                                  (route) => false,
-                                );
-                              }
-                            }
-                          }
-                        });
-                      }
-                    } else {
-                      // 나중에 보기 → 출발지 복귀 감지 시작 및 상단 깃발 아이콘 표시
-                      hideDestinationTeaseBubble();
-                      walkStateManager.startReturningHome();
-                      updateDestinationEventState(true);
-                    }
-                  } else if (result == 'one_way_completed') {
-                    // 편도 모드 처리 - 먼저 목적지 도착 알림 표시
-                    final bool? wantsToSeeEvent =
-                        await DestinationDialog.showDestinationArrivalDialog(
-                      context: context,
-                    );
-
-                    if (wantsToSeeEvent == true) {
-                      // 확인 선택 시 포즈 추천 화면으로 이동
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PoseRecommendationScreen(
-                            walkStateManager: walkStateManager,
-                          ),
-                        ),
-                      );
-                    }
-
-                    // 포즈 추천 완료 후 세션 업데이트
-                    if (walkStateManager.savedSessionId != null) {
-                      final walkSessionService = WalkSessionService();
-                      await walkSessionService.updateWalkSession(
-                        walkStateManager.savedSessionId!,
-                        {
-                          'endTime': DateTime.now().toIso8601String(),
-                          'totalDuration':
-                              walkStateManager.actualDurationInMinutes,
-                          'totalDistance':
-                              walkStateManager.accumulatedDistanceKm,
-                        },
-                      );
-                    }
-
-                    // 완료 다이얼로그 표시
-                    final bool? shouldShowDiary =
-                        await WalkCompletionDialog.showWalkCompletionDialog(
-                      context: context,
-                      savedSessionId: walkStateManager.savedSessionId ?? '',
-                    );
-
-                    if (shouldShowDiary == true && context.mounted) {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => WalkDiaryScreen(
-                            walkStateManager: walkStateManager,
-                            sessionId: walkStateManager.savedSessionId,
-                            onWalkCompleted: (completed) {},
-                          ),
-                        ),
-                      );
-                    } else if (shouldShowDiary == false && context.mounted) {
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/homescreen',
-                        (route) => false,
-                      );
                     }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('목적지 도착 이벤트 처리에 실패했습니다.'),
+                        content: const Text('목적지 도착 이벤트 처리에 실패했습니다. ✨'),
                         backgroundColor: Colors.black.withValues(alpha: 0.6),
                       ),
                     );
@@ -269,7 +138,8 @@ class DebugModeButtons extends StatelessWidget {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('현재 위치를 알 수 없어 목적지 도착을 강제할 수 없습니다.'),
+                      content:
+                          const Text('현재 위치를 알 수 없어 목적지 도착을 강제할 수 없습니다. ✨'),
                       backgroundColor: Colors.black.withValues(alpha: 0.6),
                     ),
                   );
@@ -282,81 +152,7 @@ class DebugModeButtons extends StatelessWidget {
               child: const Text('목적지 도착', style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(height: 8),
-            // 출발지 복귀 버튼 (왕복 모드에서만 표시)
-            if (walkMode == WalkMode.roundTrip)
-              ElevatedButton(
-                onPressed: () async {
-                  if (currentPosition != null) {
-                    final result = await walkStateManager.updateUserLocation(
-                      currentPosition!,
-                      forceStartReturnEvent: true,
-                    );
-
-                    if (!context.mounted) return;
-
-                    if (result == 'start_returned') {
-                      // 1. 기존 세션에 완료 시간 업데이트
-                      if (walkStateManager.savedSessionId != null) {
-                        final walkSessionService = WalkSessionService();
-                        await walkSessionService.updateWalkSession(
-                          walkStateManager.savedSessionId!,
-                          {'endTime': DateTime.now().toIso8601String()},
-                        );
-                        LogService.debug('Walk', '디버그: 출발지 복귀 완료 시간 업데이트 완룼');
-                      }
-
-                      // 2. 산책 완료 알림 다이얼로그 표시
-                      final bool? shouldShowDiary =
-                          await WalkCompletionDialog.showWalkCompletionDialog(
-                        context: context,
-                        savedSessionId: walkStateManager.savedSessionId ?? '',
-                      );
-
-                      // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
-                      if (shouldShowDiary == true && context.mounted) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => WalkDiaryScreen(
-                              walkStateManager: walkStateManager,
-                              sessionId: walkStateManager.savedSessionId,
-                              onWalkCompleted: (completed) {
-                                LogService.info('Walk', '디버그: 산책이 완전히 완료되었습니다!');
-                              },
-                            ),
-                          ),
-                        );
-                      } else if (shouldShowDiary == false && context.mounted) {
-                        // 4. '나중에' 선택 시 홈으로 이동
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/',
-                          (route) => false,
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('출발지 복귀 이벤트 처리에 실패했습니다.'),
-                          backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        ),
-                      );
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            const Text('현재 위치를 알 수 없어 출발지 복귀를 강제할 수 없습니다.'),
-                        backgroundColor: Colors.black.withValues(alpha: 0.6),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.withValues(alpha: 0.8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-                child: const Text('출발지 복귀', style: TextStyle(fontSize: 12)),
-              ),
+            // 출발지 복귀 버튼 제거 (단순화)
             const SizedBox(height: 8),
             // 말풍선 테스트 버튼
             ElevatedButton(
@@ -403,7 +199,7 @@ class DebugModeButtons extends StatelessWidget {
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('말풍선 설정: ${state.message}'),
+                          content: Text('말풍선 설정: ${state.message} ✨'),
                           backgroundColor: Colors.purple.withValues(alpha: 0.8),
                           duration: const Duration(seconds: 2),
                         ),

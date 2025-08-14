@@ -77,6 +77,8 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
       return '같이 산책가는거냥?';
     } else if (widget.screenType == 'selectMate') {
       return widget.defaultText ?? '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~';
+    } else if (widget.screenType == 'onboarding') {
+      return widget.defaultText ?? '저녁 산책에 온걸 환영한다냥!';
     }
     return '같이 산책가는거냥?';
   }
@@ -160,6 +162,13 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
   void didUpdateWidget(BlackCatWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.weatherCondition != widget.weatherCondition && !_isAngry) {
+      setState(() {
+        _originalText = _getDefaultText();
+        _currentText = _originalText;
+      });
+    }
+    // 기본 텍스트가 외부에서 변경되면(특히 온보딩) 즉시 반영
+    if (oldWidget.defaultText != widget.defaultText && !_isAngry) {
       setState(() {
         _originalText = _getDefaultText();
         _currentText = _originalText;

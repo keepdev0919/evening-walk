@@ -325,13 +325,9 @@ class WalkStateManager {
 
       if (arrived) {
         _destinationEventOccurred = true;
-        LogService.walkState(' 목적지 도착!');
-        if (_mode == WalkMode.oneWay) {
-          // 편도: 목적지 도착 즉시 종료 처리
-          _actualEndTime = DateTime.now();
-          LogService.walkState(' 편도 산책 완료! 실제 종료 시간 기록 -> $_actualEndTime');
-          return "one_way_completed";
-        }
+        // 단순화 플로우: 목적지 도착 시 즉시 종료 처리
+        _actualEndTime = DateTime.now();
+        LogService.walkState(' 목적지 도착! 실제 종료 시간 기록 -> $_actualEndTime');
         return "destination_reached";
       }
     }

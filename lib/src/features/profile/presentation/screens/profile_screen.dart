@@ -7,8 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/region_selector_widget.dart';
 import '../widgets/gender_selector_widget.dart';
-import '../widgets/email.dart';
+// 이메일 로직 제거: 인스타그램 링크로 대체
 import 'package:walk/src/features/auth/application/services/logout_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:walk/src/features/auth/presentation/screens/login_page_screen.dart';
 import 'package:walk/src/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:walk/src/core/services/log_service.dart';
@@ -42,7 +43,6 @@ class _ProfileState extends State<Profile> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _regionController = TextEditingController();
   final TextEditingController _sexController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _ProfileState extends State<Profile> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('회원 정보를 입력해주세요'),
+            content: const Text('회원 정보를 입력해주세요 ✨'),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.black.withValues(alpha: 0.7),
             behavior: SnackBarBehavior.floating,
@@ -78,7 +78,7 @@ class _ProfileState extends State<Profile> {
     _ageController.dispose();
     _regionController.dispose();
     _sexController.dispose();
-    _emailController.dispose();
+    // 이메일 컨트롤러 제거됨
     super.dispose();
   }
 
@@ -115,7 +115,7 @@ class _ProfileState extends State<Profile> {
       'age': int.tryParse(_ageController.text),
       'region': _regionController.text,
       'sex': _sexController.text,
-      'email': _emailController.text,
+      // 이메일 저장 제거
     };
 
     LogService.debug('UI', '저장할 지역 데이터: ${_regionController.text}');
@@ -138,7 +138,7 @@ class _ProfileState extends State<Profile> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('프로필이 업데이트되었습니다.'),
+        content: const Text('프로필이 업데이트되었습니다. ✨'),
         backgroundColor: Colors.black.withValues(alpha: 0.6),
         duration: const Duration(seconds: 2),
       ),
@@ -167,61 +167,62 @@ class _ProfileState extends State<Profile> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
-          // 사용방법(온보딩) 안내 아이콘
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            tooltip: '사용 방법 보기',
-            onPressed: () async {
-              final goOnboarding = await showDialog<bool>(
-                context: context,
-                barrierDismissible: true,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: Colors.black.withValues(alpha: 0.9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Colors.white24, width: 1),
-                  ),
-                  title: const Text(
-                    '이용 안내 보기',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+          // 사용방법(온보딩) 안내 아이콘 (수정 모드일 때는 숨김)
+          if (!_isEditing)
+            IconButton(
+              icon: const Icon(Icons.help_outline, color: Colors.white),
+              tooltip: '사용 방법 보기',
+              onPressed: () async {
+                final goOnboarding = await showDialog<bool>(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: Colors.black.withValues(alpha: 0.9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: Colors.white24, width: 1),
                     ),
-                  ),
-                  content: const Text(
-                    '저녁산책의 사용 방법을 \n다시 보시겠어요?',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        height: 1.3,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('취소',
-                          style: TextStyle(color: Colors.white70)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.blueAccent.withValues(alpha: 0.9),
-                        foregroundColor: Colors.white,
+                    title: const Text(
+                      '이용 안내 보기',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
                       ),
-                      child: const Text('확인'),
                     ),
-                  ],
-                ),
-              );
-              if (goOnboarding == true && mounted) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const Onboarding()),
+                    content: const Text(
+                      '저녁산책의 사용 방법을 \n다시 보시겠어요?',
+                      style: TextStyle(
+                          color: Colors.white70,
+                          height: 1.3,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('취소',
+                            style: TextStyle(color: Colors.white70)),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.blueAccent.withValues(alpha: 0.9),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('확인'),
+                      ),
+                    ],
+                  ),
                 );
-              }
-            },
-          ),
+                if (goOnboarding == true && mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const Onboarding()),
+                  );
+                }
+              },
+            ),
           // 수정/저장 버튼
           IconButton(
             icon:
@@ -284,7 +285,6 @@ class _ProfileState extends State<Profile> {
                       _ageController.text = userData['age']?.toString() ?? '';
                       _regionController.text = userData['region'] ?? '';
                       _sexController.text = userData['sex'] ?? '';
-                      _emailController.text = userData['email'] ?? '';
                     }
 
                     return SafeArea(
@@ -362,8 +362,7 @@ class _ProfileState extends State<Profile> {
                                   keyboardType: TextInputType.number),
                               _buildRegionField('지역', _regionController),
                               _buildGenderField('성별', _sexController),
-                              _buildInfoField('이메일', _emailController,
-                                  keyboardType: TextInputType.emailAddress),
+                              // 이메일 입력 필드 제거
                               if (!widget.isOnboarding && !_isEditing) ...[
                                 const SizedBox(height: 16),
                                 // 로그아웃 버튼 (온보딩 모드에서는 숨김)
@@ -383,7 +382,7 @@ class _ProfileState extends State<Profile> {
                                               color: Colors.white70,
                                               size: 18),
                                           label: const Text(
-                                            '개발자에게 문의',
+                                            '개발자에게 문의하기',
                                             style: TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600),
@@ -538,7 +537,7 @@ class _ProfileState extends State<Profile> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('로그아웃되었습니다.'),
+          content: const Text('로그아웃되었습니다. ✨'),
           backgroundColor: Colors.black.withValues(alpha: 0.7),
           duration: const Duration(seconds: 2),
         ),
@@ -552,7 +551,7 @@ class _ProfileState extends State<Profile> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('로그아웃 중 오류가 발생했습니다: $e'),
+          content: Text('로그아웃 중 오류가 발생했습니다: $e ✨'),
           backgroundColor: Colors.red.withValues(alpha: 0.85),
         ),
       );
@@ -564,9 +563,40 @@ class _ProfileState extends State<Profile> {
     await AuthLogoutService.signOut();
   }
 
-  /// 개발자에게 문의 - email.dart 인스턴스 방식 호출
+  /// 개발자에게 문의 - 인스타그램 계정으로 이동
   void _contactDeveloper() {
-    EmailWidget().sendEmail();
+    // 인앱 브라우저 없이 외부 브라우저로 열기 (url_launcher 필요)
+    _launchInstagram();
+  }
+
+  Future<void> _launchInstagram() async {
+    final appUri = Uri.parse('instagram://user?username=i__jnnn.c');
+    final webUri = Uri.parse('https://www.instagram.com/i__jnnn.c');
+    try {
+      if (await canLaunchUrl(appUri)) {
+        final ok =
+            await launchUrl(appUri, mode: LaunchMode.externalApplication);
+        if (ok) return;
+      }
+      final okWeb =
+          await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      if (!okWeb && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('인스타그램을 열 수 없습니다. ✨'),
+            backgroundColor: Colors.red.withValues(alpha: 0.85),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('인스타그램을 열 수 없습니다. ✨'),
+          backgroundColor: Colors.red.withValues(alpha: 0.85),
+        ),
+      );
+    }
   }
 
   // 회원탈퇴 기능은 테스트 단계에서 비활성화되었습니다.
@@ -579,7 +609,7 @@ class _ProfileState extends State<Profile> {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: const Text('오른쪽 위 연필 아이콘을 누르면 편집할 수 있어요.'),
+        content: const Text('오른쪽 위 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
         backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
@@ -593,10 +623,10 @@ class _ProfileState extends State<Profile> {
     String ageText = _ageController.text.trim();
     String region = _regionController.text.trim();
     String sex = _sexController.text.trim();
-    String email = _emailController.text.trim();
+    // 이메일은 더 이상 수집하지 않습니다.
 
     SnackBar _sb(String msg) => SnackBar(
-          content: Text(msg),
+          content: Text('$msg ✨'),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.black.withValues(alpha: 0.75),
           behavior: SnackBarBehavior.floating,
@@ -630,14 +660,7 @@ class _ProfileState extends State<Profile> {
       messenger.showSnackBar(_sb('성별을 선택해주세요'));
       return false;
     }
-    if (email.isEmpty) {
-      messenger.showSnackBar(_sb('이메일을 입력해주세요'));
-      return false;
-    }
-    if (!email.contains('@') || !email.contains('.')) {
-      messenger.showSnackBar(_sb('이메일에는 @와 .을 포함해주세요'));
-      return false;
-    }
+    // 이메일 유효성 검사는 더 이상 필요하지 않습니다.
     return true;
   }
 

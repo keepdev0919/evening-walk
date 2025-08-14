@@ -35,6 +35,7 @@ dependencies:
   flutter_compass: ^0.8.0
   video_player: ^2.8.6
   flutter_email_sender: ^6.0.3
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +50,6 @@ flutter:
     - assets/config/.env
     - lib/src/features/walk/application/data/walk_question/
     - assets/animations/
-    - assets/videos/
 
   fonts:
     - family: Cafe24Oneprettynight

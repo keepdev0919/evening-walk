@@ -4,7 +4,7 @@ import 'package:walk/src/features/walk/application/services/walk_session_service
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:walk/src/common/widgets/location_name_edit_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:walk/src/features/walk/application/services/pose_image_service.dart';
+// import 'package:walk/src/features/walk/application/services/pose_image_service.dart';
 import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
 import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
 import 'dart:typed_data';
@@ -44,7 +44,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   bool isEditingReflection = false;
   bool isEditingPhoto = false; // 사진 편집 모드
   bool hasRequestedPhotoRefreshAfterUpload = false;
-  Future<String?>? recommendedPoseFuture;
+  // 추천 포즈는 산책일기에서 표시하지 않습니다
   int? _recordedDurationMin; // 세션에 저장된 총 소요 시간(분)
 
   @override
@@ -60,12 +60,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     // 사진 경로 설정
     currentPhotoPath = widget.walkStateManager.photoPath;
 
-    // 추천 포즈 이미지 설정
-    recommendedPoseFuture = widget.walkStateManager.poseImageUrl != null
-        ? Future.value(widget.walkStateManager.poseImageUrl)
-        : (widget.selectedMate != null
-            ? PoseImageService.fetchRandomImageUrl(widget.selectedMate!)
-            : null);
+    // 추천 포즈: 산책일기에서는 사용하지 않음
 
     // 경로 스냅샷이 없다면 진입 시 1회 생성 시도 (fallback)
     if (widget.walkStateManager.routeSnapshotPng == null) {
@@ -134,6 +129,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           widget.walkStateManager
               .setDestinationBuildingName(session.locationName);
           widget.walkStateManager.setCustomStartName(session.customStartName);
+          // 세션에 저장된 사진 경로를 초기 로드 (조회/재진입 시 반영)
+          currentPhotoPath = session.takenPhotoPath;
         });
       }
     } catch (_) {}
@@ -319,21 +316,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     content: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 추천 포즈
-                        if (recommendedPoseFuture != null) ...[
-                          const Text(
-                            '📸 추천 포즈',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildRecommendedPoseWidget(),
-                          const SizedBox(height: 16),
-                        ],
-
                         // 내가 찍은 사진 섹션
                         const Text(
                           '내가 찍은 사진',
@@ -581,53 +563,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  Widget _buildRecommendedPoseWidget() {
-    return FutureBuilder<String?>(
-      future: recommendedPoseFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            width: double.infinity,
-            height: 180,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-            ),
-            child: const CircularProgressIndicator(color: Colors.white),
-          );
-        }
-        if (snapshot.hasData && snapshot.data != null) {
-          return GestureDetector(
-            onTap: () => _showFullScreenPhoto(context, snapshot.data!),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _buildImageWidget(snapshot.data!),
-            ),
-          );
-        }
-        return Container(
-          width: double.infinity,
-          height: 180,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
-          ),
-          child: const Text(
-            '추천 포즈 이미지를 불러올 수 없습니다',
-            style: TextStyle(color: Colors.white70),
-          ),
-        );
-      },
-    );
-  }
+  // 추천 포즈 위젯 제거
 
   Widget _buildPhotoSection() {
     return Consumer<UploadProvider>(
@@ -666,7 +602,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         }
 
         if (uploadState?.isCompleted == true &&
-            currentPhotoPath == null &&
             widget.sessionId != null &&
             !hasRequestedPhotoRefreshAfterUpload) {
           hasRequestedPhotoRefreshAfterUpload = true;
@@ -781,7 +716,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('사진이 저장되었습니다.'),
+                    content: const Text('사진이 저장되었습니다. ✨'),
                     backgroundColor: Colors.black.withValues(alpha: 0.6),
                   ),
                 );
@@ -840,6 +775,16 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     onConfirm: () {
                       widget.walkStateManager
                           .saveAnswerAndPhoto(clearPhoto: true);
+                      if (widget.sessionId != null) {
+                        // Firestore에 즉시 반영
+                        WalkSessionService().updateWalkSession(
+                          widget.sessionId!,
+                          {
+                            'takenPhotoPath': null,
+                            'updatedAt': DateTime.now().toIso8601String(),
+                          },
+                        );
+                      }
                       setState(() {
                         currentPhotoPath = null;
                       });

@@ -10,13 +10,11 @@ class DestinationDialog {
       title: '목적지 도착!',
       icon: Icons.flag,
       iconColor: Colors.red,
-      message: '목적지 이벤트를 확인하시겠어요?',
+      message: '추천포즈를 참고하여 사진을 남기고 \nSNS에 공유해보세요!',
       onEventConfirm: () {
-        // CommonArrivalDialog에서 true를 반환하고 pop 처리됨
+        // 이벤트 확인 시 외부에서 PoseRecommendationScreen으로 이동
       },
-      onLater: () {
-        // CommonArrivalDialog에서 false를 반환하고 pop 처리됨
-      },
+      // 목적지 도착 다이얼로그에는 "이벤트 확인" 버튼만 노출
       barrierDismissible: false,
     );
   }
