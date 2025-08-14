@@ -34,7 +34,7 @@ dependencies:
   lottie: ^2.7.0
   flutter_compass: ^0.8.0
   video_player: ^2.8.6
-  url_launcher: ^6.2.6
+  flutter_email_sender: ^6.0.3
 
 dev_dependencies:
   flutter_test:

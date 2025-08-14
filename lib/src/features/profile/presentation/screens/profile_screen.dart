@@ -7,11 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/region_selector_widget.dart';
 import '../widgets/gender_selector_widget.dart';
+import '../widgets/email.dart';
 import 'package:walk/src/features/auth/application/services/logout_service.dart';
 import 'package:walk/src/features/auth/presentation/screens/login_page_screen.dart';
 import 'package:walk/src/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:walk/src/core/services/log_service.dart';
-import 'package:walk/src/core/services/contact_developer_service.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
@@ -328,7 +328,11 @@ class _ProfileState extends State<Profile> {
                                       backgroundColor: Colors.white54,
                                       backgroundImage: _image != null
                                           ? FileImage(_image!)
-                                          : (userData['profileImageUrl'] != null
+                                          : ((userData['profileImageUrl'] !=
+                                                      null &&
+                                                  (userData['profileImageUrl']
+                                                          as String)
+                                                      .isNotEmpty)
                                               ? NetworkImage(
                                                   userData['profileImageUrl'])
                                               : null) as ImageProvider?,
@@ -374,8 +378,10 @@ class _ProfileState extends State<Profile> {
                                       children: [
                                         // 개발자에게 문의 버튼
                                         OutlinedButton.icon(
-                                          icon: const Icon(Icons.contact_support,
-                                              color: Colors.white70, size: 18),
+                                          icon: const Icon(
+                                              Icons.contact_support,
+                                              color: Colors.white70,
+                                              size: 18),
                                           label: const Text(
                                             '개발자에게 문의',
                                             style: TextStyle(
@@ -397,12 +403,12 @@ class _ProfileState extends State<Profile> {
                                             ),
                                           ).copyWith(
                                             overlayColor:
-                                                const MaterialStatePropertyAll(
+                                                const WidgetStatePropertyAll(
                                               Color.fromRGBO(
                                                   255, 255, 255, 0.12),
                                             ),
                                           ),
-                                          onPressed: _showContactDeveloperDialog,
+                                          onPressed: () => _contactDeveloper(),
                                         ),
                                         // 로그아웃 버튼
                                         OutlinedButton.icon(
@@ -429,13 +435,14 @@ class _ProfileState extends State<Profile> {
                                             ),
                                           ).copyWith(
                                             overlayColor:
-                                                const MaterialStatePropertyAll(
+                                                const WidgetStatePropertyAll(
                                               Color.fromRGBO(
                                                   255, 255, 255, 0.12),
                                             ),
                                           ),
                                           onPressed: _confirmAndLogout,
                                         ),
+                                        // 회원탈퇴 버튼 제거 (테스트 단계에서는 Firebase 콘솔에서 직접 삭제)
                                       ],
                                     ),
                                   ),
@@ -557,297 +564,9 @@ class _ProfileState extends State<Profile> {
     await AuthLogoutService.signOut();
   }
 
-  /// 개발자에게 문의 다이얼로그 표시
-  Future<void> _showContactDeveloperDialog() async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.black.withValues(alpha: 0.92),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white24, width: 1),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 제목
-                const Text(
-                  '개발자에게 문의',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '불편사항이나 제안사항을 알려주세요',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                // 문의 유형 버튼들
-                _buildContactOption(
-                  context,
-                  icon: Icons.bug_report,
-                  title: '버그 신고',
-                  description: '앱 사용 중 발생한 문제를 신고',
-                  onTap: () => _showFeedbackForm(context, '버그 신고'),
-                ),
-                const SizedBox(height: 12),
-                _buildContactOption(
-                  context,
-                  icon: Icons.lightbulb_outline,
-                  title: '기능 제안',
-                  description: '새로운 기능 아이디어 제안',
-                  onTap: () => _showFeedbackForm(context, '기능 제안'),
-                ),
-                const SizedBox(height: 12),
-                _buildContactOption(
-                  context,
-                  icon: Icons.help_outline,
-                  title: '일반 문의',
-                  description: '기타 문의사항',
-                  onTap: () => _showFeedbackForm(context, '일반 문의'),
-                ),
-                const SizedBox(height: 24),
-                // 닫기 버튼
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    '닫기',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// 문의 옵션 위젯
-  Widget _buildContactOption(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String description,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white70, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 피드백 작성 폼 표시
-  Future<void> _showFeedbackForm(BuildContext context, String type) async {
-    Navigator.of(context).pop(); // 이전 다이얼로그 닫기
-    
-    final TextEditingController messageController = TextEditingController();
-    
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.black.withValues(alpha: 0.92),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white24, width: 1),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 제목
-                Text(
-                  type,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                // 메시지 입력 필드
-                TextField(
-                  controller: messageController,
-                  maxLines: 5,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '내용을 입력해주세요...',
-                    hintStyle: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.white24),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.white70),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.05),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // 버튼들
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // 취소 버튼
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text(
-                        '취소',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                    // 전송 버튼
-                    ElevatedButton(
-                      onPressed: () => _sendFeedback(context, type, messageController.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent.withValues(alpha: 0.9),
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('전송'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// 피드백 전송 처리
-  Future<void> _sendFeedback(BuildContext context, String type, String message) async {
-    if (message.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('내용을 입력해주세요.'),
-          backgroundColor: Colors.red.withValues(alpha: 0.8),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).pop(); // 다이얼로그 닫기
-
-    bool success = false;
-    try {
-      // 문의 유형에 따라 적절한 서비스 메서드 호출
-      switch (type) {
-        case '버그 신고':
-          success = await ContactDeveloperService.reportBug(message);
-          break;
-        case '기능 제안':
-          success = await ContactDeveloperService.suggestFeature(message);
-          break;
-        case '일반 문의':
-          success = await ContactDeveloperService.generalInquiry(message);
-          break;
-        default:
-          success = await ContactDeveloperService.generalInquiry(message);
-      }
-
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('이메일 앱이 실행되었습니다.'),
-              backgroundColor: Colors.green.withValues(alpha: 0.8),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('이메일 앱을 실행할 수 없습니다.\n기기에 이메일 앱이 설치되어 있는지 확인해주세요.'),
-              backgroundColor: Colors.red.withValues(alpha: 0.8),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      LogService.error('UI', 'Profile: 피드백 전송 실패', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('오류가 발생했습니다. 다시 시도해주세요.'),
-            backgroundColor: Colors.red.withValues(alpha: 0.8),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
+  /// 개발자에게 문의 - email.dart 인스턴스 방식 호출
+  void _contactDeveloper() {
+    EmailWidget().sendEmail();
   }
 
   // 회원탈퇴 기능은 테스트 단계에서 비활성화되었습니다.

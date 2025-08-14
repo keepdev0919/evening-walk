@@ -5,7 +5,10 @@
       "Bash(flutter analyze:*)",
       "Bash(flutter pub:*)",
       "Bash(rg:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(del \"lib\\src\\features\\profile\\presentation\\widgets\\email.dart\")"
     ],
     "deny": []
   }
