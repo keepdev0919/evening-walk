@@ -85,14 +85,14 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
   String _getCatTextByWeather(String weatherCondition) {
     switch (weatherCondition.toLowerCase()) {
       case 'clear':
-        return '산책하기 딱 좋은 날이냥 !🐾';
+        return '산책하기 딱 좋은 날이냥!🐾';
       case 'clouds':
       case 'broken clouds':
       case 'overcast clouds':
-        return '하늘에 솜사탕 보러가자냥 !🐾';
+        return '하늘에 솜사탕 보러가자냥!🐾';
       case 'few clouds':
       case 'scattered clouds':
-        return '선선해서 걷기 좋다냥 ~🐾';
+        return '선선해서 걷기 좋다냥~🐾';
       case 'rain':
       case 'light rain':
       case 'moderate rain':
@@ -104,13 +104,13 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
       case 'thunderstorm':
         return '천둥소리가 무섭다냥...🐾';
       case 'snow':
-        return '추워도 눈구경 가자냥 !🐾';
+        return '추워도 눈구경 가자냥!🐾';
       case 'mist':
       case 'fog':
       case 'haze':
-        return '신비로운 구름 산책이다냥 !🐾';
+        return '신비로운 구름 산책이다냥!🐾';
       default:
-        return '같이 산책가는거냥 ?🐾';
+        return '같이 산책가는거냥?🐾';
     }
   }
 

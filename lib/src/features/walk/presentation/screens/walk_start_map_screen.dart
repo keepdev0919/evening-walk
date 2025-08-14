@@ -507,260 +507,25 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       ),
       backgroundColor: Colors.black.withValues(alpha: 0.8),
       builder: (ctx) {
-        String? mate; // '혼자' | '연인' | '친구'
-        String? friendGroup; // 'two' | 'many'
-        WalkMode? selectedMode = widget.mode; // 기본값은 기존 화면 설정
-
-        return StatefulBuilder(builder: (ctx, setInner) {
-          final bool canStart = mate != null &&
-              (mate != '친구' || friendGroup != null) &&
-              selectedMode != null;
-
-          EdgeInsets insets = MediaQuery.of(ctx).viewInsets;
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, insets.bottom + 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 목적지 요약
-                  Text(
-                    finalName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const Divider(
-                      color: Colors.white24, thickness: 1, height: 20),
-                  const SizedBox(height: 8),
-                  const Text('메이트',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18)),
-                  const SizedBox(height: 6),
-                  Theme(
-                    data: Theme.of(ctx).copyWith(
-                      chipTheme: Theme.of(ctx).chipTheme.copyWith(
-                            backgroundColor: Colors.transparent,
-                            selectedColor: Colors.blue.withValues(alpha: 0.8),
-                          ),
-                    ),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        {'label': '🌙혼자', 'value': '혼자'},
-                        {'label': '💕연인', 'value': '연인'},
-                        {'label': '👫친구', 'value': '친구'},
-                      ].map((opt) {
-                        final String label = opt['label'] as String;
-                        final String value = opt['value'] as String;
-                        final bool selected = mate == value;
-                        return ChoiceChip(
-                          label: Text(
-                            label,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight:
-                                  selected ? FontWeight.bold : FontWeight.w600,
-                            ),
-                          ),
-                          selected: selected,
-                          backgroundColor: selected
-                              ? Colors.blue.withValues(alpha: 0.3)
-                              : Colors.black.withValues(alpha: 0.8),
-                          side: BorderSide(
-                            color: selected ? Colors.blue : Colors.white54,
-                            width: 1.0,
-                          ),
-                          onSelected: (_) => setInner(() {
-                            mate = value;
-                            if (value != '친구') friendGroup = null;
-                          }),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: mate == '친구'
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Wrap(
-                              spacing: 8,
-                              children: [
-                                ChoiceChip(
-                                  label: Text(
-                                    '2명',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: friendGroup == 'two'
-                                          ? FontWeight.bold
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                  selected: friendGroup == 'two',
-                                  backgroundColor: friendGroup == 'two'
-                                      ? Colors.blue.withValues(alpha: 0.3)
-                                      : Colors.black.withValues(alpha: 0.8),
-                                  side: BorderSide(
-                                    color: friendGroup == 'two'
-                                        ? Colors.blue
-                                        : Colors.white54,
-                                    width: 1.0,
-                                  ),
-                                  onSelected: (_) => setInner(() {
-                                    friendGroup = 'two';
-                                  }),
-                                ),
-                                ChoiceChip(
-                                  label: Text(
-                                    '여러명',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: friendGroup == 'many'
-                                          ? FontWeight.bold
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                  selected: friendGroup == 'many',
-                                  backgroundColor: friendGroup == 'many'
-                                      ? Colors.blue.withValues(alpha: 0.3)
-                                      : Colors.black.withValues(alpha: 0.8),
-                                  side: BorderSide(
-                                    color: friendGroup == 'many'
-                                        ? Colors.blue
-                                        : Colors.white54,
-                                    width: 1.0,
-                                  ),
-                                  onSelected: (_) => setInner(() {
-                                    friendGroup = 'many';
-                                  }),
-                                ),
-                              ],
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '산책 방식',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18),
-                  ),
-                  const SizedBox(height: 6),
-                  ToggleButtons(
-                    isSelected: [
-                      selectedMode == WalkMode.roundTrip,
-                      selectedMode == WalkMode.oneWay,
-                    ],
-                    onPressed: (i) => setInner(() {
-                      selectedMode =
-                          i == 0 ? WalkMode.roundTrip : WalkMode.oneWay;
-                    }),
-                    borderRadius: BorderRadius.circular(10),
-                    selectedColor: Colors.white,
-                    color: Colors.white,
-                    fillColor: Colors.blue.withValues(alpha: 0.8),
-                    selectedBorderColor: Colors.blue,
-                    borderColor: Colors.white54,
-                    borderWidth: 1.5,
-                    children: const [
-                      Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Text(
-                          '왕복',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Text(
-                          '편도',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    '왕복: 출발지 → 목적지 → 출발지 / 편도: 출발지 → 목적지',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          child:
-                              const Text('취소', style: TextStyle(fontSize: 20)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: canStart
-                              ? () {
-                                  final String selectedMateLabel = () {
-                                    if (mate == '친구') {
-                                      return friendGroup == 'two'
-                                          ? '친구(2명)'
-                                          : '친구(여러명)';
-                                    }
-                                    return mate!;
-                                  }();
-                                  Navigator.pop(ctx);
-                                  // 이동: 산책 진행 화면
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => WalkInProgressMapScreen(
-                                        startLocation: _currentPosition!,
-                                        destinationLocation:
-                                            _selectedDestination!,
-                                        selectedMate: selectedMateLabel,
-                                        destinationBuildingName: finalName,
-                                        mode: selectedMode!,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.withValues(alpha: 0.8),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('산책 시작',
-                              style: TextStyle(fontSize: 20)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+        return _MateAndModeSheet(
+          finalName: finalName,
+          initialMode: widget.mode,
+          onStart: (selectedMateLabel, selectedMode) {
+            Navigator.pop(ctx);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => WalkInProgressMapScreen(
+                  startLocation: _currentPosition!,
+                  destinationLocation: _selectedDestination!,
+                  selectedMate: selectedMateLabel,
+                  destinationBuildingName: finalName,
+                  mode: selectedMode,
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -1222,6 +987,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           ),
                           textAlign: TextAlign.center,
                         ),
+                        width: 300,
                         backgroundColor: Colors.black.withValues(alpha: 0.8),
                         behavior: SnackBarBehavior.floating,
                         duration: Duration(seconds: 3),
@@ -1433,4 +1199,257 @@ class _StartBubbleTailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 바텀시트 전용 독립 StatefulWidget: 내부 상태 유지(mate, friendGroup, selectedMode)
+class _MateAndModeSheet extends StatefulWidget {
+  final String finalName;
+  final WalkMode initialMode;
+  final void Function(String selectedMateLabel, WalkMode selectedMode) onStart;
+  const _MateAndModeSheet({
+    required this.finalName,
+    required this.initialMode,
+    required this.onStart,
+  });
+
+  @override
+  State<_MateAndModeSheet> createState() => _MateAndModeSheetState();
+}
+
+class _MateAndModeSheetState extends State<_MateAndModeSheet> {
+  String? mate; // '혼자' | '연인' | '친구'
+  String? friendGroup; // 'two' | 'many'
+  late WalkMode selectedMode;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedMode = widget.initialMode;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final EdgeInsets insets = MediaQuery.of(context).viewInsets;
+    final bool canStart = mate != null && (mate != '친구' || friendGroup != null);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, insets.bottom + 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.finalName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            const Divider(color: Colors.white24, thickness: 1, height: 20),
+            const SizedBox(height: 8),
+            const Text('메이트',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18)),
+            const SizedBox(height: 6),
+            Theme(
+              data: Theme.of(context).copyWith(
+                chipTheme: Theme.of(context).chipTheme.copyWith(
+                      backgroundColor: Colors.transparent,
+                      selectedColor: Colors.blue.withValues(alpha: 0.8),
+                    ),
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  {'label': '🌙혼자', 'value': '혼자'},
+                  {'label': '💕연인', 'value': '연인'},
+                  {'label': '👫친구', 'value': '친구'},
+                ].map((opt) {
+                  final String label = opt['label'] as String;
+                  final String value = opt['value'] as String;
+                  final bool selected = mate == value;
+                  return ChoiceChip(
+                    label: Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight:
+                            selected ? FontWeight.bold : FontWeight.w600,
+                      ),
+                    ),
+                    selected: selected,
+                    backgroundColor: selected
+                        ? Colors.blue.withValues(alpha: 0.8)
+                        : Colors.black.withValues(alpha: 0.8),
+                    side: BorderSide(
+                      color: selected ? Colors.blue : Colors.white54,
+                      width: 1.0,
+                    ),
+                    onSelected: (_) => setState(() {
+                      mate = value;
+                      if (value != '친구') friendGroup = null;
+                    }),
+                  );
+                }).toList(),
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: mate == '친구'
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Wrap(
+                        spacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: Text(
+                              '2명',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: friendGroup == 'two'
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                            selected: friendGroup == 'two',
+                            backgroundColor: friendGroup == 'two'
+                                ? Colors.blue.withValues(alpha: 0.8)
+                                : Colors.black.withValues(alpha: 0.8),
+                            selectedColor: Colors.blue.withValues(alpha: 0.8),
+                            side: BorderSide(
+                              color: friendGroup == 'two'
+                                  ? Colors.blue
+                                  : Colors.white54,
+                              width: 1.0,
+                            ),
+                            onSelected: (_) => setState(() {
+                              friendGroup = 'two';
+                            }),
+                          ),
+                          ChoiceChip(
+                            label: Text(
+                              '여러명',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: friendGroup == 'many'
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                            selected: friendGroup == 'many',
+                            backgroundColor: friendGroup == 'many'
+                                ? Colors.blue.withValues(alpha: 0.8)
+                                : Colors.black.withValues(alpha: 0.8),
+                            selectedColor: Colors.blue.withValues(alpha: 0.8),
+                            side: BorderSide(
+                              color: friendGroup == 'many'
+                                  ? Colors.blue
+                                  : Colors.white54,
+                              width: 1.0,
+                            ),
+                            onSelected: (_) => setState(() {
+                              friendGroup = 'many';
+                            }),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '산책 방식',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18),
+            ),
+            const SizedBox(height: 6),
+            ToggleButtons(
+              isSelected: [
+                selectedMode == WalkMode.roundTrip,
+                selectedMode == WalkMode.oneWay,
+              ],
+              onPressed: (i) => setState(() {
+                selectedMode = i == 0 ? WalkMode.roundTrip : WalkMode.oneWay;
+              }),
+              borderRadius: BorderRadius.circular(10),
+              selectedColor: Colors.white,
+              color: Colors.white,
+              fillColor: Colors.blue.withValues(alpha: 0.8),
+              selectedBorderColor: Colors.blue,
+              borderColor: Colors.white54,
+              borderWidth: 1.5,
+              children: const [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child:
+                      Text('왕복', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child:
+                      Text('편도', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '왕복: 출발지 → 목적지 → 출발지 / 편도: 출발지 → 목적지',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                    child: const Text('취소', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: canStart
+                        ? () {
+                            final String selectedMateLabel = () {
+                              if (mate == '친구') {
+                                return friendGroup == 'two'
+                                    ? '친구(2명)'
+                                    : '친구(여러명)';
+                              }
+                              return mate!;
+                            }();
+                            widget.onStart(selectedMateLabel, selectedMode);
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.withValues(alpha: 0.8),
+                      foregroundColor: Colors.white,
+                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                    ),
+                    child: const Text('산책 시작', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

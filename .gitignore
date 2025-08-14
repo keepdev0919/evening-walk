@@ -1,5 +1,8 @@
 #env
 .env
+.env.local
+.env.development
+.env.production
 
 # Miscellaneous
 *.class
@@ -35,6 +38,20 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+
+# Firebase / CLI / MCP local state
+.firebase/
+firebase-debug.log
+
+# Service account or credential-like files (do not commit secrets)
+serviceAccount*.json
+*service-account*.json
+*.p8
+*.pem
+*.keystore
+
+# Platform-specific Firebase configs (keep out of VCS)
+/ios/Runner/GoogleService-Info.plist
 
 # Symbolication related
 app.*.symbols
