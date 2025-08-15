@@ -21,64 +21,191 @@ class CommonArrivalDialog {
     VoidCallback? onMessageTap,
     VoidCallback? onLater,
     bool barrierDismissible = false,
-    String confirmLabel = '이벤트 확인',
+    String confirmLabel = '확인',
   }) {
     return showDialog<T>(
       context: context,
       barrierDismissible: barrierDismissible,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: Colors.black.withValues(alpha: 0.8),
+        return Dialog(
+          backgroundColor: Colors.black.withValues(alpha: 0.95),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Colors.white54, width: 1),
+            borderRadius: BorderRadius.circular(28),
+            side: const BorderSide(color: Colors.white70, width: 1.5),
           ),
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 420,
+              maxHeight: 500,
+            ),
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 제목 영역
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: iconColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        icon,
+                        color: iconColor,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                blurRadius: 4,
+                                offset: const Offset(1, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: GestureDetector(
-            onTap: onMessageTap,
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
+
+                const SizedBox(height: 24),
+
+                // 메시지 영역
+                GestureDetector(
+                  onTap: onMessageTap,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        height: 1.5,
+                        letterSpacing: 0.3,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // 버튼 영역
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (onLater != null) ...[
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop(false);
+                              onLater();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white70,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 20,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            child: const Text(
+                              '나중에',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        margin: EdgeInsets.only(
+                          left: onLater != null ? 8 : 0,
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop(true);
+                            onEventConfirm();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: iconColor.withValues(alpha: 0.9),
+                            foregroundColor: Colors.white,
+                            elevation: 8,
+                            shadowColor: iconColor.withValues(alpha: 0.4),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 20,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: iconColor.withValues(alpha: 0.6),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            confirmLabel,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: <Widget>[
-            if (onLater != null)
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop(false); // false 반환
-                  onLater();
-                },
-                child:
-                    const Text('나중에', style: TextStyle(color: Colors.white70)),
-              ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true); // true 반환
-                onEventConfirm();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              ),
-              child: Text(confirmLabel),
-            ),
-          ],
         );
       },
     );

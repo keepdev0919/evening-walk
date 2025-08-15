@@ -16,7 +16,7 @@ class WaypointDialogs {
       title: '경유지 도착!',
       icon: Icons.card_giftcard,
       iconColor: Colors.orange,
-      message: '경유지 이벤트를 확인하시겠어요?',
+      message: '경유지 이벤트를 확인해봐요!',
       onEventConfirm: () {
         // 연인 모드: 질문 종류 선택 다이얼로그 표시
         if (selectedMate == '연인') {

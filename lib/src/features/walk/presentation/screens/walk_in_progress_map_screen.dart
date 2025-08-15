@@ -150,7 +150,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   Color _getMateColor(String mate) {
     if (mate == '혼자') return Colors.blue;
     if (mate == '연인') return Colors.pink;
-    if (mate.startsWith('친구')) return Colors.orange;
+    if (mate.startsWith('친구')) return Colors.green;
     return Colors.green; // 기본값
   }
 

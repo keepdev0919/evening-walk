@@ -8,7 +8,8 @@
       "Bash(find:*)",
       "Bash(rm:*)",
       "Bash(touch:*)",
-      "Bash(del \"lib\\src\\features\\profile\\presentation\\widgets\\email.dart\")"
+      "Bash(del \"lib\\src\\features\\profile\\presentation\\widgets\\email.dart\")",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }
