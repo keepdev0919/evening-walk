@@ -239,61 +239,120 @@ class _OnboardingState extends State<Onboarding> {
           const SizedBox(height: 16),
         ],
         // 보조 라인(1~2줄) - 첫 번째 슬라이드일 때는 첫 번째 텍스트를 title 크기로
-        ...lines.asMap().entries.map(
-          (entry) {
-            final index = entry.key;
-            final text = entry.value;
-            final isFirstLine = index == 0;
+        if (!isFirstSlide && !title.contains('출발 준비 완료')) ...[
+          // 1, 2, 3 슬라이드의 텍스트를 Container로 감싸기
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.4),
+                width: 0.8,
+              ),
+            ),
+            child: Column(
+              children: lines.asMap().entries.map(
+                (entry) {
+                  final index = entry.key;
+                  final text = entry.value;
 
-            // boldKeywords가 있고 첫 번째 슬라이드가 아닐 때만 RichText 사용
-            if (boldKeywords != null && !isFirstSlide) {
+                  // boldKeywords가 있을 때 RichText 사용
+                  if (boldKeywords != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: _buildRichText(
+                          text,
+                          boldKeywords,
+                          fontSize: 18,
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 18,
+                        fontWeight: FontWeight.normal,
+                        height: 1.35,
+                        fontFamily: 'Cafe24Oneprettynight',
+                      ),
+                    ),
+                  );
+                },
+              ).toList(),
+            ),
+          ),
+        ] else if (!isFirstSlide && title.contains('출발 준비 완료')) ...[
+          // 5번째 슬라이드의 텍스트는 Container 없이 표시
+          ...lines.asMap().entries.map(
+            (entry) {
+              final index = entry.key;
+              final text = entry.value;
+
               return Padding(
-                padding: const EdgeInsets.only(bottom: 6.0),
-                child: RichText(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  text,
                   textAlign: TextAlign.center,
-                  text: _buildRichText(
-                    text,
-                    boldKeywords,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.95),
                     fontSize: 18,
+                    fontWeight: FontWeight.normal,
+                    height: 1.35,
+                    fontFamily: 'Cafe24Oneprettynight',
                   ),
                 ),
               );
-            }
+            },
+          ).toList(),
+        ] else ...[
+          // 첫 번째 슬라이드의 텍스트는 기존 스타일 유지
+          ...lines.asMap().entries.map(
+            (entry) {
+              final index = entry.key;
+              final text = entry.value;
+              final isFirstLine = index == 0;
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6.0),
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.95),
-                  fontSize: isFirstSlide && isFirstLine
-                      ? 32 // 첫 번째 슬라이드의 첫 번째 텍스트 크기
-                      : 18, // 나머지 텍스트 크기
-                  fontWeight: isFirstSlide && isFirstLine
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  height: 1.35,
-                  fontFamily: 'Cafe24Oneprettynight',
-                  shadows: isFirstSlide && isFirstLine
-                      ? [
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.8),
-                            blurRadius: 8,
-                            offset: const Offset(2, 2),
-                          ),
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(1, 1),
-                          ),
-                        ]
-                      : null,
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    fontSize: isFirstLine ? 32 : 18,
+                    fontWeight:
+                        isFirstLine ? FontWeight.bold : FontWeight.normal,
+                    height: 1.35,
+                    fontFamily: 'Cafe24Oneprettynight',
+                    shadows: isFirstLine
+                        ? [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.8),
+                              blurRadius: 8,
+                              offset: const Offset(2, 2),
+                            ),
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              offset: const Offset(1, 1),
+                            ),
+                          ]
+                        : null,
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ).toList(),
+        ],
         if (tail != null) ...[
           const SizedBox(height: 4),
           tail,
