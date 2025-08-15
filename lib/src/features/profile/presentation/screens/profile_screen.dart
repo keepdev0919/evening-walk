@@ -625,8 +625,8 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _launchInstagram() async {
-    final appUri = Uri.parse('instagram://user?username=i__jnnn.c');
-    final webUri = Uri.parse('https://www.instagram.com/i__jnnn.c');
+    final appUri = Uri.parse('instagram://user?username=evening._.walk');
+    final webUri = Uri.parse('https://www.instagram.com/evening._.walk');
     try {
       if (await canLaunchUrl(appUri)) {
         final ok =

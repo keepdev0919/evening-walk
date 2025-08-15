@@ -94,7 +94,7 @@ class _OnboardingState extends State<Onboarding> {
                             _buildSlide(
                               title: '', // title 제거
                               lines: const [
-                                '속은 편안하게, \n마음은 추억으로 \n 기분 좋은 저녁 산책',
+                                '속은 편안하게, \n마음은 추억으로. \n 기분 좋은 저녁 산책',
                               ],
                               isFirstSlide: true, // 첫 번째 슬라이드 표시
                             ),
@@ -154,13 +154,13 @@ class _OnboardingState extends State<Onboarding> {
                           catText = '반갑다냥.. 😳';
                           break;
                         case 2:
-                          catText = '사진찍는거 나도 좋아한다냥..';
+                          catText = '산책 메이트에 따라 \n이벤트가 달라진다냥 !';
                           break;
                         case 3:
                           catText = '일기에 나도 넣어달라냥 !!!';
                           break;
                         case 4:
-                          catText = '이제 산책하러 가는거냥 🐾';
+                          catText = '이 페이지는 내정보에서 \n다시 볼수있다냥 🐾';
                           break;
                         default:
                           catText = '이제 산책하러 가는거냥 🐾';
