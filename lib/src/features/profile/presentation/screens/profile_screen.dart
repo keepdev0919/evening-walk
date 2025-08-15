@@ -178,6 +178,20 @@ class _ProfileState extends State<Profile> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () async {
+            // 첫 사용자(온보딩)의 경우 뒤로가기 완전 차단
+            if (widget.isOnboarding) {
+              // 온보딩 중에는 뒤로가기 불가 - 사용자에게 안내
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('프로필 정보를 입력해주세요 ✨'),
+                  backgroundColor: Colors.black.withValues(alpha: 0.7),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+
             if (_isEditing) {
               // 편집 모드일 때: 편집 모드 취소
               final userDoc =
