@@ -34,6 +34,7 @@ class _ProfileState extends State<Profile> {
 
   User? _user; // 현재 로그인된 사용자
   bool _isEditing = false; // 수정 모드 활성화 여부
+  bool _isSaving = false; // 저장 중 로딩 상태
   Future<DocumentSnapshot>? _userFuture; // Firestore에서 사용자 정보를 가져오는 Future
   File? _image; // 갤러리에서 선택된 이미지 파일
   final ImagePicker _picker = ImagePicker(); // 이미지 선택을 위한 ImagePicker 인스턴스
@@ -97,6 +98,10 @@ class _ProfileState extends State<Profile> {
   Future<void> _updateProfile() async {
     if (_user == null) return;
 
+    setState(() {
+      _isSaving = true; // 저장 시작 시 로딩 상태 활성화
+    });
+
     String? imageUrl;
     // 새 이미지가 선택된 경우 Storage에 업로드하고 URL을 가져옵니다.
     if (_image != null) {
@@ -131,6 +136,7 @@ class _ProfileState extends State<Profile> {
 
     setState(() {
       _isEditing = false; // 수정 모드 비활성화
+      _isSaving = false; // 저장 완료 시 로딩 상태 비활성화
       // 사용자 정보를 다시 불러와 화면을 갱신합니다.
       _userFuture = _firestore.collection('users').doc(_user!.uid).get();
       _image = null; // 로컬 이미지 선택 초기화
@@ -161,6 +167,9 @@ class _ProfileState extends State<Profile> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, // 배경색 투명
         elevation: 0, // 그림자 제거
+        automaticallyImplyLeading: !_isEditing, // 수정 모드일 때 뒤로가기 버튼 숨김
+        centerTitle: true, // 제목을 항상 가운데 정렬
+        titleSpacing: 0, // 제목 간격 조정으로 가운데 정렬 보장
         iconTheme: const IconThemeData(color: Colors.white), // 뒤로가기 아이콘 색상 변경
         title: const Text(
           '내 정보',
@@ -225,18 +234,31 @@ class _ProfileState extends State<Profile> {
             ),
           // 수정/저장 버튼
           IconButton(
-            icon:
-                Icon(_isEditing ? Icons.save : Icons.edit, color: Colors.white),
-            onPressed: () {
-              if (_isEditing) {
-                if (!_validateProfileAndWarn()) return;
-                _updateProfile(); // 저장 로직 실행
-              } else {
-                setState(() {
-                  _isEditing = true; // 수정 모드 활성화
-                });
-              }
-            },
+            icon: _isEditing
+                ? _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.save, color: Colors.white)
+                : const Icon(Icons.edit, color: Colors.white),
+            onPressed: _isSaving
+                ? null // 저장 중일 때는 버튼 비활성화
+                : () {
+                    if (_isEditing) {
+                      if (!_validateProfileAndWarn()) return;
+                      _updateProfile(); // 저장 로직 실행
+                    } else {
+                      setState(() {
+                        _isEditing = true; // 수정 모드 활성화
+                      });
+                    }
+                  },
           ),
         ],
       ),

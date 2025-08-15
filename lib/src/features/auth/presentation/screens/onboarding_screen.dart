@@ -40,7 +40,7 @@ class _OnboardingState extends State<Onboarding> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 배경 이미지
+          // 배경 이미지만 Stack으로 처리
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -50,146 +50,136 @@ class _OnboardingState extends State<Onboarding> {
             ),
           ),
 
-          // 콘텐츠: 상단 환영 문구 + 슬라이드
+          // 모든 UI 요소들을 하나의 Column으로 통합
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(
-                  top: 0, left: 24, right: 24, bottom: 40),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final double pagerHeight = constraints.maxHeight * 0.6;
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          '저녁산책에 오신걸 \n 환영해요!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                            height: 1.25,
-                            shadows: [
-                              Shadow(
-                                color: Color.fromARGB(204, 0, 0, 0),
-                                blurRadius: 8,
-                                offset: Offset(2, 2),
-                              ),
-                              Shadow(
-                                color: Color.fromARGB(102, 0, 0, 0),
-                                blurRadius: 4,
-                                offset: Offset(1, 1),
-                              ),
-                            ],
-                          ),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 130), // 상단 여백
+
+                  // 환영 문구
+                  const Text(
+                    '저녁산책에 오신걸 \n 환영해요!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      height: 1.25,
+                      shadows: [
+                        Shadow(
+                          color: Color.fromARGB(204, 0, 0, 0),
+                          blurRadius: 8,
+                          offset: Offset(2, 2),
                         ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          height: pagerHeight,
-                          child: PageView(
-                            controller: _pageController,
-                            onPageChanged: _onPageChanged,
-                            children: [
-                              _buildSlide(
-                                title: '1. 목적지 설정 🚩',
-                                lines: const [
-                                  '지도를 탭해 목적지를 고르거나',
-                                  '랜덤 추천을 통해 목적지를 정해봐요 !',
-                                ],
-                              ),
-                              _buildSlide(
-                                title: '2. 산책 중 이벤트 🚶‍',
-                                lines: const [
-                                  '경유지에서 미션을 즐기며',
-                                  '목적지에서 사진 찍고 공유해요 !',
-                                ],
-                              ),
-                              _buildSlide(
-                                title: '3. 산책 일기 쓰기 📝',
-                                lines: const [
-                                  '오늘 산책을 기록하고',
-                                  '나만의 일기로 예쁘게 모아보세요',
-                                ],
-                              ),
-                              _buildSlide(
-                                title: '출발 준비 완료 ✨',
-                                lines: const [
-                                  '이제 산책하러 가볼까요?',
-                                ],
-                                cta: _buildStartButton(),
-                              ),
-                            ],
-                          ),
+                        Shadow(
+                          color: Color.fromARGB(102, 0, 0, 0),
+                          blurRadius: 4,
+                          offset: Offset(1, 1),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-            ),
-          ),
+                  ),
 
-          // 하단 BlackCat 애니메이션 (홈과 동일 비율) + 슬라이드별 텍스트 변경 + 인디케이터 말풍선 위 배치
-          Positioned.fill(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final double screenWidth = constraints.maxWidth;
-                final double screenHeight = constraints.maxHeight;
-                final double catWidth = screenWidth * 0.28 * 2;
-                final double bottomPadding = screenHeight * 0.06;
+                  const SizedBox(height: 10),
 
-                String catText;
-                switch (_currentPage) {
-                  case 0:
-                    catText = '오른쪽으로 넘겨보라냥 !';
-                    break;
-                  case 1:
-                    catText = '사진찍는거 나도 좋아한다냥..';
-                    break;
-                  case 2:
-                    catText = '일기에 나도 넣어달라냥 !!!';
-                    break;
-                  case 3:
-                    catText = '이제 산책하러 가는거냥 🐾';
-                    break;
-                  default:
-                    catText = '이제 산책하러 가는거냥 🐾';
-                }
-
-                // 고양이 위젯과 인디케이터를 세로로 정렬
-                return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: bottomPadding),
-                    child: Transform.translate(
-                      offset: Offset(-screenWidth * 0.23, 0),
+                  // PageView (슬라이드 콘텐츠)
+                  Expanded(
+                    child: Center(
                       child: SizedBox(
-                        width: catWidth,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: PageView(
+                          controller: _pageController,
+                          onPageChanged: _onPageChanged,
                           children: [
-                            // 인디케이터를 고양이 말풍선 위에, 화면 중앙 정렬로 배치
-                            Transform.translate(
-                              offset:
-                                  Offset(screenWidth * 0.23, 0), // 부모 좌측 이동 상쇄
-                              child: _buildPageIndicator(),
+                            _buildSlide(
+                              title: '1. 목적지 설정 🚩',
+                              lines: const [
+                                '지도를 탭해 목적지를 고르거나',
+                                '랜덤 추천을 통해 목적지를 정해봐요 !',
+                              ],
                             ),
-                            const SizedBox(height: 50),
-                            BlackCatWidget(
-                              width: catWidth,
-                              bubbleMaxWidth: catWidth * 0.8,
-                              screenType: 'onboarding',
-                              defaultText: catText,
+                            _buildSlide(
+                              title: '2. 산책 중 이벤트 🚶‍',
+                              lines: const [
+                                '경유지에서 미션을 즐기며',
+                                '목적지에서 사진 찍고 공유해요 !',
+                              ],
+                            ),
+                            _buildSlide(
+                              title: '3. 산책 일기 쓰기 📝',
+                              lines: const [
+                                '오늘 산책을 기록하고',
+                                '나만의 일기로 예쁘게 모아보세요',
+                              ],
+                            ),
+                            _buildSlide(
+                              title: '출발 준비 완료 ✨',
+                              lines: const [
+                                '이제 산책하러 가볼까요?',
+                              ],
+                              cta: _buildStartButton(),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+
+                  // 인디케이터와 고양이를 하단에 배치
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double screenWidth = constraints.maxWidth;
+                      final double screenHeight =
+                          MediaQuery.of(context).size.height;
+                      final double catWidth = screenWidth * 0.28 * 2;
+                      final double bottomPadding = screenHeight * 0.06;
+
+                      String catText;
+                      switch (_currentPage) {
+                        case 0:
+                          catText = '오른쪽으로 넘겨보라냥 !';
+                          break;
+                        case 1:
+                          catText = '사진찍는거 나도 좋아한다냥..';
+                          break;
+                        case 2:
+                          catText = '일기에 나도 넣어달라냥 !!!';
+                          break;
+                        case 3:
+                          catText = '이제 산책하러 가는거냥 🐾';
+                          break;
+                        default:
+                          catText = '이제 산책하러 가는거냥 🐾';
+                      }
+
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: bottomPadding),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 인디케이터 (화면 중앙 정렬)
+                            _buildPageIndicator(),
+                            const SizedBox(height: 50),
+                            // 고양이 (기존 위치 유지)
+                            Transform.translate(
+                              offset: Offset(-screenWidth * 0.23, 0),
+                              child: BlackCatWidget(
+                                width: catWidth,
+                                bubbleMaxWidth: catWidth * 0.9,
+                                screenType: 'onboarding',
+                                defaultText: catText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
