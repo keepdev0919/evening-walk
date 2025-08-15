@@ -37,6 +37,28 @@ class _OnboardingState extends State<Onboarding> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          '저녁산책',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
+            fontFamily: 'Cafe24Oneprettynight',
+            shadows: [
+              Shadow(
+                color: Color.fromARGB(153, 0, 0, 0),
+                blurRadius: 6,
+                offset: Offset(1, 1),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -44,7 +66,7 @@ class _OnboardingState extends State<Onboarding> {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/nature_walk.jpg'),
+                image: AssetImage('assets/images/nature_walk2.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -56,32 +78,7 @@ class _OnboardingState extends State<Onboarding> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                  const SizedBox(height: 130), // 상단 여백
-
-                  // 환영 문구
-                  const Text(
-                    '저녁산책에 오신걸 \n 환영해요!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      height: 1.25,
-                      shadows: [
-                        Shadow(
-                          color: Color.fromARGB(204, 0, 0, 0),
-                          blurRadius: 8,
-                          offset: Offset(2, 2),
-                        ),
-                        Shadow(
-                          color: Color.fromARGB(102, 0, 0, 0),
-                          blurRadius: 4,
-                          offset: Offset(1, 1),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 80), // 상단 여백 (AppBar 고려하여 조정)
 
                   const SizedBox(height: 10),
 
@@ -95,11 +92,19 @@ class _OnboardingState extends State<Onboarding> {
                           onPageChanged: _onPageChanged,
                           children: [
                             _buildSlide(
+                              title: '', // title 제거
+                              lines: const [
+                                '속은 편안하게, \n마음은 추억으로 \n 기분 좋은 저녁 산책',
+                              ],
+                              isFirstSlide: true, // 첫 번째 슬라이드 표시
+                            ),
+                            _buildSlide(
                               title: '1. 목적지 설정 🚩',
                               lines: const [
                                 '지도를 탭해 목적지를 고르거나',
                                 '랜덤 추천을 통해 목적지를 정해봐요 !',
                               ],
+                              boldKeywords: ['지도', '랜덤 추천'],
                             ),
                             _buildSlide(
                               title: '2. 산책 중 이벤트 🚶‍',
@@ -107,19 +112,22 @@ class _OnboardingState extends State<Onboarding> {
                                 '경유지에서 미션을 즐기며',
                                 '목적지에서 사진 찍고 공유해요 !',
                               ],
+                              boldKeywords: ['미션', '사진', '공유'],
                             ),
                             _buildSlide(
                               title: '3. 산책 일기 쓰기 📝',
                               lines: const [
-                                '오늘 산책을 기록하고',
-                                '나만의 일기로 예쁘게 모아보세요',
+                                '오늘의 산책을 기록하고',
+                                '나만의 추억을 쌓아보세요',
                               ],
+                              boldKeywords: ['나만의 추억'],
                             ),
                             _buildSlide(
                               title: '출발 준비 완료 ✨',
                               lines: const [
                                 '이제 산책하러 가볼까요?',
                               ],
+                              boldKeywords: ['산책'],
                               cta: _buildStartButton(),
                             ),
                           ],
@@ -143,12 +151,15 @@ class _OnboardingState extends State<Onboarding> {
                           catText = '오른쪽으로 넘겨보라냥 !';
                           break;
                         case 1:
-                          catText = '사진찍는거 나도 좋아한다냥..';
+                          catText = '반갑다냥.. 😳';
                           break;
                         case 2:
-                          catText = '일기에 나도 넣어달라냥 !!!';
+                          catText = '사진찍는거 나도 좋아한다냥..';
                           break;
                         case 3:
+                          catText = '일기에 나도 넣어달라냥 !!!';
+                          break;
+                        case 4:
                           catText = '이제 산책하러 가는거냥 🐾';
                           break;
                         default:
@@ -192,50 +203,96 @@ class _OnboardingState extends State<Onboarding> {
     required List<String> lines,
     Widget? tail,
     Widget? cta,
+    bool isFirstSlide = false,
+    List<String>? boldKeywords,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // 헤드라인
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.8,
-            height: 1.25,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.8),
-                blurRadius: 8,
-                offset: const Offset(2, 2),
-              ),
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 4,
-                offset: const Offset(1, 1),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        // 보조 라인(1~2줄)
-        ...lines.map(
-          (t) => Padding(
-            padding: const EdgeInsets.only(bottom: 6.0),
-            child: Text(
-              t,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.95),
-                fontSize: 18,
-                height: 1.35,
-              ),
+        // 첫 번째 슬라이드가 아닐 때만 title 표시
+        if (!isFirstSlide && title.isNotEmpty) ...[
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+              height: 1.25,
+              fontFamily: 'Cafe24Oneprettynight',
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  blurRadius: 8,
+                  offset: const Offset(2, 2),
+                ),
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 4,
+                  offset: const Offset(1, 1),
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 16),
+        ],
+        // 보조 라인(1~2줄) - 첫 번째 슬라이드일 때는 첫 번째 텍스트를 title 크기로
+        ...lines.asMap().entries.map(
+          (entry) {
+            final index = entry.key;
+            final text = entry.value;
+            final isFirstLine = index == 0;
+
+            // boldKeywords가 있고 첫 번째 슬라이드가 아닐 때만 RichText 사용
+            if (boldKeywords != null && !isFirstSlide) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: _buildRichText(
+                    text,
+                    boldKeywords,
+                    fontSize: 18,
+                  ),
+                ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6.0),
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.95),
+                  fontSize: isFirstSlide && isFirstLine
+                      ? 32 // 첫 번째 슬라이드의 첫 번째 텍스트 크기
+                      : 18, // 나머지 텍스트 크기
+                  fontWeight: isFirstSlide && isFirstLine
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                  height: 1.35,
+                  fontFamily: 'Cafe24Oneprettynight',
+                  shadows: isFirstSlide && isFirstLine
+                      ? [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.8),
+                            blurRadius: 8,
+                            offset: const Offset(2, 2),
+                          ),
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ]
+                      : null,
+                ),
+              ),
+            );
+          },
         ),
         if (tail != null) ...[
           const SizedBox(height: 4),
@@ -267,6 +324,7 @@ class _OnboardingState extends State<Onboarding> {
             fontSize: 20,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
+            fontFamily: 'Cafe24Oneprettynight',
           ),
         ),
       ),
@@ -276,7 +334,7 @@ class _OnboardingState extends State<Onboarding> {
   Widget _buildPageIndicator() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(4, (i) {
+      children: List.generate(5, (i) {
         final bool active = i == _currentPage;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 250),
@@ -292,5 +350,77 @@ class _OnboardingState extends State<Onboarding> {
         );
       }),
     );
+  }
+
+  /// 텍스트에서 특정 키워드를 굵게 표시하는 RichText를 생성하는 메서드
+  TextSpan _buildRichText(String text, List<String> boldKeywords,
+      {double fontSize = 18}) {
+    final List<TextSpan> spans = [];
+    String remainingText = text;
+    int lastIndex = 0;
+
+    // 각 키워드를 순서대로 처리
+    for (String keyword in boldKeywords) {
+      final int index = remainingText.indexOf(keyword, lastIndex);
+      if (index != -1) {
+        // 키워드 앞의 일반 텍스트
+        if (index > lastIndex) {
+          spans.add(TextSpan(
+            text: remainingText.substring(lastIndex, index),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.95),
+              fontSize: fontSize,
+              fontWeight: FontWeight.normal,
+              height: 1.35,
+              fontFamily: 'Cafe24Oneprettynight',
+            ),
+          ));
+        }
+
+        // 굵은 키워드
+        spans.add(TextSpan(
+          text: keyword,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.95),
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            height: 1.35,
+            fontFamily: 'Cafe24Oneprettynight',
+          ),
+        ));
+
+        lastIndex = index + keyword.length;
+      }
+    }
+
+    // 마지막 남은 텍스트 추가
+    if (lastIndex < remainingText.length) {
+      spans.add(TextSpan(
+        text: remainingText.substring(lastIndex),
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.95),
+          fontSize: fontSize,
+          fontWeight: FontWeight.normal,
+          height: 1.35,
+          fontFamily: 'Cafe24Oneprettynight',
+        ),
+      ));
+    }
+
+    // 만약 아무 키워드도 찾지 못했다면 원본 텍스트를 그대로 반환
+    if (spans.isEmpty) {
+      return TextSpan(
+        text: text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.95),
+          fontSize: fontSize,
+          fontWeight: FontWeight.normal,
+          height: 1.35,
+          fontFamily: 'Cafe24Oneprettynight',
+        ),
+      );
+    }
+
+    return TextSpan(children: spans);
   }
 }

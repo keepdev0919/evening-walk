@@ -48,6 +48,11 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
     _lottieController = AnimationController(vsync: this);
     // 초기 텍스트 설정
     _initializeText();
+
+    // 모든 화면에서 자동으로 애니메이션 시작
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restartAnimation();
+    });
   }
 
   @override

@@ -204,7 +204,7 @@ class LoginPage extends StatelessWidget {
                         width: catWidth,
                         bubbleMaxWidth: catWidth * 0.8,
                         screenType: 'selectMate',
-                        defaultText: '어서오라냥~',
+                        defaultText: '어서오라냥~🐾 ',
                       ),
                     ),
                   ),
