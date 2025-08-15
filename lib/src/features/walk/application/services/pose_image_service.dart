@@ -20,6 +20,9 @@ class PoseImageService {
         case '반려견':
           folderName = 'dog';
           break;
+        case '가족':
+          folderName = 'family';
+          break;
         default:
           folderName = 'alone'; // 기본값 또는 에러 처리
       }

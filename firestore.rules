@@ -56,7 +56,7 @@ service cloud.firestore {
            data is map &&
            data.userId is string &&
            data.startTime is timestamp &&
-           data.selectedMate is string && data.selectedMate in ['혼자', '연인', '친구'] &&
+           data.selectedMate is string && data.selectedMate in ['혼자', '연인', '친구', '반려견', '가족'] &&
            data.startLocation is map &&
            data.destinationLocation is map &&
            data.waypointLocation is map;

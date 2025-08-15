@@ -1285,6 +1285,7 @@ class _MateSheetState extends State<_MateSheet> {
                   {'label': '💕연인', 'value': '연인'},
                   {'label': '👫친구', 'value': '친구'},
                   {'label': '🐕반려견', 'value': '반려견'},
+                  {'label': '👨‍👩‍👧‍👦가족', 'value': '가족'},
                 ].map((opt) {
                   final String label = opt['label'] as String;
                   final String value = opt['value'] as String;

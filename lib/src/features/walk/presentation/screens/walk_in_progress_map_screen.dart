@@ -143,6 +143,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (mate == '연인') return '💕';
     if (mate.startsWith('친구')) return '👫';
     if (mate == '반려견') return '🐕';
+    if (mate == '가족') return '👨‍👩‍👧‍👦';
     return '🚶'; // 기본값
   }
 
@@ -152,6 +153,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (mate == '연인') return Colors.pink;
     if (mate.startsWith('친구')) return Colors.green;
     if (mate == '반려견') return Colors.orange;
+    if (mate == '가족') return Colors.purple;
     return Colors.green; // 기본값
   }
 
@@ -217,7 +219,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   // 목적지 스냅샷 저장 로직은 현재 플로우에서 사용하지 않음
 
-  void _handleWaypointEventState(bool show, String? question, String? answer, [bool showSnackbar = true]) {
+  void _handleWaypointEventState(bool show, String? question, String? answer,
+      [bool showSnackbar = true]) {
     setState(() {
       _showWaypointEventButton = show;
       _lastWaypointQuestion = question;
@@ -253,7 +256,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         // 나중에 버튼 누른 경우
         message = '좋아요! 최종 목적지로의 걸음을 계속하세요! ✨';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -677,7 +680,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     WaypointDialogs.showQuestionDialog(
                         context,
                         _lastWaypointQuestion!,
-                        (show, question, answer, [showSnackbar = true]) => _handleWaypointEventState(show, question, answer, false), // 경유지 버튼을 통한 재확인시에는 스낵바 표시 안함
+                        (show, question, answer, [showSnackbar = true]) =>
+                            _handleWaypointEventState(show, question, answer,
+                                false), // 경유지 버튼을 통한 재확인시에는 스낵바 표시 안함
                         _lastWaypointUserAnswer);
                   }
                 },

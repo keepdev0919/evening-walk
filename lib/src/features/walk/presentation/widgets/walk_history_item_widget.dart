@@ -329,6 +329,8 @@ class WalkHistoryItemWidget extends StatelessWidget {
         return '👫'; // 친구
       case '반려견':
         return '🐕'; // 반려견
+      case '가족':
+        return '👨‍👩‍👧‍👦'; // 가족
       default:
         return '🚶'; // 기본 걷기
     }
