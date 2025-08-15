@@ -15,7 +15,7 @@ class DebugModeButtons extends StatelessWidget {
   final LatLng? currentPosition;
   final WalkStateManager walkStateManager;
   final String selectedMate;
-  final Function(bool, String?, String?) updateWaypointEventState;
+  final Function(bool, String?, String?, [bool]) updateWaypointEventState;
   final Function(bool) updateDestinationEventState;
   final VoidCallback hideDestinationTeaseBubble;
   final Function(String) onPoseImageGenerated;

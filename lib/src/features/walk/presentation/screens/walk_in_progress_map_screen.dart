@@ -69,7 +69,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   // 사용자의 이동 경로에 남길 발자국(🐾) 마커들
   final List<Marker> _footprintMarkers = [];
   BitmapDescriptor? _footprintIcon;
-  BitmapDescriptor? _dotIcon;
   LatLng? _lastFootprintPosition;
 
   /// 산책 상태를 관리하는 매니저 인스턴스입니다.
@@ -143,6 +142,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (mate == '혼자') return '🌙';
     if (mate == '연인') return '💕';
     if (mate.startsWith('친구')) return '👫';
+    if (mate == '반려견') return '🐕';
     return '🚶'; // 기본값
   }
 
@@ -151,6 +151,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (mate == '혼자') return Colors.blue;
     if (mate == '연인') return Colors.pink;
     if (mate.startsWith('친구')) return Colors.green;
+    if (mate == '반려견') return Colors.orange;
     return Colors.green; // 기본값
   }
 
@@ -164,14 +165,12 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   // HeadingController 사용으로 미사용
   // double _alphaBySpeed(double speedMetersPerSecond) { ... }
 
-  /// 사용자의 이동 경로에 발자국(🐾)/점(.) 마커를 추가합니다.
+  /// 사용자의 이동 경로에 발자국(🐾) 마커를 추가합니다.
   /// - 발자국: 10m 간격
-  /// - 점: 2m 간격으로 보조 시각화
   void _maybeAddFootprint(LatLng current) {
     if (_footprintIcon == null) return; // 아이콘이 아직 준비되지 않은 경우
 
     const double footprintDistance = 10.0;
-    const double dotDistance = 2.0;
     if (_lastFootprintPosition != null) {
       final double d = Geolocator.distanceBetween(
         _lastFootprintPosition!.latitude,
@@ -179,10 +178,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         current.latitude,
         current.longitude,
       );
-      // 2m 이상 이동했으면 작은 점을 찍어 경로 보조
-      if (d >= dotDistance) {
-        _addDotMarker(current);
-      }
       // 10m 이상일 때만 발자국을 추가
       if (d < footprintDistance) return;
     }
@@ -190,6 +185,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     _lastFootprintPosition = current;
     final String markerId =
         'footprint_${DateTime.now().millisecondsSinceEpoch}';
+
     _footprintMarkers.add(
       Marker(
         markerId: MarkerId(markerId),
@@ -203,33 +199,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     if (mounted) {
       setState(() {});
     }
-  }
-
-  /// 2m 간격 보조용 점(.) 마커를 추가합니다.
-  Future<void> _ensureDotIcon() async {
-    if (_dotIcon != null) return;
-    _dotIcon = await MapMarkerCreator.createDotMarkerBitmap(
-      diameter: 10.0,
-      color: Colors.white,
-      alpha: 0.85,
-      borderColor: Colors.black45,
-      borderWidth: 1.0,
-    );
-  }
-
-  void _addDotMarker(LatLng position) async {
-    await _ensureDotIcon();
-    if (_dotIcon == null) return;
-    final String markerId = 'dot_${DateTime.now().millisecondsSinceEpoch}';
-    _footprintMarkers.add(
-      Marker(
-        markerId: MarkerId(markerId),
-        position: position,
-        icon: _dotIcon!,
-        anchor: const Offset(0.5, 0.5),
-        zIndex: 0.9,
-      ),
-    );
   }
 
   Future<void> _updateOverlayPosition() async {
@@ -248,7 +217,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
   // 목적지 스냅샷 저장 로직은 현재 플로우에서 사용하지 않음
 
-  void _handleWaypointEventState(bool show, String? question, String? answer) {
+  void _handleWaypointEventState(bool show, String? question, String? answer, [bool showSnackbar = true]) {
     setState(() {
       _showWaypointEventButton = show;
       _lastWaypointQuestion = question;
@@ -272,6 +241,39 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     // 경유지 이벤트가 시작되면 (나중에 버튼이든 이벤트 확인이든) 말풍선 상태 변경
     if (show) {
       _walkStateManager.completeWaypointEvent();
+    }
+
+    // 스낵바 표시 조건 수정: "나중에" 버튼 또는 "답변 완료" 버튼 누를 때 모두 표시
+    if (mounted && show && showSnackbar) {
+      String message;
+      if (answer != null && answer.trim().isNotEmpty) {
+        // 답변 완료한 경우
+        message = '답변이 완료되었습니다! 최종 목적지로 향해보세요! ✨';
+      } else {
+        // 나중에 버튼 누른 경우
+        message = '좋아요! 최종 목적지로의 걸음을 계속하세요! ✨';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      );
     }
   }
 
@@ -675,7 +677,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                     WaypointDialogs.showQuestionDialog(
                         context,
                         _lastWaypointQuestion!,
-                        _handleWaypointEventState,
+                        (show, question, answer, [showSnackbar = true]) => _handleWaypointEventState(show, question, answer, false), // 경유지 버튼을 통한 재확인시에는 스낵바 표시 안함
                         _lastWaypointUserAnswer);
                   }
                 },

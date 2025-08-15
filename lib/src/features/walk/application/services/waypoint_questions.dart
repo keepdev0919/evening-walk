@@ -25,6 +25,8 @@ class WaypointQuestionProvider {
           'lib/src/features/walk/application/data/walk_question/alone_questions.json');
       final String coupleJson = await rootBundle.loadString(
           'lib/src/features/walk/application/data/walk_question/couple_questions.json');
+      final String dogJson = await rootBundle.loadString(
+          'lib/src/features/walk/application/data/walk_question/dog_questions.json');
       // 기본 친구 질문 파일(friend_questions.json)은 제거됨. 세분화 파일만 사용.
       // 세분화된 친구 질문 로드 (없어도 안전)
       String? friendTwoJson;
@@ -40,6 +42,7 @@ class WaypointQuestionProvider {
 
       _loadedQuestions['혼자'] = List<String>.from(json.decode(aloneJson));
       _loadedQuestions['연인'] = List<String>.from(json.decode(coupleJson));
+      _loadedQuestions['반려견'] = List<String>.from(json.decode(dogJson));
       // '친구' 기본 리스트는 비움. 실제 사용은 two/many 세분화 리스트로 대체
       _loadedQuestions['친구'] = [];
       if (friendTwoJson != null) {

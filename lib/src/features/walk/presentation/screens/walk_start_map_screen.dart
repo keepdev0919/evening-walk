@@ -434,14 +434,26 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         child: TextField(
                           controller: _destNameController ??=
                               TextEditingController(text: _selectedAddress),
+                          maxLength: 300,
                           style: const TextStyle(
                               color: Colors.white, fontSize: 16),
-                          decoration: const InputDecoration(
-                            hintText: '개발자 : 불편하신점 있으면 꼭 알려주세요! ❤️',
-                            hintStyle:
-                                TextStyle(color: Colors.white54, fontSize: 16),
+                          decoration: InputDecoration(
+                            hintText: '예) 노을 맛집 우리동네 언덕',
+                            hintStyle: const TextStyle(
+                                color: Colors.white54, fontSize: 16),
                             isDense: true,
                             border: InputBorder.none,
+                            suffixIcon: IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                _destNameController?.clear();
+                              },
+                              tooltip: '텍스트 지우기',
+                            ),
                           ),
                         ),
                       ),
@@ -1272,6 +1284,7 @@ class _MateSheetState extends State<_MateSheet> {
                   {'label': '🌙혼자', 'value': '혼자'},
                   {'label': '💕연인', 'value': '연인'},
                   {'label': '👫친구', 'value': '친구'},
+                  {'label': '🐕반려견', 'value': '반려견'},
                 ].map((opt) {
                   final String label = opt['label'] as String;
                   final String value = opt['value'] as String;

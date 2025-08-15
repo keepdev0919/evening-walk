@@ -724,56 +724,62 @@ class _ProfileState extends State<Profile> {
       {TextInputType keyboardType = TextInputType.text}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white70,
+          // 라벨 (고정 너비로 설정하여 정렬 통일)
+          SizedBox(
+            width: 60,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white54),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: _isEditing
-                ? TextField(
-                    controller: controller,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Cafe24Oneprettynight',
-                      fontSize: 16,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '$label 입력',
-                      hintStyle: const TextStyle(
-                        color: Colors.white70,
+          const SizedBox(width: 16),
+          // 입력 필드 (나머지 공간 차지)
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white54),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: _isEditing
+                  ? TextField(
+                      controller: controller,
+                      maxLength: 300,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontFamily: 'Cafe24Oneprettynight',
                         fontSize: 16,
                       ),
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '$label 입력',
+                        hintStyle: const TextStyle(
+                          color: Colors.white70,
+                          fontFamily: 'Cafe24Oneprettynight',
+                          fontSize: 16,
+                        ),
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      keyboardType: keyboardType,
+                    )
+                  : Text(
+                      controller.text.isEmpty ? '$label 없음' : controller.text,
+                      style: TextStyle(
+                        color: controller.text.isEmpty
+                            ? Colors.white70
+                            : Colors.white,
+                        fontFamily: 'Cafe24Oneprettynight',
+                        fontSize: 16,
+                      ),
                     ),
-                    keyboardType: keyboardType,
-                  )
-                : Text(
-                    controller.text.isEmpty ? '$label 없음' : controller.text,
-                    style: TextStyle(
-                      color: controller.text.isEmpty
-                          ? Colors.white70
-                          : Colors.white,
-                      fontFamily: 'Cafe24Oneprettynight',
-                      fontSize: 16,
-                    ),
-                  ),
+            ),
           ),
         ],
       ),
@@ -784,46 +790,51 @@ class _ProfileState extends State<Profile> {
   Widget _buildRegionField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white70,
+          // 라벨 (고정 너비로 설정하여 정렬 통일)
+          SizedBox(
+            width: 60,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          _isEditing
-              ? RegionSelectorWidget(
-                  initialRegion: controller.text,
-                  onRegionSelected: (region) {
-                    LogService.debug('UI', '지역 선택됨: $region');
-                    controller.text = region;
-                    LogService.debug('UI', '컨트롤러 업데이트됨: ${controller.text}');
-                  },
-                )
-              : Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white54),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    controller.text.isEmpty ? '$label 없음' : controller.text,
-                    style: TextStyle(
-                      color: controller.text.isEmpty
-                          ? Colors.white70
-                          : Colors.white,
-                      fontFamily: 'Cafe24Oneprettynight',
-                      fontSize: 16,
+          const SizedBox(width: 16),
+          // 선택 위젯 (나머지 공간 차지)
+          Expanded(
+            child: _isEditing
+                ? RegionSelectorWidget(
+                    initialRegion: controller.text,
+                    onRegionSelected: (region) {
+                      LogService.debug('UI', '지역 선택됨: $region');
+                      controller.text = region;
+                      LogService.debug('UI', '컨트롤러 업데이트됨: ${controller.text}');
+                    },
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white54),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      controller.text.isEmpty ? '$label 없음' : controller.text,
+                      style: TextStyle(
+                        color: controller.text.isEmpty
+                            ? Colors.white70
+                            : Colors.white,
+                        fontFamily: 'Cafe24Oneprettynight',
+                        fontSize: 16,
+                      ),
                     ),
                   ),
-                ),
+          ),
         ],
       ),
     );
@@ -833,44 +844,49 @@ class _ProfileState extends State<Profile> {
   Widget _buildGenderField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white70,
+          // 라벨 (고정 너비로 설정하여 정렬 통일)
+          SizedBox(
+            width: 60,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          _isEditing
-              ? GenderSelectorWidget(
-                  initialGender: controller.text,
-                  onGenderSelected: (gender) {
-                    controller.text = gender;
-                  },
-                )
-              : Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white54),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    controller.text.isEmpty ? '$label 없음' : controller.text,
-                    style: TextStyle(
-                      color: controller.text.isEmpty
-                          ? Colors.white70
-                          : Colors.white,
-                      fontFamily: 'Cafe24Oneprettynight',
-                      fontSize: 16,
+          const SizedBox(width: 16),
+          // 선택 위젯 (나머지 공간 차지)
+          Expanded(
+            child: _isEditing
+                ? GenderSelectorWidget(
+                    initialGender: controller.text,
+                    onGenderSelected: (gender) {
+                      controller.text = gender;
+                    },
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white54),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      controller.text.isEmpty ? '$label 없음' : controller.text,
+                      style: TextStyle(
+                        color: controller.text.isEmpty
+                            ? Colors.white70
+                            : Colors.white,
+                        fontFamily: 'Cafe24Oneprettynight',
+                        fontSize: 16,
+                      ),
                     ),
                   ),
-                ),
+          ),
         ],
       ),
     );

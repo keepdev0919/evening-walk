@@ -48,6 +48,7 @@ Future<void> showLocationNameEditDialog({
             builder: (context, setInner) {
               return TextField(
                 controller: controller,
+                maxLength: 300,
                 style: const TextStyle(color: Colors.white),
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(

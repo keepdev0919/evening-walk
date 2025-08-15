@@ -374,6 +374,8 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       case '친구(2명)':
       case '친구(여러명)':
         return '👫';
+      case '반려견':
+        return '🐕';
       default:
         return '🚶'; // 기본 걷기
     }

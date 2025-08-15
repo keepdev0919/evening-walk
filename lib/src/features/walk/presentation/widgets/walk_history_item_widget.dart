@@ -96,32 +96,36 @@ class WalkHistoryItemWidget extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              // 메이트 정보를 시간 옆으로 이동
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: Colors.white54,
-                                    width: 0.8,
+                              // 메이트 정보를 시간 옆으로 이동 (Flexible로 래핑하여 오버플로우 방지)
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.white54,
+                                      width: 0.8,
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  '${_getMateEmoji(_normalizeMate(walkSession.selectedMate))} ${_normalizeMate(walkSession.selectedMate)}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    shadows: [
-                                      Shadow(
-                                        blurRadius: 2.0,
-                                        color: Colors.black54,
-                                        offset: Offset(1.0, 1.0),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    '${_getMateEmoji(_normalizeMate(walkSession.selectedMate))} ${_normalizeMate(walkSession.selectedMate)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.2,
+                                      shadows: [
+                                        Shadow(
+                                          blurRadius: 2.0,
+                                          color: Colors.black54,
+                                          offset: Offset(1.0, 1.0),
+                                        ),
+                                      ],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
                                 ),
                               ),
@@ -323,6 +327,8 @@ class WalkHistoryItemWidget extends StatelessWidget {
         return '💕'; // 사랑
       case '친구':
         return '👫'; // 친구
+      case '반려견':
+        return '🐕'; // 반려견
       default:
         return '🚶'; // 기본 걷기
     }

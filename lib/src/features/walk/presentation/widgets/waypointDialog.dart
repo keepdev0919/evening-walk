@@ -9,7 +9,7 @@ class WaypointDialogs {
     required BuildContext context,
     required String questionPayload,
     required String? selectedMate,
-    required Function(bool, String?, String?) updateWaypointEventState,
+    required Function(bool, String?, String?, [bool]) updateWaypointEventState,
   }) async {
     return CommonArrivalDialog.show<void>(
       context: context,
@@ -28,7 +28,7 @@ class WaypointDialogs {
                 finalQuestion = balanceQ.trim();
               }
             }
-            updateWaypointEventState(true, finalQuestion, null);
+            updateWaypointEventState(true, finalQuestion, null, false);
             if (context.mounted) {
               WaypointDialogs.showQuestionDialog(
                 context,
@@ -52,7 +52,7 @@ class WaypointDialogs {
                 finalQuestion = friendQ.trim();
               }
             }
-            updateWaypointEventState(true, finalQuestion, null);
+            updateWaypointEventState(true, finalQuestion, null, false);
             if (context.mounted) {
               WaypointDialogs.showQuestionDialog(
                 context,
@@ -79,7 +79,7 @@ class WaypointDialogs {
   static void showQuestionDialog(
     BuildContext context,
     String question,
-    Function(bool, String?, String?) updateWaypointEventState,
+    Function(bool, String?, String?, [bool]) updateWaypointEventState,
     String? initialAnswer,
   ) {
     final TextEditingController answerController =
@@ -90,158 +90,164 @@ class WaypointDialogs {
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return Dialog(
-          backgroundColor: Colors.black.withValues(alpha: 0.9),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(color: Colors.white70, width: 1.5),
-          ),
+          insetPadding: EdgeInsets.zero,
+          backgroundColor: Colors.transparent,
           child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white70, width: 1.5),
+            ),
             constraints: const BoxConstraints(
               maxWidth: 400,
               maxHeight: 600,
             ),
             padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // 콘텐츠 크기에 맞춤
-              children: <Widget>[
-                // 제목
-                Column(
-                  children: [
-                    const Text(
-                      '경유지 질문',
-                      style: TextStyle(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // 콘텐츠 크기에 맞춤
+                children: <Widget>[
+                  // 제목
+                  Column(
+                    children: [
+                      const Text(
+                        '경유지 질문',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 40,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // 질문 텍스트
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      question,
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                        letterSpacing: 0.3,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: 40,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(2),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 답변 입력 필드
+                  TextField(
+                    controller: answerController,
+                    maxLength: 300,
+                    decoration: InputDecoration(
+                      hintText: '우측 상단 경유지 버튼으로 내용을 수정할 수 있어요!',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.1),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.orange.withValues(alpha: 0.8),
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // 질문 텍스트
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    question,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                       height: 1.4,
-                      letterSpacing: 0.3,
                     ),
-                    textAlign: TextAlign.center,
+                    maxLines: 3,
                   ),
-                ),
-                const SizedBox(height: 12),
 
-                // 답변 입력 필드
-                TextField(
-                  controller: answerController,
-                  decoration: InputDecoration(
-                    hintText: '우측 상단 경유지 버튼으로 내용을 수정할 수 있어요!',
-                    hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.orange.withValues(alpha: 0.8),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                ),
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 20),
-
-                // 답변 완료 버튼
-                Container(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      updateWaypointEventState(
-                          true, question, answerController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange.withValues(alpha: 0.9),
-                      foregroundColor: Colors.white,
-                      elevation: 8,
-                      shadowColor: Colors.orange.withValues(alpha: 0.4),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 18, horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      side: BorderSide(
-                        color: Colors.orange.withValues(alpha: 0.6),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.check_circle,
-                          size: 20,
-                          color: Colors.white,
+                  // 답변 완료 버튼
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        updateWaypointEventState(
+                            true, question, answerController.text);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.withValues(alpha: 0.9),
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: Colors.orange.withValues(alpha: 0.4),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 18, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          '답변 완료',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
+                        side: BorderSide(
+                          color: Colors.orange.withValues(alpha: 0.6),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            size: 20,
+                            color: Colors.white,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          const Text(
+                            '답변 완료',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

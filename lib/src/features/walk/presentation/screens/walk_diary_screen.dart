@@ -110,6 +110,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         return '💕';
       case '친구':
         return '👫';
+      case '반려견':
+        return '🐕';
       default:
         return '🚶';
     }
@@ -275,7 +277,20 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                                 : TextField(
                                     controller: answerEditController,
                                     readOnly: !isEditingAnswer,
-                                    maxLines: 4,
+                                    maxLines: 2,
+                                    maxLength: 300,
+                                    onTap: !isEditingAnswer
+                                        ? () {
+                                            if (answerEditController.text
+                                                .trim()
+                                                .isNotEmpty) {
+                                              _showFullScreenText(
+                                                '경유지 답변',
+                                                answerEditController.text,
+                                              );
+                                            }
+                                          }
+                                        : null,
                                     style: TextStyle(
                                       color: isEditingAnswer
                                           ? Colors.white
@@ -360,7 +375,20 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                           child: TextField(
                             controller: reflectionController,
                             readOnly: !isEditingReflection,
-                            maxLines: 4,
+                            maxLines: 2,
+                            maxLength: 300,
+                            onTap: !isEditingReflection
+                                ? () {
+                                    if (reflectionController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                      _showFullScreenText(
+                                        '오늘의 소감',
+                                        reflectionController.text,
+                                      );
+                                    }
+                                  }
+                                : null,
                             style: TextStyle(
                               color: isEditingReflection
                                   ? Colors.white
@@ -963,20 +991,43 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 Navigator.of(context).pop();
                 widget.onWalkCompleted(true);
 
-                // 홈화면에서 성공 스낵바를 보여주기 위해 arguments로 메시지 전달
-                if (widget.returnRoute != null) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    widget.returnRoute!,
-                    (route) => false,
-                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다.'},
-                  );
-                } else {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/homescreen',
-                    (route) => false,
-                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다.'},
-                  );
-                }
+                // 저장 성공 스낵바 표시
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      '산책이 저장되었습니다 ✨',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.black.withValues(alpha: 0.6),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 48, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                );
+
+                // 1초 후 홈화면으로 이동
+                Future.delayed(const Duration(seconds: 1), () {
+                  if (widget.returnRoute != null) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      widget.returnRoute!,
+                      (route) => false,
+                    );
+                  } else {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/homescreen',
+                      (route) => false,
+                    );
+                  }
+                });
               } else {
                 ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
               }
@@ -998,20 +1049,43 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 Navigator.of(context).pop();
                 widget.onWalkCompleted(true);
 
-                // 홈화면에서 성공 스낵바를 보여주기 위해 arguments로 메시지 전달
-                if (widget.returnRoute != null) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    widget.returnRoute!,
-                    (route) => false,
-                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다. ✨'},
-                  );
-                } else {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/homescreen',
-                    (route) => false,
-                    arguments: {'showSuccessMessage': '산책 일기가 저장되었습니다. ✨'},
-                  );
-                }
+                // 저장 성공 스낵바 표시
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      '산책이 저장되었습니다 ✨',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    backgroundColor: Colors.black.withValues(alpha: 0.6),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 48, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                );
+
+                // 1초 후 홈화면으로 이동
+                Future.delayed(const Duration(seconds: 1), () {
+                  if (widget.returnRoute != null) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      widget.returnRoute!,
+                      (route) => false,
+                    );
+                  } else {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/homescreen',
+                      (route) => false,
+                    );
+                  }
+                });
 
                 if (widget.walkStateManager.photoPath != null) {
                   uploadProvider.startBackgroundUpload(
@@ -1386,17 +1460,162 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.memory(
-                pngBytes,
-                fit: BoxFit.contain,
+              child: InteractiveViewer(
+                panEnabled: true, // 이동 허용
+                scaleEnabled: true, // 확대/축소 허용
+                minScale: 0.5, // 최소 축소 비율
+                maxScale: 4.0, // 최대 확대 비율
+                child: Center(
+                  child: Image.memory(
+                    pngBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
             ),
+            // 상단 컨트롤 바
+            Positioned(
+              top: 40,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.85),
+                      Colors.black.withValues(alpha: 0.75),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // 안내 아이콘과 텍스트
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.touch_app,
+                        color: Colors.blue,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        '확대/축소 및 드래그하여 탐색하세요',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 닫기 버튼
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 전체화면 텍스트 보기
+  void _showFullScreenText(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 80, 20, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 제목
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(color: Colors.white54),
+                    const SizedBox(height: 20),
+                    // 스크롤 가능한 텍스트 내용
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          content,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            height: 1.6,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // 닫기 버튼
             Positioned(
               top: 40,
               right: 20,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(ctx),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  shape: BoxShape.circle,
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
               ),
             ),
           ],

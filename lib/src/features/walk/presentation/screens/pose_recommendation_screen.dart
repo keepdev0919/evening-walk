@@ -33,6 +33,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   bool _isLoadingPhoto = false;
   String? _shareStartAddress;
   String? _shareDestAddress;
+  int _remainingRefreshCount = 2; // 남은 새로고침 횟수
 
   // 공유 기능을 위한 RepaintBoundary Key
   final GlobalKey _shareKey = GlobalKey();
@@ -80,6 +81,37 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       }
     } catch (e) {
       LogService.error('PoseRecommendation', '포즈 이미지 로드 실패', e);
+    } finally {
+      setState(() {
+        _isLoadingPose = false;
+      });
+    }
+  }
+
+  /// 새로운 추천 포즈 로드 (새로고침)
+  Future<void> _refreshRecommendedPose() async {
+    if (_remainingRefreshCount <= 0) return;
+
+    try {
+      setState(() {
+        _isLoadingPose = true;
+        _remainingRefreshCount--;
+      });
+
+      // 기존 포즈 URL을 무시하고 새로운 포즈 강제 로드
+      final selectedMate = widget.walkStateManager.selectedMate ?? '혼자';
+      final poseImageUrl = await PoseImageService.fetchRandomImageUrl(selectedMate);
+
+      if (poseImageUrl != null) {
+        widget.walkStateManager.savePoseImageUrl(poseImageUrl);
+        setState(() {
+          _recommendedPoseImageUrl = poseImageUrl;
+        });
+        LogService.pose('새로운 포즈 이미지 로드: $poseImageUrl');
+      }
+    } catch (e) {
+      LogService.error('PoseRecommendation', '포즈 새로고침 실패', e);
+      _showErrorSnackBar('새로운 포즈를 불러오는데 실패했습니다. ✨');
     } finally {
       setState(() {
         _isLoadingPose = false;
@@ -646,17 +678,92 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.memory(
-                pngBytes,
-                fit: BoxFit.contain,
+              child: InteractiveViewer(
+                panEnabled: true, // 이동 허용
+                scaleEnabled: true, // 확대/축소 허용
+                minScale: 0.5, // 최소 축소 비율
+                maxScale: 4.0, // 최대 확대 비율
+                child: Center(
+                  child: Image.memory(
+                    pngBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
             ),
+            // 상단 컨트롤 바
             Positioned(
               top: 40,
+              left: 20,
               right: 20,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.pop(ctx),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.85),
+                      Colors.black.withValues(alpha: 0.75),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // 안내 아이콘과 텍스트
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.touch_app,
+                        color: Colors.blue,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        '확대/축소 및 드래그하여 탐색하세요',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 닫기 버튼
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -851,6 +958,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         return '💕';
       case '친구':
         return '👫';
+      case '반려견':
+        return '🐕';
       default:
         return '🚶';
     }
@@ -1081,8 +1190,43 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
 
   /// 포즈 추천 섹션
   Widget _buildPoseRecommendationSection() {
-    return _buildSection(
+    return _buildSectionWithAction(
       title: '💫 추천 포즈',
+      action: _remainingRefreshCount > 0
+          ? GestureDetector(
+              onTap: _refreshRecommendedPose,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.blue.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.refresh,
+                      color: Colors.blue,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_remainingRefreshCount',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1197,11 +1341,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(24)),
-                ),
                 child: Row(
                   children: [
                     Container(
@@ -1631,6 +1770,52 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
             ),
+          ),
+          const SizedBox(height: 16),
+          content,
+        ],
+      ),
+    );
+  }
+
+  /// 액션 버튼이 있는 섹션 빌더
+  Widget _buildSectionWithAction({
+    required String title, 
+    required Widget content, 
+    Widget? action
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              if (action != null) action,
+            ],
           ),
           const SizedBox(height: 16),
           content,
