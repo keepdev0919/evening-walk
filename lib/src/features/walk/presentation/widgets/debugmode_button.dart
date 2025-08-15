@@ -152,8 +152,6 @@ class DebugModeButtons extends StatelessWidget {
               child: const Text('목적지 도착', style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(height: 8),
-            // 출발지 복귀 버튼 제거 (단순화)
-            const SizedBox(height: 8),
             // 말풍선 테스트 버튼
             ElevatedButton(
               onPressed: () {
@@ -246,10 +244,8 @@ class DebugModeButtons extends StatelessWidget {
         return Colors.yellow.withValues(alpha: 0.8); // 경유지 이벤트 완료 후 노란색
       case SpeechBubbleState.almostDestination:
         return Colors.red.withValues(alpha: 0.8);
-      case SpeechBubbleState.returning:
-        return Colors.green.withValues(alpha: 0.8);
-      case SpeechBubbleState.almostHome:
-        return Colors.purple.withValues(alpha: 0.8);
+      default:
+        return Colors.grey.withValues(alpha: 0.8);
     }
   }
 }

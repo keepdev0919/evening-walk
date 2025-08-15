@@ -167,13 +167,46 @@ class _ProfileState extends State<Profile> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, // 배경색 투명
         elevation: 0, // 그림자 제거
-        automaticallyImplyLeading: !_isEditing, // 수정 모드일 때 뒤로가기 버튼 숨김
+        automaticallyImplyLeading: false, // 자동 뒤로가기 버튼 비활성화
         centerTitle: true, // 제목을 항상 가운데 정렬
         titleSpacing: 0, // 제목 간격 조정으로 가운데 정렬 보장
-        iconTheme: const IconThemeData(color: Colors.white), // 뒤로가기 아이콘 색상 변경
+        iconTheme: const IconThemeData(color: Colors.white), // 아이콘 색상 변경
         title: const Text(
           '내 정보',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () async {
+            if (_isEditing) {
+              // 편집 모드일 때: 편집 모드 취소
+              final userDoc =
+                  await _firestore.collection('users').doc(_user!.uid).get();
+              if (userDoc.exists) {
+                final userData = userDoc.data() as Map<String, dynamic>;
+                setState(() {
+                  _isEditing = false; // 편집 모드 취소
+                  // TextEditingController의 값을 원래 데이터로 되돌리기
+                  _nicknameController.text = userData['nickname'] ?? '';
+                  _ageController.text = userData['age']?.toString() ?? '';
+                  _regionController.text = userData['region'] ?? '';
+                  _sexController.text = userData['sex'] ?? '';
+                  _image = null; // 로컬 이미지 선택 초기화
+                });
+              } else {
+                setState(() {
+                  _isEditing = false;
+                  _image = null;
+                });
+              }
+            } else {
+              // 편집 모드가 아닐 때: 홈화면으로 이동
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/homescreen',
+                (route) => false,
+              );
+            }
+          },
         ),
         actions: [
           // 사용방법(온보딩) 안내 아이콘 (수정 모드일 때는 숨김)
@@ -631,7 +664,7 @@ class _ProfileState extends State<Profile> {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: const Text('오른쪽 위 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
+        content: const Text('상단 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
         backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),

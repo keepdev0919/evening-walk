@@ -317,7 +317,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
               children: const [
                 TextSpan(text: '목적지는 최대 '),
                 TextSpan(text: '빨간원', style: TextStyle(color: Colors.red)),
-                TextSpan(text: '까지만 설정할 수 있습니다. ✨'),
+                TextSpan(text: '까지만 설정할 수 있습니다.'),
               ],
             ),
           ),
@@ -437,7 +437,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           style: const TextStyle(
                               color: Colors.white, fontSize: 16),
                           decoration: const InputDecoration(
-                            hintText: '예) 개발자 또한 맨날 밥먹고 산책합니다..ㅎㅎ',
+                            hintText: '개발자 : 불편하신점 있으면 꼭 알려주세요! ❤️',
                             hintStyle:
                                 TextStyle(color: Colors.white54, fontSize: 16),
                             isDense: true,
@@ -988,7 +988,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                               TextSpan(
                                   text: '30',
                                   style: TextStyle(color: Colors.red)),
-                              TextSpan(text: '분 정도의 산책거리에요 ✨'),
+                              TextSpan(text: '분 정도의 산책거리에요!'),
                             ],
                           ),
                           textAlign: TextAlign.center,

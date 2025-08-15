@@ -10,7 +10,7 @@ class DestinationDialog {
       title: '목적지 도착!',
       icon: Icons.flag,
       iconColor: Colors.red,
-      message: '추천포즈를 참고하여 사진을 남기고 \nSNS에 공유해보세요!',
+      message: '추천포즈를 참고하여 사진을 \n남기고 SNS에 공유해보세요!',
       onEventConfirm: () {
         // 이벤트 확인 시 외부에서 PoseRecommendationScreen으로 이동
       },

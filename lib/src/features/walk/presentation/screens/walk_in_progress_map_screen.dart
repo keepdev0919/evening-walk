@@ -146,6 +146,14 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     return '🚶'; // 기본값
   }
 
+  /// 산책 메이트에 따른 색상을 반환합니다.
+  Color _getMateColor(String mate) {
+    if (mate == '혼자') return Colors.blue;
+    if (mate == '연인') return Colors.pink;
+    if (mate.startsWith('친구')) return Colors.orange;
+    return Colors.green; // 기본값
+  }
+
   // 진행방향 계산 로직은 HeadingController로 이동
 
   /// 보조 함수: 최단 회전 경로로 각도를 보간합니다. 반환값은 도 단위입니다.
@@ -734,7 +742,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                           color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(16.0),
                           border: Border.all(
-                            color: Colors.green.withValues(alpha: 0.8),
+                            color: _getMateColor(widget.selectedMate),
                             width: 2,
                           ),
                           boxShadow: [
@@ -755,8 +763,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                             const SizedBox(width: 4),
                             Text(
                               widget.selectedMate,
-                              style: const TextStyle(
-                                  color: Colors.green,
+                              style: TextStyle(
+                                  color: _getMateColor(widget.selectedMate),
                                   fontSize: 15,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5),

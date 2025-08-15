@@ -14,9 +14,7 @@ enum SpeechBubbleState {
   toWaypoint("산책 가보자고 ~"), // 출발지~경유지절반
   almostWaypoint("선물.. 선물.. 선물.. "), // 경유지 도착 절반 전
   waypointEventCompleted("뚜비두밥~♪"), // 경유지 이벤트 확인 후
-  almostDestination("고지가 코앞이다 !!"), // 목적지 도착 절반 전
-  returning("이제 집가자 ~"), // 목적지→출발지 복귀 시작
-  almostHome("거의 다왔다 !!"); // 출발지 도착 절반 전
+  almostDestination("고지가 코앞이다 !!"); // 목적지 도착 절반 전
 
   const SpeechBubbleState(this.message);
   final String message;
@@ -252,15 +250,6 @@ class WalkStateManager {
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
     LogService.walkState(
         '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
-  }
-
-  // 목적지에서 출발지로 돌아가기 시작
-  void startReturningHome() {
-    _isReturningHome = true;
-    _currentSpeechBubbleState = SpeechBubbleState.returning; // "이제 집가자~"
-    LogService.walkState(' 이제 출발지로 돌아갑니다.');
-    LogService.info('SpeechBubble',
-        '출발지 복귀 시작 - 말풍선: ${_currentSpeechBubbleState?.message}');
   }
 
   // 실시간 위치 업데이트 처리 (Future<String?>으로 변경)
@@ -598,21 +587,6 @@ class WalkStateManager {
     // 각 구간별 절반 지점 계산
     final double halfStartToWaypoint = startToWaypointDistance / 2;
     final double halfWaypointToDestination = waypointToDestinationDistance / 2;
-    final double halfDestinationToStart = destinationToStartDistance / 2;
-
-    // 출발지 복귀 중인 경우
-    if (_isReturningHome) {
-      if (distanceToStart <= halfDestinationToStart) {
-        return SpeechBubbleState.almostHome; // "거의 다왔다!!"
-      } else {
-        return SpeechBubbleState.returning; // "이제 집가자~"
-      }
-    }
-
-    // 목적지 도달 후 아직 복귀하지 않은 경우 (포즈 촬영 중 등)
-    if (_destinationEventOccurred && !_isReturningHome) {
-      return SpeechBubbleState.returning; // "이제 집가자~"
-    }
 
     // 목적지 근처인 경우
     if (distanceToDestination <= halfWaypointToDestination) {

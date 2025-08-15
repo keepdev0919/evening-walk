@@ -109,7 +109,7 @@ class WaypointDialogs {
                 TextField(
                   controller: answerController,
                   decoration: const InputDecoration(
-                    hintText: '답변을 입력하세요...',
+                    hintText: '우측 상단 경유지 버튼으로 내용을 수정할수 있어요!',
                     hintStyle: TextStyle(color: Colors.white54),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white54),
@@ -118,7 +118,7 @@ class WaypointDialogs {
                       borderSide: BorderSide(color: Colors.white),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   maxLines: 3,
                 ),
               ],
