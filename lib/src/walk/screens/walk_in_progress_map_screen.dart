@@ -1043,47 +1043,38 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 child: GestureDetector(
                   onTap: () => _showArrivalRadiusInfo(),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.8),
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        width: 1.5,
+                        color: Colors.white,
+                        width: 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 15,
-                          offset: const Offset(0, 4),
-                          spreadRadius: 1,
-                        ),
-                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
+                          // decoration: BoxDecoration(
+                          //   color: Colors.white,
+                          //   shape: BoxShape.circle,
+                          // ),
                           child: Icon(
                             Icons.info_outline,
                             color: Colors.white,
                             size: 20,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 4),
                         Text(
                           '도착 반경 안내',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
@@ -1104,51 +1095,44 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         content: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.3),
+                color: Colors.blue,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.location_on,
-                color: Colors.blue.shade100,
-                size: 24,
+                color: Colors.white,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '경유지는 ${AppConstants.waypointTriggerDistance.toInt()}m, 목적지는 ${AppConstants.destinationTriggerDistance.toInt()}m 반경 내 진입 시 도착으로 처리돼요! ✨',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 16,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
+              child: Text(
+                '경유지는 ${AppConstants.waypointTriggerDistance.toInt()}m, 목적지는 ${AppConstants.destinationTriggerDistance.toInt()}m 반경 내 진입 시 도착으로 처리돼요!',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.black.withValues(alpha: 0.95),
+        backgroundColor: Colors.black,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           side: const BorderSide(
             color: Colors.blue,
             width: 1,
           ),
         ),
-        margin: const EdgeInsets.all(20),
-        duration: const Duration(seconds: 5),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: '확인',
           textColor: Colors.blue.shade200,
-          backgroundColor: Colors.blue.withValues(alpha: 0.2),
           onPressed: () {
             ScaffoldMessenger.of(context).clearSnackBars();
           },
