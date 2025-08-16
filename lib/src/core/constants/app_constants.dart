@@ -5,7 +5,7 @@ class AppConstants {
   // === 거리 관련 상수 ===
   static const double maxWalkDistance = 1200.0; // 미터
   static const double waypointTriggerDistance = 50.0; // 미터
-  static const double destinationTriggerDistance = 50.0; // 미터
+  static const double destinationTriggerDistance = 20.0; // 미터
 
   // === UI 크기 상수 ===
   static const double shareContentWidth = 400.0;
