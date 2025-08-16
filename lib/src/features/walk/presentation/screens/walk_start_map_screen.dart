@@ -1277,42 +1277,46 @@ class _MateSheetState extends State<_MateSheet> {
                       selectedColor: Colors.blue.withValues(alpha: 0.8),
                     ),
               ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  {'label': '🌙혼자', 'value': '혼자'},
-                  {'label': '💕연인', 'value': '연인'},
-                  {'label': '👫친구', 'value': '친구'},
-                  {'label': '🐕반려견', 'value': '반려견'},
-                  {'label': '👨‍👩‍👧‍👦가족', 'value': '가족'},
-                ].map((opt) {
-                  final String label = opt['label'] as String;
-                  final String value = opt['value'] as String;
-                  final bool selected = mate == value;
-                  return ChoiceChip(
-                    label: Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight:
-                            selected ? FontWeight.bold : FontWeight.w600,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    {'label': '🌙혼자', 'value': '혼자'},
+                    {'label': '💕연인', 'value': '연인'},
+                    {'label': '👫친구', 'value': '친구'},
+                    {'label': '🐕반려견', 'value': '반려견'},
+                    {'label': '👨‍👩‍👧‍👦가족', 'value': '가족'},
+                  ].map((opt) {
+                    final String label = opt['label'] as String;
+                    final String value = opt['value'] as String;
+                    final bool selected = mate == value;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight:
+                                selected ? FontWeight.bold : FontWeight.w600,
+                          ),
+                        ),
+                        selected: selected,
+                        backgroundColor: selected
+                            ? Colors.blue.withValues(alpha: 0.8)
+                            : Colors.black.withValues(alpha: 0.8),
+                        side: BorderSide(
+                          color: selected ? Colors.blue : Colors.white54,
+                          width: 1.0,
+                        ),
+                        onSelected: (_) => setState(() {
+                          mate = value;
+                          if (value != '친구') friendGroup = null;
+                        }),
                       ),
-                    ),
-                    selected: selected,
-                    backgroundColor: selected
-                        ? Colors.blue.withValues(alpha: 0.8)
-                        : Colors.black.withValues(alpha: 0.8),
-                    side: BorderSide(
-                      color: selected ? Colors.blue : Colors.white54,
-                      width: 1.0,
-                    ),
-                    onSelected: (_) => setState(() {
-                      mate = value;
-                      if (value != '친구') friendGroup = null;
-                    }),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
             AnimatedSwitcher(

@@ -955,7 +955,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             ),
             onPressed: _onSharePressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withValues(alpha: 0.7),
+              backgroundColor: Colors.blue.withValues(alpha: 0.8),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -1121,12 +1121,12 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withValues(alpha: 0.8),
+              backgroundColor: Colors.green.withValues(alpha: 0.8),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+                side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
               ),
             ),
           ),
