@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // 기존 단독 회원정보 입력 로직은 사용하지 않습니다.
-import 'package:walk/src/features/profile/presentation/screens/profile_screen.dart';
+import 'package:walk/src/profile/screens/profile_screen.dart';
 
 class UserInfo extends StatefulWidget {
   const UserInfo({super.key});

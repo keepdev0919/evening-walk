@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
+import 'package:walk/src/walk/utils/map_marker_creator.dart';
 
 /// 앱 내부에서 GoogleMap을 오버레이로 잠시 렌더링한 뒤 스냅샷을 찍어 PNG를 생성합니다.
 class InAppMapSnapshotService {

@@ -2097,37 +2097,51 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     final distance = widget.walkStateManager.accumulatedDistanceKm;
 
     // 시간과 거리 모두 없으면 빈 위젯
-    if (duration == null || duration <= 0) {
+    if (duration == null && distance == null) {
       return const SizedBox.shrink();
     }
 
     List<Widget> infoWidgets = [];
 
     // 시간 정보 추가
-    infoWidgets.addAll([
-      const Icon(
-        Icons.access_time,
-        color: Colors.white70,
-        size: 14,
-      ),
-      const SizedBox(width: 4),
-      Text(
-        '${duration}분',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
+    if (duration != null) {
+      String durationText;
+      if (duration <= 0) {
+        durationText = '1분 미만';
+      } else {
+        durationText = '${duration}분';
+      }
+
+      infoWidgets.addAll([
+        const Icon(
+          Icons.access_time,
+          color: Colors.white70,
+          size: 14,
         ),
-      ),
-    ]);
+        const SizedBox(width: 4),
+        Text(
+          durationText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ]);
+    }
 
     // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
-    if (distance != null) {
+    if (distance != null && infoWidgets.isNotEmpty) {
       infoWidgets.addAll([
         const SizedBox(width: 8),
         const Text('•', style: TextStyle(color: Colors.white54, fontSize: 10)),
         const SizedBox(width: 8),
+      ]);
+    }
+
+    if (distance != null) {
+      infoWidgets.addAll([
         const Icon(
           Icons.directions_walk,
           color: Colors.white70,
