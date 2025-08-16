@@ -1033,6 +1033,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                             horizontal: 48, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 1,
+                          ),
                         ),
                       ),
                     );
@@ -1092,6 +1096,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                             horizontal: 48, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 1,
+                          ),
                         ),
                       ),
                     );

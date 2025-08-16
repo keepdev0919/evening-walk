@@ -136,38 +136,88 @@ Future<void> showLocationNameEditDialog({
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 입력 필드 라벨
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.blue.withValues(alpha: 0.8),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '사용자 정의 이름',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3,
+                    // 입력 필드 라벨과 기본 주소 버튼을 한 줄에 배치
+                    Row(
+                      children: [
+                        // 사용자 정의 이름 라벨
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.withValues(alpha: 0.8),
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                '사용자 정의 이름',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // 기본 주소 버튼 (작은 크기)
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              onSave(null);
+                              Navigator.of(ctx).pop();
+                            },
+                            style: TextButton.styleFrom(
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.08),
+                              foregroundColor: Colors.white70,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: const Text(
+                              '기본 주소',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -291,338 +341,122 @@ Future<void> showLocationNameEditDialog({
                     ),
                     const SizedBox(height: 24),
 
-                    // 버튼 섹션
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        // 화면이 작으면 세로로 배치, 크면 가로로 배치
-                        if (constraints.maxWidth < 350) {
-                          return Column(
-                            children: [
-                              // 기본 주소와 취소 버튼을 가로로 배치 (위쪽)
-                              Row(
+                    // 취소 버튼과 저장 버튼 (반반으로 나누어 배치)
+                    Row(
+                      children: [
+                        // 취소 버튼 (왼쪽 반)
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: TextButton(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.of(ctx).pop();
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.08),
+                                foregroundColor: Colors.white70,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // 기본 주소 사용 버튼
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black
-                                                .withValues(alpha: 0.15),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: TextButton(
-                                        onPressed: () {
-                                          HapticFeedback.lightImpact();
-                                          onSave(null);
-                                          Navigator.of(ctx).pop();
-                                        },
-                                        style: TextButton.styleFrom(
-                                          backgroundColor: Colors.white
-                                              .withValues(alpha: 0.08),
-                                          foregroundColor: Colors.white70,
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            side: BorderSide(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.2),
-                                              width: 1,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          '기본 주소',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.3,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                  const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.white70,
                                   ),
                                   const SizedBox(width: 8),
-                                  // 취소 버튼
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.15),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: TextButton(
-                                      onPressed: () {
-                                        HapticFeedback.lightImpact();
-                                        Navigator.of(ctx).pop();
-                                      },
-                                      style: TextButton.styleFrom(
-                                        backgroundColor: Colors.white
-                                            .withValues(alpha: 0.08),
-                                        foregroundColor: Colors.white70,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                          horizontal: 20,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          side: BorderSide(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.2),
-                                            width: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 16,
-                                        color: Colors.white70,
-                                      ),
+                                  const Text(
+                                    '취소',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.3,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              // 저장 버튼 (가장 중요하므로 아래에)
-                              SizedBox(
-                                width: double.infinity,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            Colors.blue.withValues(alpha: 0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      HapticFeedback.mediumImpact();
-                                      final text = controller.text.trim();
-                                      onSave(text.isEmpty ? null : text);
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Colors.blue.withValues(alpha: 0.8),
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 18),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        side: BorderSide(
-                                          color: Colors.blue
-                                              .withValues(alpha: 0.6),
-                                          width: 1,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.check_circle,
-                                          size: 20,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          '저장',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.3,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // 저장 버튼 (오른쪽 반)
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
-                              ),
-                            ],
-                          );
-                        } else {
-                          // 가로 배치 (기존 코드 - 공간이 넉넉할 때)
-                          return Row(
-                            children: [
-                              // 저장 버튼 (맨 왼쪽으로 이동)
-                              Flexible(
-                                flex: 3,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            Colors.blue.withValues(alpha: 0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      HapticFeedback.mediumImpact();
-                                      final text = controller.text.trim();
-                                      onSave(text.isEmpty ? null : text);
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Colors.blue.withValues(alpha: 0.8),
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        side: BorderSide(
-                                          color: Colors.blue
-                                              .withValues(alpha: 0.6),
-                                          width: 1,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.check_circle,
-                                          size: 18,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        const Text(
-                                          '저장',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.3,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // 기본 주소 사용 버튼
-                              Flexible(
-                                flex: 2,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black
-                                            .withValues(alpha: 0.15),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextButton(
-                                    onPressed: () {
-                                      HapticFeedback.lightImpact();
-                                      onSave(null);
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    style: TextButton.styleFrom(
-                                      backgroundColor:
-                                          Colors.white.withValues(alpha: 0.08),
-                                      foregroundColor: Colors.white70,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 14),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        side: BorderSide(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.2),
-                                          width: 1,
-                                        ),
-                                      ),
-                                    ),
-                                    child: const FittedBox(
-                                      child: Text(
-                                        '기본 주소',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // 취소 버튼
-                              Container(
-                                decoration: BoxDecoration(
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                HapticFeedback.mediumImpact();
+                                final text = controller.text.trim();
+                                onSave(text.isEmpty ? null : text);
+                                Navigator.of(ctx).pop();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Colors.blue.withValues(alpha: 0.8),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.15),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: TextButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.of(ctx).pop();
-                                  },
-                                  style: TextButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.white.withValues(alpha: 0.08),
-                                    foregroundColor: Colors.white70,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                      horizontal: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      side: BorderSide(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.2),
-                                        width: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.white70,
+                                  side: BorderSide(
+                                    color: Colors.blue.withValues(alpha: 0.6),
+                                    width: 1,
                                   ),
                                 ),
                               ),
-                            ],
-                          );
-                        }
-                      },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    '저장',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
