@@ -4,19 +4,19 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:walk/src/features/walk/domain/models/walk_session.dart';
-import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
-import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
+import 'package:walk/src/walk/models/walk_session.dart';
+import 'package:walk/src/walk/services/walk_session_service.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
+import 'package:walk/src/walk/services/route_snapshot_service.dart';
+import 'package:walk/src/walk/services/in_app_map_snapshot_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:walk/src/common/widgets/location_name_edit_dialog.dart';
 
-import '../../../../common/providers/upload_provider.dart';
-import '../../../../common/services/toast_service.dart';
-import '../../../../core/services/log_service.dart';
-import '../../application/services/photo_share_service.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../providers/upload_provider.dart';
+import '../../common/services/toast_service.dart';
+import '../../core/services/log_service.dart';
+import '../services/photo_share_service.dart';
+import '../../core/constants/app_constants.dart';
 
 class WalkDiaryScreen extends StatefulWidget {
   final WalkStateManager walkStateManager;

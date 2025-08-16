@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../application/services/kakao_auth_service.dart';
-import '../../application/services/google_auth_service.dart';
+import '../services/kakao_auth_service.dart';
+import '../services/google_auth_service.dart';
 import 'user_info_screen.dart' as userinfo;
 import 'package:walk/src/common/widgets/black_cat_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:walk/src/features/home/presentation/screens/home_screen.dart';
+import 'package:walk/src/home/home_screen.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

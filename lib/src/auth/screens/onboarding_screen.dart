@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../common/widgets/black_cat_widget.dart';
+import '../../common/widgets/black_cat_widget.dart';
 
 /// 온보딩 화면 (4장 슬라이드)
 /// 역할: 첫 로그인 후 간단한 안내를 4개의 페이지로 제공하고 마지막에 홈으로 진입시키는 화면

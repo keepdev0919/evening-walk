@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:walk/src/features/walk/domain/models/walk_session.dart';
-import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
-import 'package:walk/src/features/walk/presentation/widgets/walk_history_item_widget.dart';
-import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:walk/src/walk/models/walk_session.dart';
+import 'package:walk/src/walk/services/walk_session_service.dart';
+import 'package:walk/src/walk/widgets/walk_history_item_widget.dart';
+import 'package:walk/src/walk/screens/walk_diary_screen.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// 산책 기록 목록을 보여주는 화면

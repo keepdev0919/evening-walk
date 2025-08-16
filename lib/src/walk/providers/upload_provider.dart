@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/upload_state.dart';
-import '../services/toast_service.dart';
-import '../../features/walk/application/services/photo_upload_service.dart';
-import '../../features/walk/application/services/walk_session_service.dart';
+import '../../common/services/toast_service.dart';
+import '../services/photo_upload_service.dart';
+import '../services/walk_session_service.dart';
 import '../../core/services/log_service.dart';
 
 /// 업로드 상태를 관리하는 Provider

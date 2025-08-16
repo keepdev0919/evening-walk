@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
 import 'common_arrival_dialog.dart';
-import '../../application/services/walk_state_manager.dart';
+import '../services/walk_state_manager.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
@@ -150,7 +150,7 @@ class WaypointDialogs {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // 질문 텍스트
                   Container(
                     width: double.infinity,
@@ -439,8 +439,8 @@ class WaypointDialogs {
   // 커플 밸런스 게임 질문 로더
   static Future<String?> _loadCoupleBalanceQuestion() async {
     try {
-      final String jsonStr = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/couple_balance.json');
+      final String jsonStr = await rootBundle
+          .loadString('lib/src/walk/questions/couple_balance.json');
       final List<dynamic> parsed = json.decode(jsonStr);
       final List<String> questions = parsed.cast<String>();
       if (questions.isEmpty) return null;
@@ -609,18 +609,18 @@ class WaypointDialogs {
     try {
       final String path = isTwo
           ? (isGame
-              ? 'lib/src/features/walk/application/data/walk_question/friend_questions_two_game.json'
-              : 'lib/src/features/walk/application/data/walk_question/friend_questions_two_talk.json')
+              ? 'lib/src/walk/questions/friend_questions_two_game.json'
+              : 'lib/src/walk/questions/friend_questions_two_talk.json')
           : (isGame
-              ? 'lib/src/features/walk/application/data/walk_question/friend_questions_many_game.json'
-              : 'lib/src/features/walk/application/data/walk_question/friend_questions_many_talk.json');
+              ? 'lib/src/walk/questions/friend_questions_many_game.json'
+              : 'lib/src/walk/questions/friend_questions_many_talk.json');
       final String jsonStr = await rootBundle.loadString(path);
       final List<dynamic> parsed = json.decode(jsonStr);
       final List<String> questions = parsed.cast<String>();
       if (questions.isEmpty) return null;
       final rnd = Random();
       final String randomQuestion = questions[rnd.nextInt(questions.length)];
-      
+
       // 게임을 선택한 경우에만 게임 종류 + 진사람이 + 질문 조합
       if (isGame) {
         final List<String> gameTypes = ['가위바위보', '제로게임'];
@@ -639,4 +639,3 @@ class WaypointDialogs {
 enum _QuestionType { balanceGame, coupleQ }
 
 enum _FriendQuestionType { game, talk }
-

@@ -48,7 +48,7 @@ flutter:
   assets:
     - assets/images/
     - assets/config/.env
-    - lib/src/features/walk/application/data/walk_question/
+    - lib/src/walk/questions/
     - assets/animations/
 
   fonts:

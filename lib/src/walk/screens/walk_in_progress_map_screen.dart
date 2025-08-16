@@ -3,26 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
 // import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:lottie/lottie.dart' as lottie;
-import 'package:walk/src/features/walk/presentation/widgets/walk_map_view.dart';
-import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
+import 'package:walk/src/walk/widgets/walk_map_view.dart';
+import 'package:walk/src/walk/utils/map_marker_creator.dart';
 // import 'package:flutter_compass/flutter_compass.dart';
-import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
-import 'package:walk/src/features/walk/presentation/widgets/debugmode_button.dart';
-import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
-import 'package:walk/src/features/walk/presentation/widgets/speech_bubble_widget.dart';
-import 'package:walk/src/features/walk/presentation/screens/pose_recommendation_screen.dart';
-import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
-import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
-import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
+import 'package:walk/src/walk/widgets/waypointDialog.dart';
+import 'package:walk/src/walk/widgets/debugmode_button.dart';
+import 'package:walk/src/walk/widgets/destinationDialog.dart';
+import 'package:walk/src/walk/widgets/speech_bubble_widget.dart';
+import 'package:walk/src/walk/screens/pose_recommendation_screen.dart';
+import 'package:walk/src/walk/screens/walk_diary_screen.dart';
+import 'package:walk/src/walk/widgets/walk_completion_dialog.dart';
+import 'package:walk/src/walk/services/walk_session_service.dart';
 import 'package:walk/src/core/services/log_service.dart';
 // import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
 // import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
 // import 'dart:typed_data';
 // import 'dart:math' as math;
-import 'package:walk/src/features/walk/presentation/utils/heading_controller.dart';
+import 'package:walk/src/walk/utils/heading_controller.dart';
 
 /// 이 파일은 산책이 진행 중일 때 지도를 표시하고 사용자 위치를 추적하며,
 /// 경유지 및 목적지 도착 이벤트를 처리하는 화면을 담당합니다.

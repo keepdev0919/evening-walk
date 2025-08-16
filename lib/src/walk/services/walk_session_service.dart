@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:walk/src/features/walk/domain/models/walk_session.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
+import 'package:walk/src/walk/models/walk_session.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
 import 'package:walk/src/core/services/log_service.dart';
 // import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
 

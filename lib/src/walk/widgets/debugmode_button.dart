@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/features/walk/presentation/widgets/waypointDialog.dart';
-import 'package:walk/src/features/walk/presentation/widgets/destinationDialog.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
+import 'package:walk/src/walk/widgets/waypointDialog.dart';
+import 'package:walk/src/walk/widgets/destinationDialog.dart';
 // import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
 // import 'package:walk/src/features/walk/presentation/widgets/walk_completion_dialog.dart';
 // import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
-import 'package:walk/src/features/walk/presentation/screens/pose_recommendation_screen.dart';
+import 'package:walk/src/walk/screens/pose_recommendation_screen.dart';
 // import 'package:walk/src/core/services/log_service.dart';
 
 class DebugModeButtons extends StatelessWidget {

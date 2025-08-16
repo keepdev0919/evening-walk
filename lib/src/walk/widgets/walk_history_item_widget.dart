@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:walk/src/features/walk/domain/models/walk_session.dart';
+import 'package:walk/src/walk/models/walk_session.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 

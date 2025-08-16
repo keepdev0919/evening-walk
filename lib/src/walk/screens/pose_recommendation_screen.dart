@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:walk/src/common/widgets/location_name_edit_dialog.dart';
-import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
-import 'package:walk/src/features/walk/application/services/pose_image_service.dart';
-import 'package:walk/src/features/walk/application/services/walk_session_service.dart';
-import 'package:walk/src/features/walk/application/services/photo_share_service.dart';
+import 'package:walk/src/walk/services/walk_state_manager.dart';
+import 'package:walk/src/walk/services/pose_image_service.dart';
+import 'package:walk/src/walk/services/walk_session_service.dart';
+import 'package:walk/src/walk/services/photo_share_service.dart';
 import 'package:walk/src/core/constants/app_constants.dart';
 import 'package:walk/src/core/services/log_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:walk/src/features/walk/application/services/in_app_map_snapshot_service.dart';
-import 'package:walk/src/features/walk/application/services/route_snapshot_service.dart';
+import 'package:walk/src/walk/services/in_app_map_snapshot_service.dart';
+import 'package:walk/src/walk/services/route_snapshot_service.dart';
 
 /// 목적지 도착 후 포즈 추천 화면
 class PoseRecommendationScreen extends StatefulWidget {

@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geocoding/geocoding.dart';
 
-import 'package:walk/src/features/walk/presentation/screens/walk_start_map_screen.dart';
-import 'package:walk/src/features/walk/presentation/screens/walk_history_screen.dart';
-import '../../../profile/presentation/screens/profile_screen.dart';
-import '../../../../common/widgets/black_cat_widget.dart';
+import 'package:walk/src/walk/screens/walk_start_map_screen.dart';
+import 'package:walk/src/walk/screens/walk_history_screen.dart';
+import '../profile/screens/profile_screen.dart';
+import '../common/widgets/black_cat_widget.dart';
 import 'package:walk/src/core/services/log_service.dart';
 
 // 상태 구분용 enum
@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final String _apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
   InfoStatus _locationStatus = InfoStatus.loading;
   InfoStatus _weatherStatus = InfoStatus.loading;
-  
+
   // 스낵바 중복 표시 방지
   bool _hasShownSnackBar = false;
 
@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // 스낵바 메시지가 있는지 확인하고 표시 (중복 방지)
     if (!_hasShownSnackBar) {
       final args = ModalRoute.of(context)?.settings.arguments;

@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/date_symbol_data_local.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
-import 'src/features/auth/presentation/screens/login_page_screen.dart';
-import 'src/features/home/presentation/screens/home_screen.dart';
-import 'src/features/walk/presentation/screens/walk_history_screen.dart';
-import 'src/common/providers/upload_provider.dart';
+import 'src/auth/screens/login_page_screen.dart';
+import 'src/home/home_screen.dart';
+import 'src/walk/screens/walk_history_screen.dart';
+import 'src/walk/providers/upload_provider.dart';
 import 'src/common/services/toast_service.dart';
 
 void main() async {

@@ -26,15 +26,15 @@ class WaypointQuestionProvider {
   Future<void> _loadQuestions() async {
     try {
       // 각 JSON 파일의 경로
-      final String aloneJson = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/alone_questions.json');
-      final String coupleJson = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/couple_questions.json');
-      final String dogJson = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/dog_questions.json');
+      final String aloneJson = await rootBundle
+          .loadString('lib/src/walk/questions/alone_questions.json');
+      final String coupleJson = await rootBundle
+          .loadString('lib/src/walk/questions/couple_questions.json');
+      final String dogJson = await rootBundle
+          .loadString('lib/src/walk/questions/dog_questions.json');
       // 가족 질문 로드 추가
-      final String familyJson = await rootBundle.loadString(
-          'lib/src/features/walk/application/data/walk_question/family_questions.json');
+      final String familyJson = await rootBundle
+          .loadString('lib/src/walk/questions/family_questions.json');
       // 기본 친구 질문 파일(friend_questions.json)은 제거됨. 세분화 파일만 사용.
       // 세분화된 친구 질문 로드 (없어도 안전)
       String? friendTwoJson;
@@ -43,19 +43,19 @@ class WaypointQuestionProvider {
       String? friendManyGameJson;
       try {
         friendTwoJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_two_talk.json');
+            'lib/src/walk/questions/friend_questions_two_talk.json');
       } catch (_) {}
       try {
         friendManyJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_many_talk.json');
+            'lib/src/walk/questions/friend_questions_many_talk.json');
       } catch (_) {}
       try {
         friendTwoGameJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_two_game.json');
+            'lib/src/walk/questions/friend_questions_two_game.json');
       } catch (_) {}
       try {
         friendManyGameJson = await rootBundle.loadString(
-            'lib/src/features/walk/application/data/walk_question/friend_questions_many_game.json');
+            'lib/src/walk/questions/friend_questions_many_game.json');
       } catch (_) {}
 
       _loadedQuestions['혼자'] = List<String>.from(json.decode(aloneJson));
@@ -71,10 +71,12 @@ class WaypointQuestionProvider {
         _friendManyQuestions = List<String>.from(json.decode(friendManyJson));
       }
       if (friendTwoGameJson != null) {
-        _friendTwoGameQuestions = List<String>.from(json.decode(friendTwoGameJson));
+        _friendTwoGameQuestions =
+            List<String>.from(json.decode(friendTwoGameJson));
       }
       if (friendManyGameJson != null) {
-        _friendManyGameQuestions = List<String>.from(json.decode(friendManyGameJson));
+        _friendManyGameQuestions =
+            List<String>.from(json.decode(friendManyGameJson));
       }
       _isLoaded = true;
 
@@ -115,7 +117,9 @@ class WaypointQuestionProvider {
       // 게임을 선택한 경우와 토크를 선택한 경우에 따라 다른 리스트 사용
       List<String> list;
       if (friendQuestionType == 'game') {
-        list = friendGroupType == 'two' ? _friendTwoGameQuestions : _friendManyGameQuestions;
+        list = friendGroupType == 'two'
+            ? _friendTwoGameQuestions
+            : _friendManyGameQuestions;
         if (list.isNotEmpty) {
           final Random r = Random();
           final randomGame = _gameTypes[r.nextInt(_gameTypes.length)];
@@ -126,7 +130,9 @@ class WaypointQuestionProvider {
         }
       } else {
         // talk를 선택한 경우 기존 토크 리스트 사용
-        list = friendGroupType == 'two' ? _friendTwoQuestions : _friendManyQuestions;
+        list = friendGroupType == 'two'
+            ? _friendTwoQuestions
+            : _friendManyQuestions;
         if (list.isNotEmpty) {
           final Random r = Random();
           final result = list[r.nextInt(list.length)];

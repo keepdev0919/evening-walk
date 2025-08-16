@@ -8,10 +8,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/region_selector_widget.dart';
 import '../widgets/gender_selector_widget.dart';
 // 이메일 로직 제거: 인스타그램 링크로 대체
-import 'package:walk/src/features/auth/application/services/logout_service.dart';
+import 'package:walk/src/auth/services/logout_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:walk/src/features/auth/presentation/screens/login_page_screen.dart';
-import 'package:walk/src/features/auth/presentation/screens/onboarding_screen.dart';
+import 'package:walk/src/auth/screens/login_page_screen.dart';
+import 'package:walk/src/auth/screens/onboarding_screen.dart';
 import 'package:walk/src/core/services/log_service.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.

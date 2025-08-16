@@ -7,7 +7,7 @@ import 'destination_event_handler.dart';
 import 'waypoint_questions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geocoding/geocoding.dart';
-import '../../../../core/services/log_service.dart';
+import '../../core/services/log_service.dart';
 
 /// 말풍선 상태를 나타내는 enum
 enum SpeechBubbleState {
@@ -46,7 +46,6 @@ class WalkStateManager {
   Uint8List? _routeSnapshotPng; // 정적 지도 캡처 PNG
   bool _waypointEventOccurred = false;
   bool _destinationEventOccurred = false;
-
 
   // 실제 산책 시간 추적
   DateTime? _actualStartTime;
@@ -207,7 +206,6 @@ class WalkStateManager {
     LogService.walkState(' 친구 질문 타입 설정 -> "$_friendQuestionType"');
     LogService.info('Walk', '친구 질문 타입 설정 완료: $_friendQuestionType');
   }
-
 
   // 산책 시작 시 초기화
   void startWalk({

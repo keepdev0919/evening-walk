@@ -13,10 +13,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart' as lottie;
-import 'package:walk/src/features/walk/presentation/screens/walk_in_progress_map_screen.dart';
+import 'package:walk/src/walk/screens/walk_in_progress_map_screen.dart';
 // import 'package:walk/src/features/walk/application/services/walk_state_manager.dart';
 import 'package:walk/src/core/services/log_service.dart';
-import 'package:walk/src/features/walk/presentation/utils/heading_controller.dart';
+import 'package:walk/src/walk/utils/heading_controller.dart';
 // 진행 화면의 상태 기반 말풍선 대신, 시작 화면은 독립 말풍선을 사용합니다.
 
 /// 이 파일은 사용자가 산책을 시작하기 전에 목적지를 설정하는 지도 화면을 담당합니다.
@@ -406,7 +406,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // 목적지 헤더
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -417,7 +417,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF667EEA).withValues(alpha: 0.3),
+                            color:
+                                const Color(0xFF667EEA).withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -468,7 +469,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         ],
                       ),
                     ),
-                    
+
                     if (_isManualSelection) ...[
                       const SizedBox(height: 24),
                       const Text(
@@ -485,7 +486,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _isDestNameFocused 
+                            color: _isDestNameFocused
                                 ? const Color(0xFF667EEA)
                                 : Colors.white.withValues(alpha: 0.2),
                             width: 1.5,
@@ -533,7 +534,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         ),
                       ),
                     ],
-                    
+
                     const SizedBox(height: 32),
 
                     // 액션 버튼
@@ -547,7 +548,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+                            color:
+                                const Color(0xFF667EEA).withValues(alpha: 0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -1367,9 +1369,9 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final EdgeInsets insets = MediaQuery.of(context).viewInsets;
     final bool canStart = mate != null && (mate != '친구' || friendGroup != null);
-    
+
     final slideAnimation = _slideAnimation;
-    
+
     if (slideAnimation == null) {
       return Container(
         decoration: const BoxDecoration(
@@ -1400,7 +1402,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
         ),
       );
     }
-    
+
     return SlideTransition(
       position: slideAnimation,
       child: Container(
@@ -1441,7 +1443,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // 목적지 헤더
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -1503,9 +1505,9 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // 메이트 선택 카드들
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1519,7 +1521,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // 메이트 옵션들
                     Wrap(
                       spacing: 12,
@@ -1529,13 +1531,17 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                         {'label': '💕 연인', 'value': '연인', 'desc': '달콤한 산책'},
                         {'label': '👫 친구', 'value': '친구', 'desc': '함께 걸어요'},
                         {'label': '🐕 반려견', 'value': '반려견', 'desc': '댕댕이와'},
-                        {'label': '👨‍👩‍👧‍👦 가족', 'value': '가족', 'desc': '가족과 함께'},
+                        {
+                          'label': '👨‍👩‍👧‍👦 가족',
+                          'value': '가족',
+                          'desc': '가족과 함께'
+                        },
                       ].map((opt) {
                         final String label = opt['label'] as String;
                         final String value = opt['value'] as String;
                         final String desc = opt['desc'] as String;
                         final bool selected = mate == value;
-                        
+
                         return GestureDetector(
                           onTap: () => setState(() {
                             mate = value;
@@ -1544,14 +1550,20 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             curve: Curves.easeInOut,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
                               gradient: selected
                                   ? const LinearGradient(
-                                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                                      colors: [
+                                        Color(0xFF667EEA),
+                                        Color(0xFF764BA2)
+                                      ],
                                     )
                                   : null,
-                              color: selected ? null : Colors.white.withValues(alpha: 0.08),
+                              color: selected
+                                  ? null
+                                  : Colors.white.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: selected
@@ -1562,7 +1574,8 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                               boxShadow: selected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFF667EEA).withValues(alpha: 0.3),
+                                        color: const Color(0xFF667EEA)
+                                            .withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -1576,14 +1589,18 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
-                                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   desc,
                                   style: TextStyle(
-                                    color: selected ? Colors.white70 : Colors.white54,
+                                    color: selected
+                                        ? Colors.white70
+                                        : Colors.white54,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1594,11 +1611,12 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                         );
                       }).toList(),
                     ),
-                    
+
                     // 친구 선택 시 인원수 옵션
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (Widget child, Animation<double> animation) {
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
                         return SizeTransition(
                           sizeFactor: animation,
                           child: FadeTransition(
@@ -1640,7 +1658,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // 액션 버튼들
@@ -1684,15 +1702,21 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                         decoration: BoxDecoration(
                           gradient: canStart
                               ? const LinearGradient(
-                                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                                  colors: [
+                                    Color(0xFF667EEA),
+                                    Color(0xFF764BA2)
+                                  ],
                                 )
                               : null,
-                          color: canStart ? null : Colors.white.withValues(alpha: 0.1),
+                          color: canStart
+                              ? null
+                              : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: canStart
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+                                    color: const Color(0xFF667EEA)
+                                        .withValues(alpha: 0.4),
                                     blurRadius: 16,
                                     offset: const Offset(0, 8),
                                   ),
@@ -1722,14 +1746,18 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                 children: [
                                   Icon(
                                     Icons.directions_walk_rounded,
-                                    color: canStart ? Colors.white : Colors.white54,
+                                    color: canStart
+                                        ? Colors.white
+                                        : Colors.white54,
                                     size: 24,
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     '산책 시작하기',
                                     style: TextStyle(
-                                      color: canStart ? Colors.white : Colors.white54,
+                                      color: canStart
+                                          ? Colors.white
+                                          : Colors.white54,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                     ),
