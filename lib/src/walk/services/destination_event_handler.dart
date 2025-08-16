@@ -1,10 +1,8 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:walk/src/core/constants/app_constants.dart';
 
 class DestinationEventHandler {
-  // 목적지 도착 반경 설정 (20m)
-  static const double destinationArrivalRadius = 20.0;
-
   // 목적지 도착 확인 로직
   bool checkDestinationArrival({
     required LatLng userLocation,
@@ -22,6 +20,6 @@ class DestinationEventHandler {
       destinationLocation.longitude,
     );
 
-    return distance <= destinationArrivalRadius;
+    return distance <= AppConstants.destinationTriggerDistance;
   }
 }

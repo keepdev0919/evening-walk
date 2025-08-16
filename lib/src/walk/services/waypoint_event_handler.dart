@@ -1,6 +1,7 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/core/constants/app_constants.dart';
 
 /// 사용자의 위치가 경유지에 도착했는지 여부를 확인하는 역할을 담당하는 클래스.
 class WaypointEventHandler {
@@ -10,9 +11,6 @@ class WaypointEventHandler {
     final double lng = (start.longitude + destination.longitude) / 2;
     return LatLng(lat, lng);
   }
-
-  // 경유지 도착 반경 (미터)
-  static const double waypointArrivalRadius = 20.0;
 
   /// 사용자 위치가 경유지 도착 반경 내에 있는지 확인합니다.
   bool checkWaypointArrival({
@@ -38,6 +36,6 @@ class WaypointEventHandler {
       waypointLocation.longitude,
     );
 
-    return distance <= waypointArrivalRadius;
+    return distance <= AppConstants.waypointTriggerDistance;
   }
 }

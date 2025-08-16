@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 class AppConstants {
   // === 거리 관련 상수 ===
   static const double maxWalkDistance = 1200.0; // 미터
-  static const double waypointTriggerDistance = 40.0; // 미터
-  static const double destinationTriggerDistance = 40.0; // 미터
-  static const double startReturnTriggerDistance = 40.0; // 미터
+  static const double waypointTriggerDistance = 50.0; // 미터
+  static const double destinationTriggerDistance = 50.0; // 미터
+  static const double startReturnTriggerDistance = 50.0; // 미터
 
   // === UI 크기 상수 ===
   static const double shareContentWidth = 400.0;
@@ -34,9 +34,12 @@ class AppConstants {
 class AppColors {
   // === 투명도가 있는 색상들 ===
   static final Color backgroundOverlay = Colors.black.withValues(alpha: 0.6);
-  static final Color backgroundOverlayLight = Colors.black.withValues(alpha: 0.3);
-  static final Color backgroundOverlayDark = Colors.black.withValues(alpha: 0.7);
-  static final Color backgroundOverlayVeryDark = Colors.black.withValues(alpha: 0.8);
+  static final Color backgroundOverlayLight =
+      Colors.black.withValues(alpha: 0.3);
+  static final Color backgroundOverlayDark =
+      Colors.black.withValues(alpha: 0.7);
+  static final Color backgroundOverlayVeryDark =
+      Colors.black.withValues(alpha: 0.8);
   static final Color backgroundOverlayTransparent =
       Colors.black.withValues(alpha: 0.5);
 

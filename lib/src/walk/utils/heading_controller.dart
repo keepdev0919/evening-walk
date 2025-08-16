@@ -7,7 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// 기기 나침반(자기 센서)과 이동 진행방향(course, GPS)을 융합해
 /// 안정적이고 사용자 인지에 맞는 바라보는 방향(0~360°)을 제공하는 컨트롤러입니다.
-/// - 정지/저속: 나침반 가중치↑
+/// - 정지/저속: 나침반 가중치↑ (실시간 나침반 갱신)
 /// - 고속 이동: 진행방향(course) 가중치↑
 /// - 각도는 최단경로 보간과 EMA 성격의 완화로 급격한 튐을 억제합니다.
 class HeadingController {
@@ -16,10 +16,16 @@ class HeadingController {
 
   StreamSubscription<CompassEvent>? _compassSub;
   StreamSubscription<Position>? _positionSub;
+  Timer? _compassUpdateTimer;
 
   double? _lastCompassHeading; // 0~360
   Position? _lastPosition; // course 계산용
   double? _smoothedHeading; // EMA 적용된 최근 결과 (0~360)
+
+  // 정지 상태 감지를 위한 변수들
+  DateTime? _lastPositionUpdateTime;
+  bool _isStationary = false;
+  static const Duration _stationaryThreshold = Duration(seconds: 2);
 
   /// 융합 각도 스트림(도 단위, 0~360).
   Stream<double> get stream => _controller.stream;
@@ -32,8 +38,16 @@ class HeadingController {
       final double? h = event.heading; // 0~360 또는 null
       if (h != null) {
         _lastCompassHeading = _normalize(h);
+
+        // 정지 상태일 때는 나침반 변화만으로도 즉시 업데이트
+        if (_isStationary && _smoothedHeading != null) {
+          _updateHeadingFromCompass();
+        }
       }
     });
+
+    // 나침반 전용 타이머 시작 (정지 상태에서 200ms마다 체크)
+    _startCompassTimer();
 
     _positionSub = Geolocator.getPositionStream(
       locationSettings: locationSettings ??
@@ -43,6 +57,10 @@ class HeadingController {
           ),
     ).listen((pos) {
       final double speed = pos.speed; // m/s
+      final DateTime now = DateTime.now();
+
+      // 정지 상태 감지 로직 업데이트
+      _updateStationaryStatus(pos, now);
 
       // 이동 진행방향(course) 후보 계산
       double? courseHeading;
@@ -87,6 +105,7 @@ class HeadingController {
 
       _controller.add(_smoothedHeading!);
       _lastPosition = pos;
+      _lastPositionUpdateTime = now;
     });
   }
 
@@ -94,8 +113,10 @@ class HeadingController {
   Future<void> stop() async {
     await _compassSub?.cancel();
     await _positionSub?.cancel();
+    _compassUpdateTimer?.cancel();
     _compassSub = null;
     _positionSub = null;
+    _compassUpdateTimer = null;
   }
 
   /// 자원 해제.
@@ -105,6 +126,76 @@ class HeadingController {
   }
 
   // ---- 내부 보조 함수들 ----
+
+  /// 나침반 전용 타이머 시작 (정지 상태 감지 및 실시간 업데이트)
+  void _startCompassTimer() {
+    _compassUpdateTimer =
+        Timer.periodic(const Duration(milliseconds: 200), (_) {
+      _checkStationaryStatus();
+    });
+  }
+
+  /// 정지 상태 체크 및 나침반 업데이트
+  void _checkStationaryStatus() {
+    if (_lastPositionUpdateTime != null) {
+      final timeSinceLastUpdate =
+          DateTime.now().difference(_lastPositionUpdateTime!);
+      final wasStationary = _isStationary;
+      _isStationary = timeSinceLastUpdate >= _stationaryThreshold;
+
+      // 정지 상태로 전환되었거나 계속 정지 중일 때 나침반으로 업데이트
+      if (_isStationary &&
+          _lastCompassHeading != null &&
+          _smoothedHeading != null) {
+        if (!wasStationary || _shouldUpdateCompass()) {
+          _updateHeadingFromCompass();
+        }
+      }
+    }
+  }
+
+  /// 정지 상태 업데이트 (위치 변화 감지)
+  void _updateStationaryStatus(Position pos, DateTime now) {
+    if (_lastPosition != null) {
+      final double movedMeters = Geolocator.distanceBetween(
+        _lastPosition!.latitude,
+        _lastPosition!.longitude,
+        pos.latitude,
+        pos.longitude,
+      );
+
+      // 의미있는 이동이 있으면 정지 상태 해제
+      if (movedMeters >= 2.0) {
+        _isStationary = false;
+      }
+    }
+    _lastPositionUpdateTime = now;
+  }
+
+  /// 나침반만으로 방향 업데이트 (정지 상태용)
+  void _updateHeadingFromCompass() {
+    if (_lastCompassHeading == null) return;
+
+    // 정지 상태에서는 나침반 100% 적용, 부드러운 보간 사용
+    final double alpha = 0.3; // 부드러운 전환을 위한 낮은 알파값
+    _smoothedHeading = _lerpAngleShortestDegrees(
+      _smoothedHeading!,
+      _lastCompassHeading!,
+      alpha,
+    );
+
+    _controller.add(_smoothedHeading!);
+  }
+
+  /// 나침반 업데이트가 필요한지 판단
+  bool _shouldUpdateCompass() {
+    if (_lastCompassHeading == null || _smoothedHeading == null) return false;
+
+    // 현재 방향과 나침반 방향의 차이가 5도 이상이면 업데이트
+    final double diff = (_lastCompassHeading! - _smoothedHeading!).abs();
+    final double normalizedDiff = diff > 180 ? 360 - diff : diff;
+    return normalizedDiff >= 5.0;
+  }
 
   double _normalize(double deg) {
     double a = deg % 360.0;
