@@ -176,6 +176,13 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white, size: 24),
+            tooltip: '도움말',
+            onPressed: _showHelpDialog,
+          )
+        ],
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -2361,4 +2368,263 @@ class _WatermarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
+  /// 도움말 다이얼로그 표시
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(
+            maxWidth: 400,
+            maxHeight: 600, // 최대 높이 제한 추가
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.black.withValues(alpha: 0.95),
+                Colors.black.withValues(alpha: 0.9),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 상단 헤더 (고정)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.purple.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.help_outline,
+                        color: Colors.purple,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Text(
+                        '산책 일기 도움말',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 스크롤 가능한 내용 영역
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildHelpItem(
+                        number: '1',
+                        title: '위치 수정',
+                        description: '출발지와 목적지를 터치하여 표시명을 변경할 수 있어요.',
+                        icon: Icons.edit_location_alt,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildHelpItem(
+                        number: '2',
+                        title: '사진 편집',
+                        description: '사진을 터치하여 재촬영하거나 삭제할 수 있어요.',
+                        icon: Icons.camera_alt,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildHelpItem(
+                        number: '3',
+                        title: '답변 & 소감',
+                        description: '경유지 답변과 산책 소감을 자유롭게 작성해보세요.',
+                        icon: Icons.edit_note,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildHelpItem(
+                        number: '4',
+                        title: 'SNS 공유',
+                        description: '완성된 산책 일기를 SNS에 공유할 수 있어요.',
+                        icon: Icons.share,
+                        color: Colors.pink,
+                      ),
+                      const SizedBox(height: 20), // 마지막 여백
+                    ],
+                  ),
+                ),
+              ),
+
+              // 하단 버튼 (고정)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple.withValues(alpha: 0.8),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '확인',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 도움말 아이템 위젯 생성
+  Widget _buildHelpItem({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16), // 패딩 줄임
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16), // 둥근 모서리 줄임
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36, // 크기 줄임
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: color.withValues(alpha: 0.4),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 16, // 폰트 크기 줄임
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14), // 간격 줄임
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      icon,
+                      color: color,
+                      size: 18, // 아이콘 크기 줄임
+                    ),
+                    const SizedBox(width: 6), // 간격 줄임
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15, // 폰트 크기 줄임
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4), // 간격 줄임
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13, // 폰트 크기 줄임
+                    height: 1.3, // 행간 줄임
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
