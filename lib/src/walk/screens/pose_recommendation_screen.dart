@@ -501,7 +501,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   ),
                 ],
               ),
-              _buildTimeDistanceInfo(),
             ],
           ),
           const SizedBox(height: 16),
@@ -1044,78 +1043,6 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       ),
     );
   }
-
-  /// 시간과 거리 정보 표시
-  Widget _buildTimeDistanceInfo() {
-    final duration = widget.walkStateManager.actualDurationInMinutes;
-    final distance = widget.walkStateManager.accumulatedDistanceKm;
-
-    // 시간과 거리 모두 없으면 빈 위젯
-    if (duration == null && distance == null) return const SizedBox.shrink();
-
-    List<Widget> infoWidgets = [];
-
-    // 시간 정보 추가
-    if (duration != null) {
-      String durationText;
-      if (duration <= 0) {
-        durationText = '1분 미만';
-      } else {
-        durationText = '${duration}분';
-      }
-
-      infoWidgets.addAll([
-        const Icon(Icons.access_time, color: Colors.white70, size: 16),
-        const SizedBox(width: 4),
-        Text(
-          durationText,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]);
-    }
-
-    // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
-    if (distance != null && infoWidgets.isNotEmpty) {
-      infoWidgets.addAll([
-        const SizedBox(width: 12),
-        const Text('•', style: TextStyle(color: Colors.white54, fontSize: 12)),
-        const SizedBox(width: 12),
-      ]);
-    }
-
-    if (distance != null) {
-      String distanceText;
-      if (distance < 0.1) {
-        distanceText = '0.1km 미만';
-      } else {
-        distanceText = '${distance.toStringAsFixed(1)}km';
-      }
-
-      infoWidgets.addAll([
-        const Icon(Icons.directions_walk, color: Colors.white70, size: 16),
-        const SizedBox(width: 4),
-        Text(
-          distanceText,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]);
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: infoWidgets,
-    );
-  }
-
-  // 해시태그 배지는 워터마크로 대체되어 제거했습니다.
 
   @override
   Widget build(BuildContext context) {

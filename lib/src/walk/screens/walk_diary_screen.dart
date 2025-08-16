@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:walk/src/walk/models/walk_session.dart';
 import 'package:walk/src/walk/services/walk_session_service.dart';
 import 'package:walk/src/walk/services/walk_state_manager.dart';
 import 'package:walk/src/walk/services/route_snapshot_service.dart';
@@ -1322,7 +1320,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   ),
                 ],
               ),
-              _buildDiaryTimeDistanceInfo(),
+              // _buildDiaryTimeDistanceInfo(),
             ],
           ),
           const SizedBox(height: 16),
@@ -1442,56 +1440,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  /// 산책 일기 헤더용 시간과 거리 정보 표시
-  Widget _buildDiaryTimeDistanceInfo() {
-    final duration =
-        widget.walkStateManager.actualDurationInMinutes ?? _recordedDurationMin;
-    final distance = widget.walkStateManager.accumulatedDistanceKm;
-
-    if (duration == null) return const SizedBox.shrink();
-
-    List<Widget> infoWidgets = [];
-
-    // 시간 정보 추가
-    final String durationText = duration <= 0 ? '1분 미만' : '${duration}분';
-    infoWidgets.addAll([
-      const Icon(Icons.access_time, color: Colors.white70, size: 16),
-      const SizedBox(width: 4),
-      Text(
-        durationText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ]);
-
-    // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
-    if (distance != null) {
-      infoWidgets.addAll([
-        const SizedBox(width: 8),
-        const Text('•', style: TextStyle(color: Colors.white54, fontSize: 12)),
-        const SizedBox(width: 8),
-        const Icon(Icons.directions_walk, color: Colors.white70, size: 16),
-        const SizedBox(width: 4),
-        Text(
-          distance < 0.1 ? '0.1km 미만' : '${distance.toStringAsFixed(1)}km',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ]);
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: infoWidgets,
     );
   }
 
