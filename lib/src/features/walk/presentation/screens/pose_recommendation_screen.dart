@@ -33,7 +33,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   bool _isLoadingPhoto = false;
   String? _shareStartAddress;
   String? _shareDestAddress;
-  int _remainingRefreshCount = 2; // 남은 새로고침 횟수
+  int _remainingRefreshCount = 1; // 남은 새로고침 횟수
 
   // 공유 기능을 위한 RepaintBoundary Key
   final GlobalKey _shareKey = GlobalKey();
@@ -1045,17 +1045,18 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     );
   }
 
-  /// 시간 정보만 표시 (공유 화면에서는 거리 제거 요청)
+  /// 시간과 거리 정보 표시
   Widget _buildTimeDistanceInfo() {
     final duration = widget.walkStateManager.actualDurationInMinutes;
+    final distance = widget.walkStateManager.accumulatedDistanceKm;
 
-    // 시간 없으면 빈 위젯
-    if (duration == null) return const SizedBox.shrink();
+    // 시간과 거리 모두 없으면 빈 위젯
+    if (duration == null && distance == null) return const SizedBox.shrink();
 
     List<Widget> infoWidgets = [];
 
     // 시간 정보 추가
-    {
+    if (duration != null) {
       String durationText;
       if (duration <= 0) {
         durationText = '1분 미만';
@@ -1068,6 +1069,37 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         const SizedBox(width: 4),
         Text(
           durationText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]);
+    }
+
+    // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
+    if (distance != null && infoWidgets.isNotEmpty) {
+      infoWidgets.addAll([
+        const SizedBox(width: 12),
+        const Text('•', style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(width: 12),
+      ]);
+    }
+
+    if (distance != null) {
+      String distanceText;
+      if (distance < 0.1) {
+        distanceText = '0.1km 미만';
+      } else {
+        distanceText = '${distance.toStringAsFixed(1)}km';
+      }
+
+      infoWidgets.addAll([
+        const Icon(Icons.directions_walk, color: Colors.white70, size: 16),
+        const SizedBox(width: 4),
+        Text(
+          distanceText,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,

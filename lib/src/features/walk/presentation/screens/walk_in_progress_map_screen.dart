@@ -546,53 +546,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           }
           break;
 
-        case "start_returned":
-          _positionStreamSubscription?.cancel();
-
-          // 1. 기존 세션에 완료 시간/총 시간/총 거리 업데이트
-          if (_walkStateManager.savedSessionId != null) {
-            final walkSessionService = WalkSessionService();
-            await walkSessionService.updateWalkSession(
-              _walkStateManager.savedSessionId!,
-              {
-                'endTime': DateTime.now().toIso8601String(),
-                'totalDuration': _walkStateManager.actualDurationInMinutes,
-                'totalDistance': _walkStateManager.accumulatedDistanceKm,
-              },
-            );
-            LogService.info('WalkProgress', '출발지 복귀 완료 시간 업데이트 완료');
-          }
-
-          // 2. 산책 완료 알림 다이얼로그 표시
-          final bool? shouldShowDiary =
-              await WalkCompletionDialog.showWalkCompletionDialog(
-            context: context,
-            savedSessionId: _walkStateManager.savedSessionId ?? '',
-          );
-
-          // 3. 사용자가 '일기 작성'을 선택한 경우에만 산책 일기 페이지로 이동
-          if (shouldShowDiary == true && context.mounted) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WalkDiaryScreen(
-                  walkStateManager: _walkStateManager,
-                  sessionId: _walkStateManager.savedSessionId, // 기존 세션 ID 전달
-                  onWalkCompleted: (completed) {
-                    LogService.info('WalkProgress', '산책이 완전히 완료되었습니다!');
-                  },
-                ),
-              ),
-            );
-          } else if (shouldShowDiary == false && context.mounted) {
-            // 4. '나중에' 선택 시 홈으로 이동
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/',
-              (route) => false,
-            );
-          }
-          break;
-
         default: // 경유지 이벤트
           if (_lastLifecycleState == AppLifecycleState.resumed) {
             await WaypointDialogs.showWaypointArrivalDialog(
@@ -600,6 +553,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
               questionPayload: eventSignal,
               selectedMate: widget.selectedMate,
               updateWaypointEventState: _handleWaypointEventState,
+              walkStateManager: _walkStateManager, // WalkStateManager 전달
             );
           }
           break;
@@ -683,7 +637,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         (show, question, answer, [showSnackbar = true]) =>
                             _handleWaypointEventState(show, question, answer,
                                 false), // 경유지 버튼을 통한 재확인시에는 스낵바 표시 안함
-                        _lastWaypointUserAnswer);
+                        _lastWaypointUserAnswer,
+                        selectedMate: widget.selectedMate,
+                        walkStateManager: _walkStateManager);
                   }
                 },
               ),

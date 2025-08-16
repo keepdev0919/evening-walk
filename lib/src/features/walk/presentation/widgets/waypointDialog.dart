@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
 import 'common_arrival_dialog.dart';
+import '../../application/services/walk_state_manager.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
@@ -10,6 +11,7 @@ class WaypointDialogs {
     required String questionPayload,
     required String? selectedMate,
     required Function(bool, String?, String?, [bool]) updateWaypointEventState,
+    WalkStateManager? walkStateManager, // WalkStateManager 추가
   }) async {
     return CommonArrivalDialog.show<void>(
       context: context,
@@ -35,15 +37,25 @@ class WaypointDialogs {
                 finalQuestion,
                 updateWaypointEventState,
                 null,
+                selectedMate: selectedMate,
+                walkStateManager: walkStateManager,
               );
             }
           });
         } else if (selectedMate != null && selectedMate.startsWith('친구')) {
           _showFriendQuestionTypeSelector(context).then((selection) async {
             String finalQuestion = questionPayload;
+            String questionType = 'talk';
             if (selection != null) {
               final bool isTwo = selectedMate.contains('2명');
               final bool isGame = selection == _FriendQuestionType.game;
+              questionType = isGame ? 'game' : 'talk';
+
+              // WalkStateManager에 친구 질문 타입 설정
+              if (walkStateManager != null) {
+                walkStateManager.setFriendQuestionType(questionType);
+              }
+
               final String? friendQ = await _loadFriendQuestion(
                 isTwo: isTwo,
                 isGame: isGame,
@@ -59,6 +71,8 @@ class WaypointDialogs {
                 finalQuestion,
                 updateWaypointEventState,
                 null,
+                selectedMate: selectedMate,
+                walkStateManager: walkStateManager,
               );
             }
           });
@@ -66,7 +80,8 @@ class WaypointDialogs {
           // 기본 플로우
           updateWaypointEventState(true, questionPayload, null);
           WaypointDialogs.showQuestionDialog(
-              context, questionPayload, updateWaypointEventState, null);
+              context, questionPayload, updateWaypointEventState, null,
+              selectedMate: selectedMate, walkStateManager: walkStateManager);
         }
       },
       onLater: () {
@@ -80,8 +95,10 @@ class WaypointDialogs {
     BuildContext context,
     String question,
     Function(bool, String?, String?, [bool]) updateWaypointEventState,
-    String? initialAnswer,
-  ) {
+    String? initialAnswer, {
+    String? selectedMate,
+    WalkStateManager? walkStateManager,
+  }) {
     final TextEditingController answerController =
         TextEditingController(text: initialAnswer);
 
@@ -106,7 +123,7 @@ class WaypointDialogs {
             padding: const EdgeInsets.all(24),
             child: SingleChildScrollView(
               child: Column(
-                mainAxisSize: MainAxisSize.min, // 콘텐츠 크기에 맞춤
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   // 제목
                   Column(
@@ -133,17 +150,32 @@ class WaypointDialogs {
                     ],
                   ),
                   const SizedBox(height: 20),
+                  
                   // 질문 텍스트
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.08),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Text(
                       question,
@@ -587,7 +619,17 @@ class WaypointDialogs {
       final List<String> questions = parsed.cast<String>();
       if (questions.isEmpty) return null;
       final rnd = Random();
-      return questions[rnd.nextInt(questions.length)];
+      final String randomQuestion = questions[rnd.nextInt(questions.length)];
+      
+      // 게임을 선택한 경우에만 게임 종류 + 진사람이 + 질문 조합
+      if (isGame) {
+        final List<String> gameTypes = ['가위바위보', '제로게임'];
+        final String randomGame = gameTypes[rnd.nextInt(gameTypes.length)];
+        return '$randomGame 진사람이 $randomQuestion';
+      } else {
+        // 토크를 선택한 경우 질문만 반환
+        return randomQuestion;
+      }
     } catch (_) {
       return null;
     }
@@ -597,3 +639,4 @@ class WaypointDialogs {
 enum _QuestionType { balanceGame, coupleQ }
 
 enum _FriendQuestionType { game, talk }
+

@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
 import 'destination_event_handler.dart';
-import 'start_return_event_handler.dart';
+
 import 'waypoint_questions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geocoding/geocoding.dart';
@@ -20,14 +20,11 @@ enum SpeechBubbleState {
   final String message;
 }
 
-/// 산책 방식
-enum WalkMode { roundTrip, oneWay }
-
 class WalkStateManager {
   // 핸들러 및 프로바이더 인스턴스
   final WaypointEventHandler _waypointHandler = WaypointEventHandler();
   final DestinationEventHandler _destinationHandler = DestinationEventHandler();
-  final StartReturnEventHandler _startReturnHandler = StartReturnEventHandler();
+
   final WaypointQuestionProvider _questionProvider = WaypointQuestionProvider();
 
   // 산책 상태 변수
@@ -36,6 +33,7 @@ class WalkStateManager {
   LatLng? _waypointLocation;
   String? _selectedMate;
   String? _friendGroupType; // 친구 인원 구분: 'two' or 'many'
+  String? _friendQuestionType; // 친구 질문 타입: 'game' or 'talk'
   String? _destinationBuildingName; // 목적지 건물명
   String? _customStartName; // 사용자 지정 출발지 이름
 
@@ -48,9 +46,7 @@ class WalkStateManager {
   Uint8List? _routeSnapshotPng; // 정적 지도 캡처 PNG
   bool _waypointEventOccurred = false;
   bool _destinationEventOccurred = false;
-  bool _startReturnEventOccurred = false; // 출발지 복귀 이벤트 상태 추가
-  bool _isReturningHome = false; // 목적지에서 출발지로 돌아가는 중인지 여부
-  WalkMode _mode = WalkMode.roundTrip; // 기본은 왕복
+
 
   // 실제 산책 시간 추적
   DateTime? _actualStartTime;
@@ -76,11 +72,12 @@ class WalkStateManager {
   String? get userReflection => _userReflection;
   String? get selectedMate => _selectedMate;
   String? get friendGroupType => _friendGroupType;
+  String? get friendQuestionType => _friendQuestionType;
   String? get poseImageUrl => _poseImageUrl;
   Uint8List? get routeSnapshotPng => _routeSnapshotPng;
   String? get destinationBuildingName => _destinationBuildingName;
   String? get customStartName => _customStartName;
-  bool get isWalkComplete => _startReturnEventOccurred;
+  bool get isWalkComplete => _destinationEventOccurred; // 목적지 도착 시 산책 완료
   DateTime? get actualStartTime => _actualStartTime;
   DateTime? get actualEndTime => _actualEndTime;
   String? get savedSessionId => _savedSessionId;
@@ -91,9 +88,6 @@ class WalkStateManager {
 
   /// 경유지 이벤트 발생 여부 (경유지 도착 알림 트리거 여부)
   bool get waypointEventOccurred => _waypointEventOccurred;
-
-  /// 목적지에서 출발지로 돌아가는 중인지 여부
-  bool get isReturningHome => _isReturningHome;
 
   // 실제 산책 소요 시간 계산 (분 단위)
   int? get actualDurationInMinutes {
@@ -116,11 +110,6 @@ class WalkStateManager {
       _destinationLocation!.latitude,
       _destinationLocation!.longitude,
     );
-  }
-
-  /// 산책 방식을 설정합니다. (왕복/편도)
-  void setWalkMode(WalkMode mode) {
-    _mode = mode;
   }
 
   /// 답변 및 사진 저장 메소드
@@ -212,6 +201,14 @@ class WalkStateManager {
     LogService.walkState(' 사용자 지정 출발지 이름 설정 -> "$_customStartName"');
   }
 
+  /// 친구 질문 타입 설정 메소드 (게임 또는 talk)
+  void setFriendQuestionType(String? questionType) {
+    _friendQuestionType = questionType;
+    LogService.walkState(' 친구 질문 타입 설정 -> "$_friendQuestionType"');
+    LogService.info('Walk', '친구 질문 타입 설정 완료: $_friendQuestionType');
+  }
+
+
   // 산책 시작 시 초기화
   void startWalk({
     required LatLng start,
@@ -223,11 +220,11 @@ class WalkStateManager {
     _destinationLocation = destination;
     _selectedMate = mate;
     _friendGroupType = friendGroupType;
+    _friendQuestionType = null; // 초기화
     _waypointLocation = _waypointHandler.generateWaypoint(start, destination);
     _waypointEventOccurred = false;
     _destinationEventOccurred = false;
-    _startReturnEventOccurred = false; // 출발지 복귀 상태 초기화
-    _isReturningHome = false; // 초기화
+
     _waypointQuestion = null;
     _userAnswer = null;
     _photoPath = null;
@@ -257,7 +254,6 @@ class WalkStateManager {
     LatLng userLocation, {
     bool forceWaypointEvent = false,
     bool forceDestinationEvent = false,
-    bool forceStartReturnEvent = false,
   }) async {
     // 누적 이동 거리 갱신
     try {
@@ -291,9 +287,14 @@ class WalkStateManager {
 
       if (arrived) {
         _waypointEventOccurred = true;
+        // 디버깅 로그 추가
+        LogService.info('Walk',
+            '경유지 질문 생성 - selectedMate: $_selectedMate, friendGroupType: $_friendGroupType, friendQuestionType: $_friendQuestionType');
+
         final String? question = await _questionProvider.getQuestionForMate(
           _selectedMate,
           friendGroupType: _friendGroupType,
+          friendQuestionType: _friendQuestionType, // 친구 질문 타입 전달
         );
 
         if (question != null) {
@@ -318,34 +319,6 @@ class WalkStateManager {
         _actualEndTime = DateTime.now();
         LogService.walkState(' 목적지 도착! 실제 종료 시간 기록 -> $_actualEndTime');
         return "destination_reached";
-      }
-    }
-
-    // 출발지 복귀 이벤트 확인 (목적지 이벤트가 완료되고, 돌아오는 중일 때만)
-    LogService.walkState(
-        ' 출발지 복귀 체크 - _destinationEventOccurred: $_destinationEventOccurred');
-    LogService.walkState(' 출발지 복귀 체크 - _isReturningHome: $_isReturningHome');
-    LogService.walkState(
-        ' 출발지 복귀 체크 - _startReturnEventOccurred: $_startReturnEventOccurred');
-
-    if (_mode == WalkMode.roundTrip &&
-        _destinationEventOccurred &&
-        _isReturningHome &&
-        !_startReturnEventOccurred) {
-      LogService.walkState(' 출발지 복귀 조건 만족 - 거리 체크 중...');
-      final bool returned = _startReturnHandler.checkStartArrival(
-        userLocation: userLocation,
-        startLocation: _startLocation!,
-        forceStartReturnEvent: forceStartReturnEvent,
-      );
-
-      if (returned) {
-        _startReturnEventOccurred = true;
-        _actualEndTime = DateTime.now(); // 실제 산책 종료 시간 기록
-        LogService.walkState(' 출발지 복귀 완료! 산책 끝!');
-        LogService.walkState(' 실제 산책 종료 시간 기록 -> $_actualEndTime');
-        LogService.walkState(' 총 산책 시간: ${actualDurationInMinutes}분');
-        return "start_returned";
       }
     }
 

@@ -11,6 +11,7 @@
       "Bash(del \"lib\\src\\features\\profile\\presentation\\widgets\\email.dart\")",
       "mcp__ide__getDiagnostics"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

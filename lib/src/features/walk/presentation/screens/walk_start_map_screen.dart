@@ -364,124 +364,229 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.black.withValues(alpha: 0.8),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         final EdgeInsets insets = MediaQuery.of(ctx).viewInsets;
         return StatefulBuilder(builder: (ctx, setInner) {
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, insets.bottom + 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 목적지 요약 (깃발 아이콘 + 주소)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.flag,
-                        color: Colors.red,
-                        size: 18,
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF1A1A2E),
+                  Color(0xFF0F0F23),
+                ],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x40000000),
+                  blurRadius: 24,
+                  offset: Offset(0, -8),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(24, 20, 24, insets.bottom + 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 드래그 핸들
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _selectedAddress,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // 목적지 헤더
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF667EEA).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '목적지',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _selectedAddress,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 18,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    if (_isManualSelection) ...[
+                      const SizedBox(height: 24),
+                      const Text(
+                        '목적지 이름 수정',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _isDestNameFocused 
+                                ? const Color(0xFF667EEA)
+                                : Colors.white.withValues(alpha: 0.2),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Focus(
+                          onFocusChange: (hasFocus) => setInner(() {
+                            _isDestNameFocused = hasFocus;
+                          }),
+                          child: TextField(
+                            controller: _destNameController ??=
+                                TextEditingController(text: _selectedAddress),
+                            maxLength: 300,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '예) 노을 맛집 우리동네 언덕',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              contentPadding: const EdgeInsets.all(20),
+                              border: InputBorder.none,
+                              counterText: '',
+                              suffixIcon: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.clear_rounded,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    _destNameController?.clear();
+                                  },
+                                  tooltip: '텍스트 지우기',
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  if (_isManualSelection) ...[
-                    const Divider(
-                        color: Colors.white24, thickness: 1, height: 20),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '목적지 이름 수정(선택)',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
+                    
+                    const SizedBox(height: 32),
+
+                    // 액션 버튼
                     Container(
+                      width: double.infinity,
+                      height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color:
-                              _isDestNameFocused ? Colors.red : Colors.white24,
-                          width: 1,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                         ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      child: Focus(
-                        onFocusChange: (hasFocus) => setInner(() {
-                          _isDestNameFocused = hasFocus;
-                        }),
-                        child: TextField(
-                          controller: _destNameController ??=
-                              TextEditingController(text: _selectedAddress),
-                          maxLength: 300,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 16),
-                          decoration: InputDecoration(
-                            hintText: '예) 노을 맛집 우리동네 언덕',
-                            hintStyle: const TextStyle(
-                                color: Colors.white54, fontSize: 16),
-                            isDense: true,
-                            border: InputBorder.none,
-                            suffixIcon: IconButton(
-                              icon: const Icon(
-                                Icons.clear,
-                                color: Colors.white70,
-                                size: 20,
-                              ),
-                              onPressed: () {
-                                _destNameController?.clear();
-                              },
-                              tooltip: '텍스트 지우기',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _confirmDestination();
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: const Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.directions_walk_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  '이곳으로 산책 떠나기',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _confirmDestination();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.blueAccent.withValues(alpha: 0.9),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('이곳으로 산책 떠나기',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -521,10 +626,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.black.withValues(alpha: 0.8),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return _MateSheet(
           finalName: finalName,
@@ -1232,198 +1334,454 @@ class _MateSheet extends StatefulWidget {
   State<_MateSheet> createState() => _MateSheetState();
 }
 
-class _MateSheetState extends State<_MateSheet> {
+class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
   String? mate; // '혼자' | '연인' | '친구'
   String? friendGroup; // 'two' | 'many'
+  AnimationController? _slideController;
+  Animation<Offset>? _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController!,
+      curve: Curves.easeOutCubic,
+    ));
+    _slideController!.forward();
+  }
+
+  @override
+  void dispose() {
+    _slideController?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final EdgeInsets insets = MediaQuery.of(context).viewInsets;
     final bool canStart = mate != null && (mate != '친구' || friendGroup != null);
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, insets.bottom + 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.finalName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+    
+    final slideAnimation = _slideAnimation;
+    
+    if (slideAnimation == null) {
+      return Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A1A2E),
+              Color(0xFF0F0F23),
+            ],
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x40000000),
+              blurRadius: 24,
+              offset: Offset(0, -8),
             ),
-            const Divider(color: Colors.white24, thickness: 1, height: 20),
-            const SizedBox(height: 8),
-            const Text('메이트',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18)),
-            const SizedBox(height: 6),
-            Theme(
-              data: Theme.of(context).copyWith(
-                chipTheme: Theme.of(context).chipTheme.copyWith(
-                      backgroundColor: Colors.transparent,
-                      selectedColor: Colors.blue.withValues(alpha: 0.8),
-                    ),
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    {'label': '🌙혼자', 'value': '혼자'},
-                    {'label': '💕연인', 'value': '연인'},
-                    {'label': '👫친구', 'value': '친구'},
-                    {'label': '🐕반려견', 'value': '반려견'},
-                    {'label': '👨‍👩‍👧‍👦가족', 'value': '가족'},
-                  ].map((opt) {
-                    final String label = opt['label'] as String;
-                    final String value = opt['value'] as String;
-                    final bool selected = mate == value;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(
-                          label,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight:
-                                selected ? FontWeight.bold : FontWeight.w600,
-                          ),
-                        ),
-                        selected: selected,
-                        backgroundColor: selected
-                            ? Colors.blue.withValues(alpha: 0.8)
-                            : Colors.black.withValues(alpha: 0.8),
-                        side: BorderSide(
-                          color: selected ? Colors.blue : Colors.white54,
-                          width: 1.0,
-                        ),
-                        onSelected: (_) => setState(() {
-                          mate = value;
-                          if (value != '친구') friendGroup = null;
-                        }),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, insets.bottom + 24),
+            child: const Center(
+              child: CircularProgressIndicator(),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: mate == '친구'
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Wrap(
-                        spacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: Text(
-                              '2명',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: friendGroup == 'two'
-                                    ? FontWeight.bold
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                            selected: friendGroup == 'two',
-                            backgroundColor: friendGroup == 'two'
-                                ? Colors.blue.withValues(alpha: 0.8)
-                                : Colors.black.withValues(alpha: 0.8),
-                            selectedColor: Colors.blue.withValues(alpha: 0.8),
-                            side: BorderSide(
-                              color: friendGroup == 'two'
-                                  ? Colors.blue
-                                  : Colors.white54,
-                              width: 1.0,
-                            ),
-                            onSelected: (_) => setState(() {
-                              friendGroup = 'two';
-                            }),
-                          ),
-                          ChoiceChip(
-                            label: Text(
-                              '여러명',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: friendGroup == 'many'
-                                    ? FontWeight.bold
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                            selected: friendGroup == 'many',
-                            backgroundColor: friendGroup == 'many'
-                                ? Colors.blue.withValues(alpha: 0.8)
-                                : Colors.black.withValues(alpha: 0.8),
-                            selectedColor: Colors.blue.withValues(alpha: 0.8),
-                            side: BorderSide(
-                              color: friendGroup == 'many'
-                                  ? Colors.blue
-                                  : Colors.white54,
-                              width: 1.0,
-                            ),
-                            onSelected: (_) => setState(() {
-                              friendGroup = 'many';
-                            }),
-                          ),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink(),
+          ),
+        ),
+      );
+    }
+    
+    return SlideTransition(
+      position: slideAnimation,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A1A2E),
+              Color(0xFF0F0F23),
+            ],
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x40000000),
+              blurRadius: 24,
+              offset: Offset(0, -8),
             ),
-            const SizedBox(height: 12),
-            // 단순화: 산책 방식 선택 제거
-            const SizedBox(height: 10),
-            Row(
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, insets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white54),
+                // 드래그 핸들
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    child: const Text('취소', style: TextStyle(fontSize: 20)),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: canStart
-                        ? () {
-                            final String selectedMateLabel = () {
-                              if (mate == '친구') {
-                                return friendGroup == 'two'
-                                    ? '친구(2명)'
-                                    : '친구(여러명)';
-                              }
-                              return mate!;
-                            }();
-                            widget.onStart(selectedMateLabel);
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.withValues(alpha: 0.8),
-                      foregroundColor: Colors.white,
-                      overlayColor: Colors.blue.withValues(alpha: 0.2),
+                const SizedBox(height: 24),
+                
+                // 목적지 헤더
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                     ),
-                    child: const Text('산책 시작', style: TextStyle(fontSize: 20)),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF667EEA).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.group_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '함께할 메이트를 선택해주세요',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.finalName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // 메이트 선택 카드들
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '산책 메이트',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 메이트 옵션들
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        {'label': '🌙 혼자', 'value': '혼자', 'desc': '나만의 시간'},
+                        {'label': '💕 연인', 'value': '연인', 'desc': '달콤한 산책'},
+                        {'label': '👫 친구', 'value': '친구', 'desc': '함께 걸어요'},
+                        {'label': '🐕 반려견', 'value': '반려견', 'desc': '댕댕이와'},
+                        {'label': '👨‍👩‍👧‍👦 가족', 'value': '가족', 'desc': '가족과 함께'},
+                      ].map((opt) {
+                        final String label = opt['label'] as String;
+                        final String value = opt['value'] as String;
+                        final String desc = opt['desc'] as String;
+                        final bool selected = mate == value;
+                        
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            mate = value;
+                            if (value != '친구') friendGroup = null;
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: selected
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                                    )
+                                  : null,
+                              color: selected ? null : Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: selected
+                                    ? Colors.transparent
+                                    : Colors.white.withValues(alpha: 0.2),
+                                width: 1.5,
+                              ),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF667EEA).withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  desc,
+                                  style: TextStyle(
+                                    color: selected ? Colors.white70 : Colors.white54,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    
+                    // 친구 선택 시 인원수 옵션
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return SizeTransition(
+                          sizeFactor: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: mate == '친구'
+                          ? Container(
+                              key: const ValueKey('friend_options'),
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '몇 명과 함께 하시나요?',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      _buildFriendGroupOption('2명', 'two'),
+                                      const SizedBox(width: 12),
+                                      _buildFriendGroupOption('여러명', 'many'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(
+                              key: ValueKey('empty'),
+                            ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 32),
+
+                // 액션 버튼들
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(16),
+                            child: const Center(
+                              child: Text(
+                                '취소',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: canStart
+                              ? const LinearGradient(
+                                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                                )
+                              : null,
+                          color: canStart ? null : Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: canStart
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: canStart
+                                ? () {
+                                    final String selectedMateLabel = () {
+                                      if (mate == '친구') {
+                                        return friendGroup == 'two'
+                                            ? '친구(2명)'
+                                            : '친구(여러명)';
+                                      }
+                                      return mate!;
+                                    }();
+                                    widget.onStart(selectedMateLabel);
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                            child: Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.directions_walk_rounded,
+                                    color: canStart ? Colors.white : Colors.white54,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '산책 시작하기',
+                                    style: TextStyle(
+                                      color: canStart ? Colors.white : Colors.white54,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendGroupOption(String label, String value) {
+    final bool selected = friendGroup == value;
+    return GestureDetector(
+      onTap: () => setState(() {
+        friendGroup = value;
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                )
+              : null,
+          color: selected ? null : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? Colors.transparent
+                : Colors.white.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
         ),
       ),
     );

@@ -1445,27 +1445,53 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  /// 산책 일기 헤더용 시간 정보만 표시 (목적지 도착 화면과 동일 스타일)
+  /// 산책 일기 헤더용 시간과 거리 정보 표시
   Widget _buildDiaryTimeDistanceInfo() {
     final duration =
         widget.walkStateManager.actualDurationInMinutes ?? _recordedDurationMin;
+    final distance = widget.walkStateManager.accumulatedDistanceKm;
+
     if (duration == null) return const SizedBox.shrink();
 
+    List<Widget> infoWidgets = [];
+
+    // 시간 정보 추가
     final String durationText = duration <= 0 ? '1분 미만' : '${duration}분';
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.access_time, color: Colors.white70, size: 16),
+    infoWidgets.addAll([
+      const Icon(Icons.access_time, color: Colors.white70, size: 16),
+      const SizedBox(width: 4),
+      Text(
+        durationText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ]);
+
+    // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
+    if (distance != null) {
+      infoWidgets.addAll([
+        const SizedBox(width: 8),
+        const Text('•', style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(width: 8),
+        const Icon(Icons.directions_walk, color: Colors.white70, size: 16),
         const SizedBox(width: 4),
         Text(
-          durationText,
+          distance < 0.1 ? '0.1km 미만' : '${distance.toStringAsFixed(1)}km',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
         ),
-      ],
+      ]);
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: infoWidgets,
     );
   }
 
@@ -2065,13 +2091,59 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  /// 시간 정보만 표시 (공유 화면에서는 거리 제거 요청)
+  /// 시간과 거리 정보 표시
   Widget _buildTimeDistanceInfo() {
     final duration = widget.walkStateManager.actualDurationInMinutes;
+    final distance = widget.walkStateManager.accumulatedDistanceKm;
 
-    // 시간 없으면 빈 위젯
+    // 시간과 거리 모두 없으면 빈 위젯
     if (duration == null || duration <= 0) {
       return const SizedBox.shrink();
+    }
+
+    List<Widget> infoWidgets = [];
+
+    // 시간 정보 추가
+    infoWidgets.addAll([
+      const Icon(
+        Icons.access_time,
+        color: Colors.white70,
+        size: 14,
+      ),
+      const SizedBox(width: 4),
+      Text(
+        '${duration}분',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+      ),
+    ]);
+
+    // 거리 정보 추가 (시간과 거리 사이에 구분자 추가)
+    if (distance != null) {
+      infoWidgets.addAll([
+        const SizedBox(width: 8),
+        const Text('•', style: TextStyle(color: Colors.white54, fontSize: 10)),
+        const SizedBox(width: 8),
+        const Icon(
+          Icons.directions_walk,
+          color: Colors.white70,
+          size: 14,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          distance < 0.1 ? '0.1km 미만' : '${distance.toStringAsFixed(1)}km',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ]);
     }
 
     return Container(
@@ -2083,23 +2155,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.access_time,
-            color: Colors.white70,
-            size: 14,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '${duration}분',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
+        children: infoWidgets,
       ),
     );
   }
