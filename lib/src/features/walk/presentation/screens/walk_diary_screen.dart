@@ -1469,8 +1469,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  // 거리 표시 포맷터는 공유 UI 단에서만 사용되어 현재 일기 화면에서는 제거했습니다.
-
   /// 전체 화면 경로 스냅샷 보기 (목적지 화면)
   void _showFullScreenRouteSnapshot(Uint8List pngBytes) {
     showDialog(
@@ -1909,12 +1907,12 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                               const SizedBox(height: 16),
                             ],
 
-                            // 산책메이트 정보 (경유지 질문이 없어도 표시)
-                            if (widget.walkStateManager.selectedMate !=
-                                null) ...[
-                              _buildMateInfoSection(),
-                              const SizedBox(height: 16),
-                            ],
+                            // // 산책메이트 정보 (경유지 질문이 없어도 표시)
+                            // if (widget.walkStateManager.selectedMate !=
+                            //     null) ...[
+                            //   _buildMateInfoSection(),
+                            //   const SizedBox(height: 16),
+                            // ],
 
                             // 사용자 촬영 사진
                             if (_userPhotoPath != null &&
@@ -2132,7 +2130,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (widget.walkStateManager.selectedMate != null)
+              if (widget.selectedMate != null)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -2145,13 +2143,12 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        _mateEmoji(_normalizedMate(
-                            widget.walkStateManager.selectedMate!)),
+                        _mateEmoji(_normalizedMate(widget.selectedMate!)),
                         style: const TextStyle(fontSize: 10),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _normalizedMate(widget.walkStateManager.selectedMate!),
+                        _normalizedMate(widget.selectedMate!),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 10,
@@ -2178,46 +2175,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     );
   }
 
-  /// 산책메이트 정보 섹션 (경유지 질문이 없어도 표시)
-  Widget _buildMateInfoSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.people, color: Colors.purple, size: 18),
-              SizedBox(width: 6),
-              Text(
-                '산책메이트',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (widget.walkStateManager.selectedMate != null)
-            _buildMateChipLarge(widget.walkStateManager.selectedMate!),
-          if (widget.walkStateManager.selectedMate == null)
-            const Text(
-              '산책메이트를 선택해 주세요!',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-        ],
-      ),
-    );
-  }
-
   /// 기존 UI용 산책메이트 칩 (작은 크기)
   Widget _buildMateChip(String? selectedMate) {
     if (selectedMate == null) return const SizedBox.shrink();
@@ -2239,37 +2196,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 공유용 산책메이트 칩 (큰 크기)
-  Widget _buildMateChipLarge(String mate) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _mateEmoji(_normalizedMate(mate)),
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _mateEmoji(_normalizedMate(mate)),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),

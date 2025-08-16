@@ -100,7 +100,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
 
       // 기존 포즈 URL을 무시하고 새로운 포즈 강제 로드
       final selectedMate = widget.walkStateManager.selectedMate ?? '혼자';
-      final poseImageUrl = await PoseImageService.fetchRandomImageUrl(selectedMate);
+      final poseImageUrl =
+          await PoseImageService.fetchRandomImageUrl(selectedMate);
 
       if (poseImageUrl != null) {
         widget.walkStateManager.savePoseImageUrl(poseImageUrl);
@@ -697,7 +698,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
               left: 20,
               right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -1196,7 +1198,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
           ? GestureDetector(
               onTap: _refreshRecommendedPose,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.blue.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
@@ -1779,11 +1782,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   }
 
   /// 액션 버튼이 있는 섹션 빌더
-  Widget _buildSectionWithAction({
-    required String title, 
-    required Widget content, 
-    Widget? action
-  }) {
+  Widget _buildSectionWithAction(
+      {required String title, required Widget content, Widget? action}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
