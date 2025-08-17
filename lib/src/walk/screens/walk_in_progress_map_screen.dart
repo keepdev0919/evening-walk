@@ -1147,56 +1147,231 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     );
   }
 
-  /// 도착 반경 안내 스낵바 표시
+  /// 도착 반경 안내 다이얼로그 표시
   void _showArrivalRadiusInfo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.95),
+                  Colors.white.withValues(alpha: 0.9),
+                ],
               ),
-              child: Icon(
-                Icons.location_on,
-                color: Colors.white,
-                size: 20,
+              borderRadius: BorderRadius.circular(24.0),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '경유지는 ${AppConstants.waypointTriggerDistance.toInt()}m, 목적지는 ${AppConstants.destinationTriggerDistance.toInt()}m 반경 내 진입 시 도착으로 처리돼요!',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  height: 1.4,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  offset: const Offset(0, 4),
+                  blurRadius: 16,
+                  spreadRadius: 0,
                 ),
-              ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  offset: const Offset(0, 2),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                ),
+              ],
             ),
-          ],
-        ),
-        backgroundColor: Colors.black,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(
-            color: Colors.blue,
-            width: 1,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: const Color(0xFF764ba2),
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '도착 반경 안내',
+                      style: TextStyle(
+                        color: Color(0xFF2D3748),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF4A90E2).withValues(alpha: 0.1),
+                        const Color(0xFF87CEEB).withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(
+                      color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4A90E2),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF2D3748),
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                            children: [
+                              const TextSpan(text: '경유지'),
+                              const TextSpan(text: '는 '),
+                              TextSpan(
+                                text:
+                                    '${AppConstants.waypointTriggerDistance.toInt()}m',
+                                style: const TextStyle(
+                                  color: Color(0xFF4A90E2),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const TextSpan(text: ' 반경 내 진입 시 도착으로 처리돼요!'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFFFF6B9D).withValues(alpha: 0.1),
+                        const Color(0xFFFFB6C1).withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20.0),
+                    border: Border.all(
+                      color: const Color(0xFFFF6B9D).withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6B9D),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF2D3748),
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                            children: [
+                              const TextSpan(text: '목적지'),
+                              const TextSpan(text: '는 '),
+                              TextSpan(
+                                text:
+                                    '${AppConstants.destinationTriggerDistance.toInt()}m',
+                                style: const TextStyle(
+                                  color: Color(0xFFFF6B9D),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const TextSpan(text: ' 반경 내 진입 시 도착으로 처리돼요!'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: Colors.grey.withValues(alpha: 0.7),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '알겠어요',
+                              style: TextStyle(
+                                color: Colors.grey.withValues(alpha: 0.7),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: '확인',
-          textColor: Colors.blue.shade200,
-          onPressed: () {
-            ScaffoldMessenger.of(context).clearSnackBars();
-          },
-        ),
-      ),
+        );
+      },
     );
   }
 }
