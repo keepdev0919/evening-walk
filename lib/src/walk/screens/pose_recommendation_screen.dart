@@ -1616,25 +1616,41 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
             builder: (context, constraints) {
               final bool isNarrow = constraints.maxWidth < 360;
 
-              final Widget primaryButton = ElevatedButton.icon(
-                icon: Icon(
-                  _userPhotoPath == null
-                      ? Icons.camera_alt
-                      : Icons.camera_alt_outlined,
-                  color: Colors.white,
+              final Widget primaryButton = Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.15),
+                      Colors.white.withValues(alpha: 0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.purple.withValues(alpha: 0.7),
+                    width: 2,
+                  ),
                 ),
-                label: Text(
-                  _userPhotoPath == null ? '사진 촬영' : '다시 촬영',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-                onPressed: _userPhotoPath == null ? _takePhoto : _retakePhoto,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.withValues(alpha: 0.8),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                child: ElevatedButton.icon(
+                  icon: Icon(
+                    _userPhotoPath == null
+                        ? Icons.camera_alt
+                        : Icons.camera_alt_outlined,
+                    color: Colors.purple,
+                  ),
+                  label: Text(
+                    _userPhotoPath == null ? '사진 촬영' : '다시 촬영',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: _userPhotoPath == null ? _takePhoto : _retakePhoto,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               );
@@ -1688,23 +1704,38 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       children: [
         // 공유하기 버튼
         Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.share, color: Colors.white),
-            label: const Text(
-              '공유하기',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.15),
+                  Colors.white.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.blue.withValues(alpha: 0.7),
+                width: 2,
               ),
             ),
-            onPressed: _onSharePressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withValues(alpha: 0.7),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.share, color: Colors.blue),
+              label: const Text(
+                '공유하기',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: _onSharePressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -1715,23 +1746,38 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         // 완료 버튼
         Expanded(
           flex: 2,
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            label: const Text(
-              '완료',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.15),
+                  Colors.white.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.green.withValues(alpha: 0.7),
+                width: 2,
               ),
             ),
-            onPressed: _onCompletePressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withValues(alpha: 0.8),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.check_circle, color: Colors.green),
+              label: const Text(
+                '완료',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: _onCompletePressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
