@@ -7,24 +7,26 @@ class PoseImageService {
     try {
       // 한글 메이트 이름을 영어 폴더 이름으로 매핑
       String folderName;
-      switch (mate) {
-        case '혼자':
-          folderName = 'alone';
-          break;
-        case '연인':
-          folderName = 'couple';
-          break;
-        case '친구':
-          folderName = 'friend';
-          break;
-        case '반려견':
-          folderName = 'dog';
-          break;
-        case '가족':
-          folderName = 'family';
-          break;
-        default:
-          folderName = 'alone'; // 기본값 또는 에러 처리
+      if (mate.startsWith('친구')) {
+        // "친구", "친구(2명)", "친구(여러명)" 모두 friend 폴더 사용
+        folderName = 'friend';
+      } else {
+        switch (mate) {
+          case '혼자':
+            folderName = 'alone';
+            break;
+          case '연인':
+            folderName = 'couple';
+            break;
+          case '반려견':
+            folderName = 'dog';
+            break;
+          case '가족':
+            folderName = 'family';
+            break;
+          default:
+            folderName = 'alone'; // 기본값 또는 에러 처리
+        }
       }
 
       final storageRef = FirebaseStorage.instance

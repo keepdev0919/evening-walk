@@ -74,13 +74,13 @@ class _BlackCatWidgetState extends State<BlackCatWidget>
       if (widget.weatherCondition != null) {
         return _getCatTextByWeather(widget.weatherCondition!);
       }
-      return '같이 산책가는거냥?';
+      return '같이 산책가는거냥?🐾';
     } else if (widget.screenType == 'selectMate') {
       return widget.defaultText ?? '메이트에 따라 경유지, 목적지 \n이벤트가 달라진다냥 ~';
     } else if (widget.screenType == 'onboarding') {
       return widget.defaultText ?? '저녁 산책에 온걸 환영한다냥!';
     }
-    return '같이 산책가는거냥?';
+    return '같이 산책가는거냥?🐾';
   }
 
   /// 날씨 상태에 따른 고양이 텍스트 반환
