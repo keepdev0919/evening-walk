@@ -11,13 +11,14 @@ class WalkSessionService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   // final PhotoUploadService _photoUploadService = PhotoUploadService(); // 미사용
 
-  /// 산책 세션을 Firebase에 저장
+  /// 산책 세션을 Firebase에 저장 (에러 핸들링 강화)
   Future<String?> saveWalkSession({
     required WalkStateManager walkStateManager,
     String? walkReflection,
     String? locationName,
   }) async {
     try {
+      // 입력 검증
       final user = _auth.currentUser;
       if (user == null) {
         LogService.warning('Walk', 'WalkSessionService: 사용자가 로그인되지 않음');
@@ -25,8 +26,16 @@ class WalkSessionService {
       }
 
       if (walkStateManager.startLocation == null ||
-          walkStateManager.waypointLocation == null) {
+          walkStateManager.waypointLocation == null ||
+          walkStateManager.destinationLocation == null) {
         LogService.warning('Walk', 'WalkSessionService: 필수 위치 정보가 누락됨');
+        return null;
+      }
+      
+      // 산책 데이터 유효성 검증
+      if (walkStateManager.selectedMate == null || 
+          walkStateManager.selectedMate!.trim().isEmpty) {
+        LogService.warning('Walk', 'WalkSessionService: 선택된 메이트 정보가 누락됨');
         return null;
       }
 
@@ -89,8 +98,11 @@ class WalkSessionService {
       LogService.info(
           'Walk', 'WalkSessionService: 산책 세션 저장 완료 - ID: ${docRef.id}');
       return docRef.id;
+    } on FirebaseException catch (e) {
+      LogService.error('Walk', 'WalkSessionService: Firebase 오류 - ${e.code}: ${e.message}', e);
+      return null;
     } catch (e) {
-      LogService.error('Walk', 'WalkSessionService: 산책 세션 저장 중 오류 발생', e);
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 저장 중 예상치 못한 오류 발생', e);
       return null;
     }
   }
@@ -130,8 +142,11 @@ class WalkSessionService {
       LogService.info('Walk',
           'WalkSessionService: ${walkSessions.length}개의 산책 세션을 Firebase에서 최신순으로 가져왔습니다.');
       return walkSessions;
+    } on FirebaseException catch (e) {
+      LogService.error('Walk', 'WalkSessionService: Firebase 데이터 조회 오류 - ${e.code}: ${e.message}', e);
+      return [];
     } catch (e) {
-      LogService.error('Walk', 'WalkSessionService: 산책 세션 목록 가져오기 중 오류 발생', e);
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 목록 가져오기 중 예상치 못한 오류 발생', e);
       return [];
     }
   }
@@ -189,8 +204,11 @@ class WalkSessionService {
             'Walk', 'WalkSessionService: 세션 ID $sessionId를 찾을 수 없음');
         return null;
       }
+    } on FirebaseException catch (e) {
+      LogService.error('Walk', 'WalkSessionService: Firebase 데이터 조회 오류 - ${e.code}: ${e.message}', e);
+      return null;
     } catch (e) {
-      LogService.error('Walk', 'WalkSessionService: 산책 세션 가져오기 중 오류 발생', e);
+      LogService.error('Walk', 'WalkSessionService: 산책 세션 가져오기 중 예상치 못한 오류 발생', e);
       return null;
     }
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/walk_state_manager.dart';
+import '../services/speech_bubble_state_service.dart';
 
 /// 말풍선 위젯
 /// 출발지 애니메이션 위에 표시되는 동적 말풍선

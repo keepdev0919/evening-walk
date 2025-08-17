@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walk/src/walk/services/walk_state_manager.dart';
+import 'package:walk/src/walk/services/speech_bubble_state_service.dart';
 // import 'package:walk/src/features/walk/presentation/utils/map_marker_creator.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:walk/src/walk/widgets/walk_map_view.dart';
@@ -447,7 +448,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   Future<void> _initializeWalk() async {
     // 프로필/경유지/목적지 마커는 사용하지 않고, 오버레이 Lottie로 대체합니다.
 
-    _walkStateManager.startWalk(
+    await _walkStateManager.startWalk(
       start: widget.startLocation,
       destination: widget.destinationLocation,
       mate: widget.selectedMate,

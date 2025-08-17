@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:walk/src/walk/services/walk_state_manager.dart';
+import 'package:walk/src/walk/services/speech_bubble_state_service.dart';
 import 'package:walk/src/walk/widgets/waypointDialog.dart';
 import 'package:walk/src/walk/widgets/destinationDialog.dart';
 // import 'package:walk/src/features/walk/presentation/screens/walk_diary_screen.dart';
@@ -244,8 +245,6 @@ class DebugModeButtons extends StatelessWidget {
         return Colors.yellow.withValues(alpha: 0.8); // 경유지 이벤트 완료 후 노란색
       case SpeechBubbleState.almostDestination:
         return Colors.red.withValues(alpha: 0.8);
-      default:
-        return Colors.grey.withValues(alpha: 0.8);
     }
   }
 }

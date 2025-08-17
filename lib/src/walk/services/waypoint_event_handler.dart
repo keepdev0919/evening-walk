@@ -7,9 +7,24 @@ import 'package:walk/src/core/constants/app_constants.dart';
 class WaypointEventHandler {
   /// 시작점과 목적지 사이의 중간 지점을 경유지로 생성합니다.
   LatLng generateWaypoint(LatLng start, LatLng destination) {
-    final double lat = (start.latitude + destination.latitude) / 2;
-    final double lng = (start.longitude + destination.longitude) / 2;
-    return LatLng(lat, lng);
+    try {
+      // 입력 좌표 유효성 검증
+      if (!_isValidLatLng(start) || !_isValidLatLng(destination)) {
+        LogService.error('Walk', 'WaypointEventHandler: 유효하지 않은 좌표 - start: $start, destination: $destination');
+        // 유효하지 않은 경우 기본값 반환
+        return const LatLng(37.5665, 126.9780); // 서울시청 좌표
+      }
+      
+      final double lat = (start.latitude + destination.latitude) / 2;
+      final double lng = (start.longitude + destination.longitude) / 2;
+      final waypoint = LatLng(lat, lng);
+      
+      LogService.info('Walk', 'WaypointEventHandler: 경유지 생성 성공 - $waypoint');
+      return waypoint;
+    } catch (e) {
+      LogService.error('Walk', 'WaypointEventHandler: 경유지 생성 중 오류', e);
+      return const LatLng(37.5665, 126.9780); // 기본값 반환
+    }
   }
 
   /// 사용자 위치가 경유지 도착 반경 내에 있는지 확인합니다.
@@ -37,5 +52,13 @@ class WaypointEventHandler {
     );
 
     return distance <= AppConstants.waypointTriggerDistance;
+  }
+  
+  /// 좌표 유효성 검증
+  bool _isValidLatLng(LatLng location) {
+    return location.latitude.abs() <= 90.0 && 
+           location.longitude.abs() <= 180.0 &&
+           location.latitude != 0.0 && 
+           location.longitude != 0.0;
   }
 }

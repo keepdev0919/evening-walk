@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
 import 'common_arrival_dialog.dart';
 import '../services/walk_state_manager.dart';
+import '../services/firestore_question_service.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
@@ -23,13 +24,33 @@ class WaypointDialogs {
         // 연인 모드: 질문 종류 선택 다이얼로그 표시
         if (selectedMate == '연인') {
           _showQuestionTypeSelector(context).then((selection) async {
-            String finalQuestion = questionPayload;
+            String questionType = 'talk';
             if (selection == _QuestionType.balanceGame) {
-              final String? balanceQ = await _loadCoupleBalanceQuestion();
-              if (balanceQ != null && balanceQ.trim().isNotEmpty) {
-                finalQuestion = balanceQ.trim();
-              }
+              questionType = 'balance';
+              print('🔥 DEBUG: 밸런스게임 선택됨, questionType = $questionType');
+            } else {
+              print('🔥 DEBUG: 커플질문 선택됨, questionType = $questionType');
             }
+
+            // WalkStateManager에 연인 질문 타입 설정 및 새로운 질문 가져오기
+            String finalQuestion = "기본 연인 질문";
+            
+            if (walkStateManager != null) {
+              walkStateManager.setCoupleQuestionType(questionType);
+              print('🔥 DEBUG: WalkStateManager에 coupleQuestionType 설정: $questionType');
+            }
+            
+            // FirestoreQuestionService에 직접 질문 요청
+            final questionService = FirestoreQuestionService();
+            print('🔥 DEBUG: 직접 호출 전 - selectedMate=$selectedMate, questionType=$questionType');
+            final newQuestion = await questionService.getQuestionForMate(
+              selectedMate,
+              coupleQuestionType: questionType,
+            );
+            print('🔥 DEBUG: Firestore에서 가져온 새 질문: $newQuestion');
+            finalQuestion = newQuestion ?? "기본 연인 질문";
+            print('🔥 DEBUG: 최종 질문: $finalQuestion');
+
             updateWaypointEventState(true, finalQuestion, null, false);
             if (context.mounted) {
               WaypointDialogs.showQuestionDialog(
@@ -44,36 +65,41 @@ class WaypointDialogs {
           });
         } else if (selectedMate != null && selectedMate.startsWith('친구')) {
           _showFriendQuestionTypeSelector(context).then((selection) async {
-            String finalQuestion = questionPayload;
             String questionType = 'talk';
             if (selection != null) {
-              final bool isTwo = selectedMate.contains('2명');
               final bool isGame = selection == _FriendQuestionType.game;
               questionType = isGame ? 'game' : 'talk';
 
-              // WalkStateManager에 친구 질문 타입 설정
+              // WalkStateManager에 친구 질문 타입 설정 및 새로운 질문 가져오기
+              String finalQuestion = "기본 친구 질문";
+              
               if (walkStateManager != null) {
                 walkStateManager.setFriendQuestionType(questionType);
+                print('🔥 DEBUG: 친구 questionType 설정: $questionType');
               }
+              
+              // FirestoreQuestionService에 직접 질문 요청
+              final questionService = FirestoreQuestionService();
+              print('🔥 DEBUG: 친구 직접 호출 - selectedMate=$selectedMate, friendQuestionType=$questionType');
+              final newQuestion = await questionService.getQuestionForMate(
+                selectedMate,
+                friendQuestionType: questionType,
+              );
+              print('🔥 DEBUG: 친구 Firestore 질문: $newQuestion');
+              finalQuestion = newQuestion ?? "기본 친구 질문";
+              print('🔥 DEBUG: 친구 최종 질문: $finalQuestion');
 
-              final String? friendQ = await _loadFriendQuestion(
-                isTwo: isTwo,
-                isGame: isGame,
-              );
-              if (friendQ != null && friendQ.trim().isNotEmpty) {
-                finalQuestion = friendQ.trim();
+              updateWaypointEventState(true, finalQuestion, null, false);
+              if (context.mounted) {
+                WaypointDialogs.showQuestionDialog(
+                  context,
+                  finalQuestion,
+                  updateWaypointEventState,
+                  null,
+                  selectedMate: selectedMate,
+                  walkStateManager: walkStateManager,
+                );
               }
-            }
-            updateWaypointEventState(true, finalQuestion, null, false);
-            if (context.mounted) {
-              WaypointDialogs.showQuestionDialog(
-                context,
-                finalQuestion,
-                updateWaypointEventState,
-                null,
-                selectedMate: selectedMate,
-                walkStateManager: walkStateManager,
-              );
             }
           });
         } else {

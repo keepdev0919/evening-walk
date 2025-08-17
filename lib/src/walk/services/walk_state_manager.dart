@@ -3,29 +3,25 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'waypoint_event_handler.dart';
 import 'destination_event_handler.dart';
-
-import 'waypoint_questions.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:geocoding/geocoding.dart';
+import 'firestore_question_service.dart';
+import 'location_address_service.dart';
+import 'photo_capture_service.dart';
+import 'speech_bubble_state_service.dart';
 import '../../core/services/log_service.dart';
-
-/// 말풍선 상태를 나타내는 enum
-enum SpeechBubbleState {
-  toWaypoint("산책 가보자고 ~"), // 출발지~경유지절반
-  almostWaypoint("선물.. 선물.. 선물.. "), // 경유지 도착 절반 전
-  waypointEventCompleted("뚜비두밥~♪"), // 경유지 이벤트 확인 후
-  almostDestination("고지가 코앞이다 !!"); // 목적지 도착 절반 전
-
-  const SpeechBubbleState(this.message);
-  final String message;
-}
+import '../../common/utils/string_validation_utils.dart';
 
 class WalkStateManager {
   // 핸들러 및 프로바이더 인스턴스
   final WaypointEventHandler _waypointHandler = WaypointEventHandler();
   final DestinationEventHandler _destinationHandler = DestinationEventHandler();
+  final FirestoreQuestionService _questionService = FirestoreQuestionService();
 
-  final WaypointQuestionProvider _questionProvider = WaypointQuestionProvider();
+  // 새로운 서비스 인스턴스들
+  final LocationAddressService _locationAddressService =
+      LocationAddressService();
+  final PhotoCaptureService _photoCaptureService = PhotoCaptureService();
+  final SpeechBubbleStateService _speechBubbleService =
+      SpeechBubbleStateService();
 
   // 산책 상태 변수
   LatLng? _startLocation; // 출발지 위치 추가
@@ -34,6 +30,7 @@ class WalkStateManager {
   String? _selectedMate;
   String? _friendGroupType; // 친구 인원 구분: 'two' or 'many'
   String? _friendQuestionType; // 친구 질문 타입: 'game' or 'talk'
+  String? _coupleQuestionType; // 연인 질문 타입: 'talk' or 'balance'
   String? _destinationBuildingName; // 목적지 건물명
   String? _customStartName; // 사용자 지정 출발지 이름
 
@@ -58,10 +55,6 @@ class WalkStateManager {
   // 저장된 세션 ID (1차 저장 후 업데이트용)
   String? _savedSessionId;
 
-  // 말풍선 상태 관리 변수
-  SpeechBubbleState? _currentSpeechBubbleState;
-  bool _speechBubbleVisible = true;
-
   // --- Public Getters ---
   LatLng? get startLocation => _startLocation;
   LatLng? get waypointLocation => _waypointLocation;
@@ -72,6 +65,7 @@ class WalkStateManager {
   String? get selectedMate => _selectedMate;
   String? get friendGroupType => _friendGroupType;
   String? get friendQuestionType => _friendQuestionType;
+  String? get coupleQuestionType => _coupleQuestionType;
   String? get poseImageUrl => _poseImageUrl;
   Uint8List? get routeSnapshotPng => _routeSnapshotPng;
   String? get destinationBuildingName => _destinationBuildingName;
@@ -81,9 +75,10 @@ class WalkStateManager {
   DateTime? get actualEndTime => _actualEndTime;
   String? get savedSessionId => _savedSessionId;
 
-  // 말풍선 관련 getters
-  SpeechBubbleState? get currentSpeechBubbleState => _currentSpeechBubbleState;
-  bool get speechBubbleVisible => _speechBubbleVisible;
+  // 말풍선 관련 getters (서비스에 위임)
+  SpeechBubbleState? get currentSpeechBubbleState =>
+      _speechBubbleService.currentState;
+  bool get speechBubbleVisible => _speechBubbleService.isVisible;
 
   /// 경유지 이벤트 발생 여부 (경유지 도착 알림 트리거 여부)
   bool get waypointEventOccurred => _waypointEventOccurred;
@@ -174,29 +169,14 @@ class WalkStateManager {
 
   // 목적지 건물명 설정 메소드
   void setDestinationBuildingName(String? buildingName) {
-    // 일부 단말/지역에서 '.' 등 플레이스홀더가 전달될 수 있어 필터링
-    bool _isInvalidPlaceholder(String? value) {
-      if (value == null) return true;
-      final t = value.trim();
-      if (t.isEmpty) return true;
-      return t == '.' || t == '·' || t == '-';
-    }
-
     _destinationBuildingName =
-        _isInvalidPlaceholder(buildingName) ? null : buildingName!.trim();
+        StringValidationUtils.sanitizeString(buildingName);
     LogService.walkState(' 목적지 건물명 설정 -> "$_destinationBuildingName"');
   }
 
   /// 사용자 지정 출발지 이름 설정 메소드
   void setCustomStartName(String? name) {
-    bool _isInvalidPlaceholder(String? value) {
-      if (value == null) return true;
-      final t = value.trim();
-      if (t.isEmpty) return true;
-      return t == '.' || t == '·' || t == '-';
-    }
-
-    _customStartName = _isInvalidPlaceholder(name) ? null : name!.trim();
+    _customStartName = StringValidationUtils.sanitizeString(name);
     LogService.walkState(' 사용자 지정 출발지 이름 설정 -> "$_customStartName"');
   }
 
@@ -207,18 +187,37 @@ class WalkStateManager {
     LogService.info('Walk', '친구 질문 타입 설정 완료: $_friendQuestionType');
   }
 
+  /// 연인 질문 타입 설정 메소드 (talk 또는 balance)
+  void setCoupleQuestionType(String? questionType) {
+    _coupleQuestionType = questionType;
+    LogService.walkState(' 연인 질문 타입 설정 -> "$_coupleQuestionType"');
+    LogService.info('Walk', '연인 질문 타입 설정 완료: $_coupleQuestionType');
+  }
+
+  /// 현재 설정된 메이트와 타입에 맞는 새로운 질문을 가져오는 메소드
+  Future<String?> getNewQuestion() async {
+    LogService.info('Walk', 'getNewQuestion 호출 - selectedMate: $_selectedMate, coupleQuestionType: $_coupleQuestionType, friendQuestionType: $_friendQuestionType');
+    return await _questionService.getQuestionForMate(
+      _selectedMate,
+      friendGroupType: _friendGroupType,
+      friendQuestionType: _friendQuestionType,
+      coupleQuestionType: _coupleQuestionType,
+    );
+  }
+
   // 산책 시작 시 초기화
-  void startWalk({
+  Future<void> startWalk({
     required LatLng start,
     required LatLng destination,
     required String mate,
     String? friendGroupType,
-  }) {
+  }) async {
     _startLocation = start; // 출발지 위치 저장
     _destinationLocation = destination;
     _selectedMate = mate;
     _friendGroupType = friendGroupType;
     _friendQuestionType = null; // 초기화
+    _coupleQuestionType = null; // 초기화
     _waypointLocation = _waypointHandler.generateWaypoint(start, destination);
     _waypointEventOccurred = false;
     _destinationEventOccurred = false;
@@ -227,9 +226,8 @@ class WalkStateManager {
     _userAnswer = null;
     _photoPath = null;
 
-    // 말풍선 초기화 - 산책 시작 시 첫 번째 상태
-    _currentSpeechBubbleState = SpeechBubbleState.toWaypoint;
-    _speechBubbleVisible = true;
+    // 말풍선 초기화
+    _speechBubbleService.reset();
     _userReflection = null;
     _poseImageUrl = null;
     _savedSessionId = null;
@@ -242,105 +240,57 @@ class WalkStateManager {
     // 누적 거리 초기화
     _accumulatedDistanceMeters = 0.0;
     _lastUserLocation = null;
+
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
     LogService.walkState(
         '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
   }
 
-  // 실시간 위치 업데이트 처리 (Future<String?>으로 변경)
+  // 실시간 위치 업데이트 처리 (에러 핸들링 강화)
   Future<String?> updateUserLocation(
     LatLng userLocation, {
     bool forceWaypointEvent = false,
     bool forceDestinationEvent = false,
   }) async {
-    // 누적 이동 거리 갱신
     try {
-      if (_lastUserLocation == null) {
-        _lastUserLocation = userLocation;
-      } else {
-        final double segment = Geolocator.distanceBetween(
-          _lastUserLocation!.latitude,
-          _lastUserLocation!.longitude,
-          userLocation.latitude,
-          userLocation.longitude,
-        );
-        if (segment.isFinite && segment > 0) {
-          _accumulatedDistanceMeters += segment;
-        }
-        _lastUserLocation = userLocation;
-      }
-    } catch (e) {
-      LogService.error('WalkState', '누적 거리 계산 실패', e);
-    }
-
-    // 말풍선 상태 업데이트
-    updateSpeechBubbleState(userLocation);
-    // 경유지 이벤트 확인 (아직 발생하지 않았을 때만)
-    if (!_waypointEventOccurred) {
-      final bool arrived = _waypointHandler.checkWaypointArrival(
-        userLocation: userLocation,
-        waypointLocation: _waypointLocation,
-        forceWaypointEvent: forceWaypointEvent,
-      );
-
-      if (arrived) {
-        _waypointEventOccurred = true;
-        // 디버깅 로그 추가
-        LogService.info('Walk',
-            '경유지 질문 생성 - selectedMate: $_selectedMate, friendGroupType: $_friendGroupType, friendQuestionType: $_friendQuestionType');
-
-        final String? question = await _questionProvider.getQuestionForMate(
-          _selectedMate,
-          friendGroupType: _friendGroupType,
-          friendQuestionType: _friendQuestionType, // 친구 질문 타입 전달
-        );
-
-        if (question != null) {
-          _waypointQuestion = question;
-          LogService.walkState(' 경유지 질문 생성 -> "$_waypointQuestion"');
-          return _waypointQuestion;
-        }
-      }
-    }
-
-    // 목적지 이벤트 확인 (아직 발생하지 않았을 때만)
-    if (!_destinationEventOccurred) {
-      final bool arrived = _destinationHandler.checkDestinationArrival(
-        userLocation: userLocation,
-        destinationLocation: _destinationLocation!,
-        forceDestinationEvent: forceDestinationEvent,
-      );
-
-      if (arrived) {
-        _destinationEventOccurred = true;
-        // 단순화 플로우: 목적지 도착 시 즉시 종료 처리
-        _actualEndTime = DateTime.now();
-        LogService.walkState(' 목적지 도착! 실제 종료 시간 기록 -> $_actualEndTime');
-        return "destination_reached";
-      }
-    }
-
-    return null;
-  }
-
-  // 사진 촬영 메서드
-  Future<String?> takePhoto() async {
-    final ImagePicker picker = ImagePicker();
-
-    try {
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-
-      if (photo != null) {
-        LogService.info('WalkState', '사진 촬영 성공: ${photo.path}');
-        return photo.path;
-      } else {
-        LogService.info('WalkState', '사용자가 사진 촬영을 취소했습니다.');
+      // 입력 데이터 검증
+      if (!_isValidLocation(userLocation)) {
+        LogService.warning('WalkState', '유효하지 않은 위치 데이터: $userLocation');
         return null;
       }
+
+      // 산책이 시작되었는지 확인
+      if (_startLocation == null || _destinationLocation == null) {
+        LogService.warning('WalkState', '산책이 시작되지 않았습니다');
+        return null;
+      }
+
+      // 누적 이동 거리 갱신
+      _updateAccumulatedDistance(userLocation);
+
+      // 말풍선 상태 업데이트
+      _updateSpeechBubbleState(userLocation);
+
+      // 경유지 이벤트 확인
+      final waypointResult =
+          await _checkWaypointEvent(userLocation, forceWaypointEvent);
+      if (waypointResult != null) return waypointResult;
+
+      // 목적지 이벤트 확인
+      final destinationResult =
+          _checkDestinationEvent(userLocation, forceDestinationEvent);
+      if (destinationResult != null) return destinationResult;
+
+      return null;
     } catch (e) {
-      LogService.error('WalkState', '사진 촬영 중 오류 발생', e);
+      LogService.error('WalkState', '위치 업데이트 중 오류 발생', e);
       return null;
     }
+  }
+
+  // 사진 촬영 메서드 (서비스에 위임)
+  Future<String?> takePhoto() async {
+    return await _photoCaptureService.takePhoto();
   }
 
   // === 위치 정보 관련 메소드 ===
@@ -361,103 +311,21 @@ class WalkStateManager {
     LogService.walkState('목적지: $_destinationLocation');
   }
 
-  /// 좌표를 주소로 변환하는 메소드
-  Future<String> _convertCoordinateToAddress(LatLng coordinate) async {
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        coordinate.latitude,
-        coordinate.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        final placeMark = placemarks.first;
-        // 일부 단말/지역에서 '.' 같은 플레이스홀더가 올 수 있어 필터링 처리
-        String safeString(String? v) {
-          if (v == null) return '';
-          final t = v.trim();
-          if (t.isEmpty) return '';
-          if (t == '.' || t == '·' || t == '-') return '';
-          return t;
-        }
-
-        final String country = safeString(placeMark.country);
-        final String region =
-            safeString(placeMark.administrativeArea); // 시/도 (표시 제외)
-        final String cityA = safeString(placeMark.locality); // 시
-        final String cityB =
-            safeString(placeMark.subAdministrativeArea); // 구/군 (기기별 편차)
-        final String district = safeString(placeMark.subLocality); // 동/읍/면
-        final String road = safeString(placeMark.thoroughfare); // 도로명
-        final String number = safeString(placeMark.subThoroughfare); // 번지
-        final String street =
-            safeString(placeMark.street); // 일부 기기에서 전체 주소가 들어올 수 있음
-
-        // 파츠 구성: 국가/시도(region)는 표시하지 않고 시-구/군-동 순으로 조합
-        final List<String> parts = [];
-        if (cityA.isNotEmpty) parts.add(cityA); // 수원시
-        if (cityB.isNotEmpty &&
-            cityB != cityA &&
-            !cityA.contains(cityB) &&
-            !cityB.contains(cityA)) {
-          parts.add(cityB); // 영통구
-        }
-        if (district.isNotEmpty) parts.add(district); // 영통동
-
-        // 도로명 + 번지 우선. 없으면 street 사용하되 상위 행정구역/국가명이 포함되어 있으면 제거
-        String tail = '';
-        if (road.isNotEmpty) {
-          tail = number.isNotEmpty ? '$road $number' : road;
-        } else if (street.isNotEmpty) {
-          String sanitized = street;
-          for (final token in [country, region, cityA, cityB, district]) {
-            if (token.isNotEmpty) {
-              sanitized = sanitized.replaceAll(token, '');
-            }
-          }
-          sanitized = sanitized.replaceAll(RegExp(r'\s+'), ' ').trim();
-          // 너무 짧거나 상위 행정구역과 동일하면 무시 (region 제외)
-          if (sanitized.isNotEmpty &&
-              sanitized != cityA &&
-              sanitized != cityB &&
-              sanitized != district) {
-            tail = sanitized;
-          }
-        }
-
-        if (tail.isNotEmpty) parts.add(tail);
-
-        // 중복 제거 (입력 순서 유지)
-        final List<String> deduped = [];
-        for (final p in parts) {
-          if (p.isEmpty) continue;
-          if (!deduped.contains(p)) deduped.add(p);
-        }
-
-        final String address =
-            deduped.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-        return address.isNotEmpty ? address : '알 수 없는 위치';
-      }
-    } catch (e) {
-      LogService.error('WalkState', '주소 변환 실패', e);
-    }
-
-    // fallback으로 좌표 표시
-    return '${coordinate.latitude.toStringAsFixed(4)}, ${coordinate.longitude.toStringAsFixed(4)}';
-  }
-
   /// 출발지 주소 가져오기
   Future<String> getStartLocationAddress() async {
     if (_startLocation == null) return '출발지 정보 없음';
     if (_customStartName != null && _customStartName!.trim().isNotEmpty) {
       return _customStartName!;
     }
-    return await _convertCoordinateToAddress(_startLocation!);
+    return await _locationAddressService
+        .convertCoordinateToAddress(_startLocation!);
   }
 
   /// 경유지 주소 가져오기
   Future<String?> getWaypointLocationAddress() async {
     if (_waypointLocation == null) return null;
-    return await _convertCoordinateToAddress(_waypointLocation!);
+    return await _locationAddressService
+        .convertCoordinateToAddress(_waypointLocation!);
   }
 
   /// 목적지 주소 가져오기 (건물명이 있으면 우선 표시)
@@ -482,121 +350,128 @@ class WalkStateManager {
     }
 
     // 건물명이 없으면 주소로 fallback
-    return await _convertCoordinateToAddress(_destinationLocation!);
+    return await _locationAddressService
+        .convertCoordinateToAddress(_destinationLocation!);
   }
 
-  // --- 말풍선 관련 메서드들 ---
+  // --- 말풍선 관련 메서드들 (서비스에 위임) ---
 
   /// 현재 위치를 기반으로 말풍선 상태를 업데이트합니다.
-  void updateSpeechBubbleState(LatLng currentPosition) {
+  void _updateSpeechBubbleState(LatLng currentPosition) {
     if (_startLocation == null ||
         _destinationLocation == null ||
         _waypointLocation == null) {
       return;
     }
 
-    final SpeechBubbleState? newState =
-        _calculateSpeechBubbleState(currentPosition);
-
-    if (newState != null && newState != _currentSpeechBubbleState) {
-      _currentSpeechBubbleState = newState;
-      LogService.info('SpeechBubble', '말풍선 상태 변경: ${newState.message}');
-    }
-  }
-
-  /// 현재 위치를 기반으로 적절한 말풍선 상태를 계산합니다.
-  SpeechBubbleState? _calculateSpeechBubbleState(LatLng currentPosition) {
-    if (_startLocation == null ||
-        _destinationLocation == null ||
-        _waypointLocation == null) {
-      return null;
-    }
-
-    final double distanceToStart = Geolocator.distanceBetween(
-      currentPosition.latitude,
-      currentPosition.longitude,
-      _startLocation!.latitude,
-      _startLocation!.longitude,
+    _speechBubbleService.updateState(
+      currentPosition: currentPosition,
+      startLocation: _startLocation!,
+      waypointLocation: _waypointLocation!,
+      destinationLocation: _destinationLocation!,
+      waypointEventCompleted: _waypointEventOccurred,
     );
-
-    final double distanceToWaypoint = Geolocator.distanceBetween(
-      currentPosition.latitude,
-      currentPosition.longitude,
-      _waypointLocation!.latitude,
-      _waypointLocation!.longitude,
-    );
-
-    final double distanceToDestination = Geolocator.distanceBetween(
-      currentPosition.latitude,
-      currentPosition.longitude,
-      _destinationLocation!.latitude,
-      _destinationLocation!.longitude,
-    );
-
-    // 전체 구간별 거리 계산
-    final double startToWaypointDistance = Geolocator.distanceBetween(
-      _startLocation!.latitude,
-      _startLocation!.longitude,
-      _waypointLocation!.latitude,
-      _waypointLocation!.longitude,
-    );
-
-    final double waypointToDestinationDistance = Geolocator.distanceBetween(
-      _waypointLocation!.latitude,
-      _waypointLocation!.longitude,
-      _destinationLocation!.latitude,
-      _destinationLocation!.longitude,
-    );
-
-    final double destinationToStartDistance = Geolocator.distanceBetween(
-      _destinationLocation!.latitude,
-      _destinationLocation!.longitude,
-      _startLocation!.latitude,
-      _startLocation!.longitude,
-    );
-
-    // 각 구간별 절반 지점 계산
-    final double halfStartToWaypoint = startToWaypointDistance / 2;
-    final double halfWaypointToDestination = waypointToDestinationDistance / 2;
-
-    // 목적지 근처인 경우
-    if (distanceToDestination <= halfWaypointToDestination) {
-      return SpeechBubbleState.almostDestination; // "고지가 코앞이다!!"
-    }
-
-    // 경유지 이벤트가 완료되었다면 해당 상태 유지 (목적지 근처가 아닌 한)
-    if (_currentSpeechBubbleState == SpeechBubbleState.waypointEventCompleted) {
-      return SpeechBubbleState.waypointEventCompleted; // "뚜비두밥~♪"
-    }
-
-    // 경유지 근처인 경우
-    if (distanceToWaypoint <= halfStartToWaypoint) {
-      return SpeechBubbleState.almostWaypoint; // "선물.. 선물.. 선물.. "
-    }
-
-    // 기본 상태: 출발지에서 경유지로 향하는 중
-    return SpeechBubbleState.toWaypoint; // "산책 가보자고~"
   }
 
   /// 개발자 전용: 말풍선 상태를 강제로 설정합니다. (디버그 모드에서만 작동)
   void setDebugSpeechBubbleState(SpeechBubbleState state) {
-    if (kDebugMode) {
-      _currentSpeechBubbleState = state;
-      LogService.debug('SpeechBubble', 'DEBUG: 말풍선 상태 강제 설정: ${state.message}');
-    }
+    _speechBubbleService.setDebugState(state);
   }
 
   /// 말풍선 표시 여부를 설정합니다.
   void setSpeechBubbleVisible(bool visible) {
-    _speechBubbleVisible = visible;
+    _speechBubbleService.setVisible(visible);
   }
 
   /// 경유지 이벤트 확인 후 말풍선 상태를 변경합니다.
   void completeWaypointEvent() {
-    if (_currentSpeechBubbleState == SpeechBubbleState.almostWaypoint) {
-      _currentSpeechBubbleState = SpeechBubbleState.waypointEventCompleted;
-      LogService.info('SpeechBubble',
-          '경유지 이벤트 완료 - 말풍선: ${_currentSpeechBubbleState?.message}');
+    _speechBubbleService.completeWaypointEvent();
+  }
+
+  // --- 추가된 유틸리티 메서드들 ---
+
+  /// 위치 좌표 유효성 검증
+  bool _isValidLocation(LatLng location) {
+    return location.latitude.abs() <= 90.0 &&
+        location.longitude.abs() <= 180.0 &&
+        location.latitude != 0.0 &&
+        location.longitude != 0.0;
+  }
+
+  /// 누적 거리 계산 및 업데이트 (기존 로직 분리)
+  void _updateAccumulatedDistance(LatLng currentLocation) {
+    try {
+      if (_lastUserLocation == null) {
+        _lastUserLocation = currentLocation;
+        return;
+      }
+
+      final segmentDistance = Geolocator.distanceBetween(
+        _lastUserLocation!.latitude,
+        _lastUserLocation!.longitude,
+        currentLocation.latitude,
+        currentLocation.longitude,
+      );
+
+      if (segmentDistance.isFinite &&
+          segmentDistance > 0 &&
+          segmentDistance < 1000) {
+        // 1km 이상의 갑작스러운 이동은 GPS 오류로 간주하여 무시
+        _accumulatedDistanceMeters += segmentDistance;
+      }
+
+      _lastUserLocation = currentLocation;
+    } catch (e) {
+      LogService.error('WalkState', '누적 거리 계산 실패', e);
+    }
+  }
+
+  /// 경유지 이벤트 확인 및 처리 (기존 로직 분리)
+  Future<String?> _checkWaypointEvent(
+      LatLng userLocation, bool forceEvent) async {
+    if (_waypointEventOccurred) return null;
+
+    try {
+      final hasArrived = _waypointHandler.checkWaypointArrival(
+        userLocation: userLocation,
+        waypointLocation: _waypointLocation,
+        forceWaypointEvent: forceEvent,
+      );
+
+      if (!hasArrived) return null;
+
+      _waypointEventOccurred = true;
+      LogService.info('Walk', '경유지 도착! 질문은 사용자 선택 후 생성됩니다.');
+      
+      // 더미 질문 반환 (실제 질문은 다이얼로그에서 생성)
+      return "waypoint_arrived";
+    } catch (e) {
+      LogService.error('WalkState', '경유지 이벤트 처리 중 오류', e);
+      return null;
+    }
+  }
+
+  /// 목적지 이벤트 확인 및 처리 (기존 로직 분리)
+  String? _checkDestinationEvent(LatLng userLocation, bool forceEvent) {
+    if (_destinationEventOccurred) return null;
+
+    try {
+      final hasArrived = _destinationHandler.checkDestinationArrival(
+        userLocation: userLocation,
+        destinationLocation: _destinationLocation!,
+        forceDestinationEvent: forceEvent,
+      );
+
+      if (!hasArrived) return null;
+
+      _destinationEventOccurred = true;
+      _actualEndTime = DateTime.now();
+      LogService.walkState('목적지 도착! 실제 종료 시간: $_actualEndTime');
+
+      return "destination_reached";
+    } catch (e) {
+      LogService.error('WalkState', '목적지 이벤트 처리 중 오류', e);
+      return null;
     }
   }
 }

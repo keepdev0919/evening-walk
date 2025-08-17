@@ -91,22 +91,25 @@ class WaypointQuestionProvider {
   /// 질문이 아직 로드되지 않았다면 로드될 때까지 기다립니다.
   Future<String?> getQuestionForMate(String? selectedMate,
       {String? friendGroupType, String? friendQuestionType}) async {
-    if (selectedMate == null) {
-      return null;
-    }
+    try {
+      // 입력 검증
+      if (selectedMate == null || selectedMate.trim().isEmpty) {
+        LogService.warning('Walk', 'WaypointQuestionProvider: 메이트가 선택되지 않음');
+        return null;
+      }
 
-    // 질문이 로드될 때까지 최대 2초 대기 (안전장치)
-    int attempts = 0;
-    while (!_isLoaded && attempts < 20) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
-    }
+      // 질문이 로드될 때까지 최대 2초 대기 (안전장치)
+      int attempts = 0;
+      while (!_isLoaded && attempts < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
 
-    if (!_isLoaded) {
-      LogService.warning(
-          'Walk', 'WaypointQuestionProvider: 질문이 로드되지 않아 질문을 반환할 수 없습니다.');
-      return null;
-    }
+      if (!_isLoaded) {
+        LogService.warning(
+            'Walk', 'WaypointQuestionProvider: 질문이 로드되지 않아 질문을 반환할 수 없습니다.');
+        return null;
+      }
 
     // 친구 인원 타입이 지정된 경우 우선 사용
     if (selectedMate.startsWith('친구') && friendGroupType != null) {
@@ -144,16 +147,22 @@ class WaypointQuestionProvider {
       return '';
     }
 
-    // 친구 기본 리스트는 사용하지 않음. 도착 다이얼로그만 필요하므로 빈 문자열 반환
-    if (selectedMate.startsWith('친구')) {
-      return '';
-    }
+      // 친구 기본 리스트는 사용하지 않음. 도착 다이얼로그만 필요하므로 빈 문자열 반환
+      if (selectedMate.startsWith('친구')) {
+        return '';
+      }
 
-    final List<String>? mateQuestions = _loadedQuestions[selectedMate];
-    if (mateQuestions != null && mateQuestions.isNotEmpty) {
-      final Random random = Random();
-      return mateQuestions[random.nextInt(mateQuestions.length)];
+      final List<String>? mateQuestions = _loadedQuestions[selectedMate];
+      if (mateQuestions != null && mateQuestions.isNotEmpty) {
+        final Random random = Random();
+        return mateQuestions[random.nextInt(mateQuestions.length)];
+      }
+      
+      LogService.warning('Walk', 'WaypointQuestionProvider: "$selectedMate"에 대한 질문을 찾을 수 없음');
+      return null;
+    } catch (e) {
+      LogService.error('Walk', 'WaypointQuestionProvider: 질문 선택 중 오류 발생', e);
+      return null;
     }
-    return null;
   }
 }
