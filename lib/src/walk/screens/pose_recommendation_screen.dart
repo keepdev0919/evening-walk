@@ -166,11 +166,15 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
   /// 완료 버튼 - 세션 저장 후 출발지 복귀 감지 시작
   Future<void> _onCompletePressed() async {
     try {
+      LogService.info('PoseRecommendation', '🎯 완료 버튼 클릭 - 세션 저장 시작');
       final walkSessionService = WalkSessionService();
 
       // 1) 세션이 없다면 새로 저장 (소감 제외)
       String? sessionId = widget.walkStateManager.savedSessionId;
+      LogService.info('PoseRecommendation', '📄 기존 세션 ID: $sessionId');
+      
       if (sessionId == null) {
+        LogService.info('PoseRecommendation', '💾 새 세션 저장 시작');
         sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
           walkStateManager: widget.walkStateManager,
           walkReflection: null,
@@ -178,6 +182,9 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         );
         if (sessionId != null) {
           widget.walkStateManager.setSavedSessionId(sessionId);
+          LogService.info('PoseRecommendation', '✅ 새 세션 저장 완료 - ID: $sessionId');
+        } else {
+          LogService.error('PoseRecommendation', '❌ 새 세션 저장 실패', null);
         }
       }
 
@@ -191,16 +198,27 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         totalDuration = widget.walkStateManager.actualDurationInMinutes;
       }
 
+      LogService.info('PoseRecommendation', '⏰ 업데이트할 데이터 - endTime: $endTime, totalDuration: $totalDuration, totalDistance: ${widget.walkStateManager.accumulatedDistanceKm}');
+
       if (sessionId != null) {
-        await walkSessionService.updateWalkSession(sessionId, {
+        LogService.info('PoseRecommendation', '🔄 세션 업데이트 시작 - ID: $sessionId');
+        final updateSuccess = await walkSessionService.updateWalkSession(sessionId, {
           'endTime': endTime.toIso8601String(),
           'totalDuration': totalDuration,
           'totalDistance': widget.walkStateManager.accumulatedDistanceKm,
           'updatedAt': DateTime.now().toIso8601String(),
         });
+        if (updateSuccess) {
+          LogService.info('PoseRecommendation', '✅ 세션 업데이트 완료');
+        } else {
+          LogService.error('PoseRecommendation', '❌ 세션 업데이트 실패', null);
+        }
+      } else {
+        LogService.warning('PoseRecommendation', '⚠️ sessionId가 null이어서 업데이트 건너뜀');
       }
 
       // 3) 홈 화면으로 이동 (스택 제거)
+      LogService.info('PoseRecommendation', '🏠 홈 화면으로 이동');
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/homescreen',

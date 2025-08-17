@@ -197,7 +197,8 @@ class WalkStateManager {
 
   /// 현재 설정된 메이트와 타입에 맞는 새로운 질문을 가져오는 메소드
   Future<String?> getNewQuestion() async {
-    LogService.info('Walk', 'getNewQuestion 호출 - selectedMate: $_selectedMate, coupleQuestionType: $_coupleQuestionType, friendQuestionType: $_friendQuestionType');
+    LogService.info('Walk',
+        'getNewQuestion 호출 - selectedMate: $_selectedMate, coupleQuestionType: $_coupleQuestionType, friendQuestionType: $_friendQuestionType');
     return await _questionService.getQuestionForMate(
       _selectedMate,
       friendGroupType: _friendGroupType,
@@ -245,7 +246,7 @@ class WalkStateManager {
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
     LogService.walkState(
         '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
-        
+
     // Firebase Analytics 산책 시작 이벤트 기록
     try {
       final startAddress = await getStartLocationAddress();
@@ -303,7 +304,7 @@ class WalkStateManager {
   // 사진 촬영 메서드 (서비스에 위임)
   Future<String?> takePhoto() async {
     final photoPath = await _photoCaptureService.takePhoto();
-    
+
     // 사진 촬영 성공 시 Analytics 이벤트 기록
     if (photoPath != null) {
       try {
@@ -315,7 +316,7 @@ class WalkStateManager {
         LogService.error('WalkState', 'Analytics 사진 촬영 이벤트 기록 실패', e);
       }
     }
-    
+
     return photoPath;
   }
 
@@ -467,8 +468,8 @@ class WalkStateManager {
       if (!hasArrived) return null;
 
       _waypointEventOccurred = true;
-      LogService.info('Walk', '경유지 도착! 질문은 사용자 선택 후 생성됩니다.');
-      
+      LogService.info('Walk', '경유지 도착! Firebase에서 질문을 생성합니다.');
+
       // Firebase Analytics 경유지 도착 이벤트 기록
       try {
         await AnalyticsService().logWaypointArrived(
@@ -478,9 +479,28 @@ class WalkStateManager {
       } catch (e) {
         LogService.error('WalkState', 'Analytics 경유지 도착 이벤트 기록 실패', e);
       }
-      
-      // 더미 질문 반환 (실제 질문은 다이얼로그에서 생성)
-      return "waypoint_arrived";
+
+      // FirestoreQuestionService를 사용하여 실제 질문 생성
+      try {
+        final question = await _questionService.getQuestionForMate(
+          _selectedMate,
+          friendGroupType: _friendGroupType,
+          friendQuestionType: _friendQuestionType,
+          coupleQuestionType: _coupleQuestionType,
+        );
+
+        if (question != null) {
+          _waypointQuestion = question;
+          LogService.info('Walk', 'Firebase에서 경유지 질문 생성 완료: $question');
+          return question;
+        } else {
+          LogService.warning('Walk', 'Firebase에서 질문을 가져올 수 없음');
+          return "경유지에 도착했습니다! 질문을 확인해보세요.";
+        }
+      } catch (e) {
+        LogService.error('WalkState', 'Firebase 질문 생성 실패', e);
+        return "경유지에 도착했습니다! 질문을 확인해보세요.";
+      }
     } catch (e) {
       LogService.error('WalkState', '경유지 이벤트 처리 중 오류', e);
       return null;
@@ -488,7 +508,8 @@ class WalkStateManager {
   }
 
   /// 목적지 이벤트 확인 및 처리 (기존 로직 분리)
-  Future<String?> _checkDestinationEvent(LatLng userLocation, bool forceEvent) async {
+  Future<String?> _checkDestinationEvent(
+      LatLng userLocation, bool forceEvent) async {
     if (_destinationEventOccurred) return null;
 
     try {

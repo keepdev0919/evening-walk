@@ -33,6 +33,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
   /// 산책 세션 목록 로드
   Future<void> _loadWalkSessions() async {
     try {
+      print('🔄 WalkHistoryScreen: 산책 세션 목록 로드 시작');
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -41,12 +42,20 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       final sessions = await _walkSessionService
           .getUserWalkSessions(); // limit 제거하여 모든 데이터 가져오기
 
+      print('📊 WalkHistoryScreen: 로드된 세션 수: ${sessions.length}');
+      for (int i = 0; i < sessions.length; i++) {
+        print('📝 세션 $i: ID=${sessions[i].id}, 날짜=${sessions[i].startTime}, 메이트=${sessions[i].selectedMate}');
+      }
+
       setState(() {
         _walkSessions = sessions;
         _updateAvailableMateFilters();
         _isLoading = false;
       });
+      
+      print('✅ WalkHistoryScreen: 산책 세션 목록 로드 완료');
     } catch (e) {
+      print('❌ WalkHistoryScreen: 산책 세션 로드 오류: $e');
       setState(() {
         _errorMessage = '산책 기록을 불러오는 중 오류가 발생했습니다: $e';
         _isLoading = false;

@@ -35,15 +35,17 @@ class WaypointDialogs {
 
             // WalkStateManager에 연인 질문 타입 설정 및 새로운 질문 가져오기
             String finalQuestion = "기본 연인 질문";
-            
+
             if (walkStateManager != null) {
               walkStateManager.setCoupleQuestionType(questionType);
-              print('🔥 DEBUG: WalkStateManager에 coupleQuestionType 설정: $questionType');
+              print(
+                  '🔥 DEBUG: WalkStateManager에 coupleQuestionType 설정: $questionType');
             }
-            
+
             // FirestoreQuestionService에 직접 질문 요청
             final questionService = FirestoreQuestionService();
-            print('🔥 DEBUG: 직접 호출 전 - selectedMate=$selectedMate, questionType=$questionType');
+            print(
+                '🔥 DEBUG: 직접 호출 전 - selectedMate=$selectedMate, questionType=$questionType');
             final newQuestion = await questionService.getQuestionForMate(
               selectedMate,
               coupleQuestionType: questionType,
@@ -73,15 +75,16 @@ class WaypointDialogs {
 
               // WalkStateManager에 친구 질문 타입 설정 및 새로운 질문 가져오기
               String finalQuestion = "기본 친구 질문";
-              
+
               if (walkStateManager != null) {
                 walkStateManager.setFriendQuestionType(questionType);
                 print('🔥 DEBUG: 친구 questionType 설정: $questionType');
               }
-              
+
               // FirestoreQuestionService에 직접 질문 요청
               final questionService = FirestoreQuestionService();
-              print('🔥 DEBUG: 친구 직접 호출 - selectedMate=$selectedMate, friendQuestionType=$questionType');
+              print(
+                  '🔥 DEBUG: 친구 직접 호출 - selectedMate=$selectedMate, friendQuestionType=$questionType');
               final newQuestion = await questionService.getQuestionForMate(
                 selectedMate,
                 friendQuestionType: questionType,
@@ -104,15 +107,19 @@ class WaypointDialogs {
             }
           });
         } else {
-          // 기본 플로우
-          updateWaypointEventState(true, questionPayload, null);
+          // 기본 플로우 (혼자, 반려견, 가족 등)
+          // questionPayload는 이미 WalkStateManager에서 생성된 실제 질문
+          final question =
+              questionPayload.isNotEmpty ? questionPayload : "경유지에 도착했습니다!";
+          updateWaypointEventState(true, question, null);
           WaypointDialogs.showQuestionDialog(
-              context, questionPayload, updateWaypointEventState, null,
+              context, question, updateWaypointEventState, null,
               selectedMate: selectedMate, walkStateManager: walkStateManager);
         }
       },
       onLater: () {
-        updateWaypointEventState(true, questionPayload, null);
+        // "나중에" 버튼을 눌렀을 때는 스낵바를 표시하지 않음 (showSnackbar = false)
+        updateWaypointEventState(true, questionPayload, null, false);
       },
       barrierDismissible: false,
     );
@@ -265,19 +272,28 @@ class WaypointDialogs {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () async {
-                        final answer = answerController.text;
+                        final answer = answerController.text.trim();
+                        print('🔥 DEBUG: 답변 완료 버튼 클릭됨');
+                        print('🔥 DEBUG: answer = "$answer"');
+                        print('🔥 DEBUG: answer.isEmpty = ${answer.isEmpty}');
+
                         Navigator.of(dialogContext).pop();
-                        updateWaypointEventState(true, question, answer);
-                        
+                        // 답변 완료 시에는 항상 스낵바를 표시 (showSnackbar = true)
+                        print(
+                            '🔥 DEBUG: updateWaypointEventState 호출: show=true, question="$question", answer="$answer", showSnackbar=true');
+                        updateWaypointEventState(true, question, answer, true);
+
                         // Firebase Analytics 질문 답변 이벤트 기록
                         if (selectedMate != null && answer.isNotEmpty) {
                           String questionType = 'general';
                           if (selectedMate == '연인') {
-                            questionType = walkStateManager?.coupleQuestionType ?? 'talk';
+                            questionType =
+                                walkStateManager?.coupleQuestionType ?? 'talk';
                           } else if (selectedMate.startsWith('친구')) {
-                            questionType = walkStateManager?.friendQuestionType ?? 'talk';
+                            questionType =
+                                walkStateManager?.friendQuestionType ?? 'talk';
                           }
-                          
+
                           await AnalyticsService().logQuestionAnswered(
                             mateType: selectedMate,
                             questionType: questionType,

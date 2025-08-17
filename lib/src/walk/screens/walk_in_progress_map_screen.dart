@@ -248,16 +248,19 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
       _walkStateManager.completeWaypointEvent();
     }
 
-    // 스낵바 표시 조건 수정: "나중에" 버튼 또는 "답변 완료" 버튼 누를 때 모두 표시
+    // 스낵바 표시 조건 수정: "답변 완료" 버튼을 눌렀을 때만 표시
+    print('🔥 DEBUG: _handleWaypointEventState 호출됨');
+    print('🔥 DEBUG: show = $show');
+    print('🔥 DEBUG: showSnackbar = $showSnackbar');
+    print('🔥 DEBUG: answer = "$answer"');
+    print('🔥 DEBUG: answer != null = ${answer != null}');
+    print(
+        '🔥 DEBUG: answer.trim().isNotEmpty = ${answer != null ? answer.trim().isNotEmpty : false}');
+
     if (mounted && show && showSnackbar) {
-      String message;
-      if (answer != null && answer.trim().isNotEmpty) {
-        // 답변 완료한 경우
-        message = '답변이 완료되었습니다! 최종 목적지로 향해보세요! ✨';
-      } else {
-        // 나중에 버튼 누른 경우
-        message = '좋아요! 최종 목적지로의 걸음을 계속하세요! ✨';
-      }
+      print('🔥 DEBUG: 스낵바 표시 조건 만족! 스낵바를 표시합니다.');
+      // showSnackbar = true일 때만 스낵바 표시 (답변 완료 버튼을 눌렀을 때)
+      const message = '좋아요! 최종 목적지로의 걸음을 계속하세요! ✨';
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -550,9 +553,11 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
 
         default: // 경유지 이벤트
           if (_lastLifecycleState == AppLifecycleState.resumed) {
+            // eventSignal이 이제 실제 질문이므로 이를 사용
+            final question = eventSignal;
             await WaypointDialogs.showWaypointArrivalDialog(
               context: context,
-              questionPayload: eventSignal,
+              questionPayload: question,
               selectedMate: widget.selectedMate,
               updateWaypointEventState: _handleWaypointEventState,
               walkStateManager: _walkStateManager, // WalkStateManager 전달
@@ -606,18 +611,56 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
         title: _isLoading
             ? null
             : Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 18.0, vertical: 11.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(20.0),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.95),
+                      Colors.white.withValues(alpha: 0.9),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24.0),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      offset: const Offset(0, 4),
+                      blurRadius: 16,
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      offset: const Offset(0, 2),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  '산책 중 ...',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.directions_walk_rounded,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '산책 중 ...',
+                      style: TextStyle(
+                        color: Color(0xFF2D3748),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
         centerTitle: true,
@@ -1044,38 +1087,53 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                 child: GestureDetector(
                   onTap: () => _showArrivalRadiusInfo(),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 10.0),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.95),
+                          Colors.white.withValues(alpha: 0.9),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(24.0),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          offset: const Offset(0, 4),
+                          blurRadius: 16,
+                          spreadRadius: 0,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          offset: const Offset(0, 2),
+                          blurRadius: 8,
+                          spreadRadius: 0,
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          // decoration: BoxDecoration(
-                          //   color: Colors.white,
-                          //   shape: BoxShape.circle,
-                          // ),
-                          child: Icon(
-                            Icons.info_outline,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: Colors.black,
+                          size: 20,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         Text(
                           '도착 반경 안내',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
+                            color: Color(0xFF2D3748),
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
+                            height: 1.2,
                           ),
                         ),
                       ],
