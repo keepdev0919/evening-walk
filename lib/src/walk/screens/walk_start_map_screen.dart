@@ -663,75 +663,227 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
           child: Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(20.0),
-              border: Border.all(color: Colors.white24, width: 1.5),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              ),
+              borderRadius: BorderRadius.circular(24.0),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  '어떤 산책을 원하세요?',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_walk_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '어떤 산책을 원하세요?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 // 15분 산책 버튼
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.directions_walk),
-                  label: const Text('가볍게 15분',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF87CEEB).withValues(alpha: 0.9),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.95),
+                        Colors.white.withValues(alpha: 0.9),
+                      ],
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                    borderRadius: BorderRadius.circular(24.0),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        offset: const Offset(0, 4),
+                        blurRadius: 16,
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        offset: const Offset(0, 2),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _findRandomDestination(minDistance: 500, maxDistance: 850);
-                  },
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _findRandomDestination(
+                            minDistance: 500, maxDistance: 850);
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.directions_walk_rounded,
+                              color: const Color(0xFF764ba2),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              '가볍게 15분',
+                              style: TextStyle(
+                                color: Color(0xFF2D3748),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 // 30분 산책 버튼
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.timer_outlined),
-                  label: const Text('여유롭게 30분',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFFFF6B9D).withValues(alpha: 0.8),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.95),
+                        Colors.white.withValues(alpha: 0.9),
+                      ],
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                    borderRadius: BorderRadius.circular(24.0),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        offset: const Offset(0, 4),
+                        blurRadius: 16,
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        offset: const Offset(0, 2),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _findRandomDestination(minDistance: 850, maxDistance: 1700);
-                  },
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _findRandomDestination(
+                            minDistance: 850, maxDistance: 1700);
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              color: const Color(0xFF764ba2),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              '여유롭게 30분',
+                              style: TextStyle(
+                                color: Color(0xFF2D3748),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  child: const Text('다음에 할게요',
-                      style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.close_rounded,
+                              color: Colors.grey.withValues(alpha: 0.7),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '다음에 할게요',
+                              style: TextStyle(
+                                color: Colors.grey.withValues(alpha: 0.7),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -978,18 +1130,49 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         title: _isLoading
             ? null
             : Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 12.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(20.0),
+                  borderRadius: BorderRadius.circular(24.0),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      offset: const Offset(0, 4),
+                      blurRadius: 16,
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      offset: const Offset(0, 2),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  '어디로 산책을 떠날까요?',
-                  style: TextStyle(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.directions_walk_rounded,
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 2),
+                    const Text(
+                      '어디로 산책을 떠날까요?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
         centerTitle: true, // 제목을 중앙에 정렬합니다.
@@ -1065,78 +1248,311 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
               left: 10,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14.0, vertical: 10.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(20.0),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.95),
+                      Colors.white.withValues(alpha: 0.9),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24.0),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      offset: const Offset(0, 4),
+                      blurRadius: 16,
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      offset: const Offset(0, 2),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
                 ),
                 child: GestureDetector(
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text.rich(
-                          TextSpan(
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            children: [
-                              TextSpan(
-                                  text: '파란 원',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                  )),
-                              TextSpan(text: '은 보통 '),
-                              TextSpan(
-                                  text: '15',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                  )),
-                              TextSpan(
-                                text: '분, ',
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          backgroundColor: Colors.transparent,
+                          child: Container(
+                            padding: const EdgeInsets.all(24.0),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.95),
+                                  Colors.white.withValues(alpha: 0.9),
+                                ],
                               ),
-                              TextSpan(
-                                  text: '빨간 원',
-                                  style: TextStyle(color: Colors.red)),
-                              TextSpan(text: '은 \n보통 '),
-                              TextSpan(
-                                  text: '30',
-                                  style: TextStyle(color: Colors.red)),
-                              TextSpan(text: '분 정도의 산책거리에요!'),
-                            ],
+                              borderRadius: BorderRadius.circular(24.0),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  offset: const Offset(0, 4),
+                                  blurRadius: 16,
+                                  spreadRadius: 0,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 8,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.help_outline_rounded,
+                                      color: const Color(0xFF764ba2),
+                                      size: 28,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      '산책 거리 안내',
+                                      style: TextStyle(
+                                        color: Color(0xFF2D3748),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                Container(
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFF4A90E2)
+                                            .withValues(alpha: 0.1),
+                                        const Color(0xFF87CEEB)
+                                            .withValues(alpha: 0.1),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    border: Border.all(
+                                      color: const Color(0xFF4A90E2)
+                                          .withValues(alpha: 0.3),
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF4A90E2),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text.rich(
+                                          TextSpan(
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              color: Color(0xFF2D3748),
+                                              fontWeight: FontWeight.w600,
+                                              height: 1.3,
+                                            ),
+                                            children: [
+                                              const TextSpan(text: '파란 원'),
+                                              const TextSpan(text: '은 보통 '),
+                                              const TextSpan(
+                                                text: '15분',
+                                                style: TextStyle(
+                                                  color: Color(0xFF4A90E2),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              const TextSpan(
+                                                  text: ' 정도의 산책거리예요'),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFFFF6B9D)
+                                            .withValues(alpha: 0.1),
+                                        const Color(0xFFFFB6C1)
+                                            .withValues(alpha: 0.1),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    border: Border.all(
+                                      color: const Color(0xFFFF6B9D)
+                                          .withValues(alpha: 0.3),
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFF6B9D),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text.rich(
+                                          TextSpan(
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              color: Color(0xFF2D3748),
+                                              fontWeight: FontWeight.w600,
+                                              height: 1.3,
+                                            ),
+                                            children: [
+                                              const TextSpan(text: '빨간 원'),
+                                              const TextSpan(text: '은 보통 '),
+                                              const TextSpan(
+                                                text: '30분',
+                                                style: TextStyle(
+                                                  color: Color(0xFFFF6B9D),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              const TextSpan(
+                                                  text: ' 정도의 산책거리예요'),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.grey.withValues(alpha: 0.3),
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 16),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons
+                                                  .check_circle_outline_rounded,
+                                              color: Colors.grey
+                                                  .withValues(alpha: 0.7),
+                                              size: 24,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              '알겠어요',
+                                              style: TextStyle(
+                                                color: Colors.grey
+                                                    .withValues(alpha: 0.7),
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        width: 300,
-                        backgroundColor: Colors.black.withValues(alpha: 0.8),
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 3),
-                      ),
+                        );
+                      },
                     );
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.help_outline_rounded,
-                          size: 20, color: Colors.white),
-                      const SizedBox(width: 8),
-                      const Text.rich(TextSpan(
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
+                      Icon(
+                        Icons.help_outline_rounded,
+                        size: 20,
+                        color: const Color(0xFF764ba2),
+                      ),
+                      const SizedBox(width: 6),
+                      Text.rich(
+                        TextSpan(
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF2D3748),
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
                           children: [
-                            TextSpan(
-                                text: '파란원',
-                                style: TextStyle(color: Colors.blue)),
-                            TextSpan(text: '? '),
-                            TextSpan(
-                                text: '빨간원',
-                                style: TextStyle(color: Colors.red)),
-                            TextSpan(text: '?'),
-                          ])),
+                            const TextSpan(
+                              text: '파란원',
+                              style: TextStyle(
+                                color: Color(0xFF4A90E2),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const TextSpan(text: '? '),
+                            const TextSpan(
+                              text: '빨간원',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const TextSpan(text: '?'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1222,36 +1638,115 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
       // 플로팅 액션 버튼: 로딩 중에는 표시하지 않습니다.
       floatingActionButton: _isLoading
           ? null
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(20.0),
+          : Container(
+              margin: const EdgeInsets.only(left: 30, bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // 세련된 그라데이션 버튼
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF667eea),
+                          Color(0xFF764ba2),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF667eea).withValues(alpha: 0.4),
+                          offset: const Offset(0, 8),
+                          blurRadius: 20,
+                          spreadRadius: 0,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          offset: const Offset(0, 4),
+                          blurRadius: 12,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _showRandomDestinationDialog,
+                        borderRadius: BorderRadius.circular(28),
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: const Icon(
+                            Icons.explore_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Text(
-                    '어디 갈지 고민된다면?',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
+                  const SizedBox(width: 16),
+                  // 개선된 말풍선 디자인
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.95),
+                          Colors.white.withValues(alpha: 0.9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24.0),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          offset: const Offset(0, 4),
+                          blurRadius: 16,
+                          spreadRadius: 0,
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          offset: const Offset(0, 2),
+                          blurRadius: 8,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline_rounded,
+                          color: const Color(0xFF764ba2),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '어디 갈지 고민된다면?',
+                          style: TextStyle(
+                            color: Color(0xFF2D3748),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FloatingActionButton(
-                  onPressed: _showRandomDestinationDialog,
-                  backgroundColor:
-                      const Color(0xFF4A90E2).withValues(alpha: 0.9),
-                  tooltip: '랜덤 목적지',
-                  child: const Icon(
-                    Icons.explore,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }

@@ -12,6 +12,7 @@ import 'src/home/home_screen.dart';
 import 'src/walk/screens/walk_history_screen.dart';
 import 'src/walk/providers/upload_provider.dart';
 import 'src/common/services/toast_service.dart';
+import 'src/core/services/analytics_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,8 +70,10 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => UploadProvider(),
       child: MaterialApp(
+          debugShowCheckedModeBanner: false,
           title: '산책 앱',
           scaffoldMessengerKey: ToastService.scaffoldMessengerKey,
+          navigatorObservers: [AnalyticsService().observer],
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
             useMaterial3: false,

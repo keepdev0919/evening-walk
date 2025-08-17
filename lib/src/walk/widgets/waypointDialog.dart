@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'common_arrival_dialog.dart';
 import '../services/walk_state_manager.dart';
 import '../services/firestore_question_service.dart';
+import '../../core/services/analytics_service.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
@@ -263,10 +264,26 @@ class WaypointDialogs {
                   Container(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        final answer = answerController.text;
                         Navigator.of(dialogContext).pop();
-                        updateWaypointEventState(
-                            true, question, answerController.text);
+                        updateWaypointEventState(true, question, answer);
+                        
+                        // Firebase Analytics 질문 답변 이벤트 기록
+                        if (selectedMate != null && answer.isNotEmpty) {
+                          String questionType = 'general';
+                          if (selectedMate == '연인') {
+                            questionType = walkStateManager?.coupleQuestionType ?? 'talk';
+                          } else if (selectedMate.startsWith('친구')) {
+                            questionType = walkStateManager?.friendQuestionType ?? 'talk';
+                          }
+                          
+                          await AnalyticsService().logQuestionAnswered(
+                            mateType: selectedMate,
+                            questionType: questionType,
+                            answerLength: answer.length,
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange.withValues(alpha: 0.9),

@@ -13,6 +13,7 @@ import 'package:walk/src/common/widgets/location_name_edit_dialog.dart';
 import '../providers/upload_provider.dart';
 import '../../common/services/toast_service.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../services/photo_share_service.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -1009,8 +1010,19 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                       'updatedAt': DateTime.now().toIso8601String(),
                     },
                   );
+                  
+                  // Firebase Analytics 일기 작성 이벤트 기록 (소감이 있는 경우)
+                  if (reflectionController.text.trim().isNotEmpty) {
+                    await AnalyticsService().logDiaryWritten(
+                      mateType: widget.walkStateManager.selectedMate ?? 'unknown',
+                      contentLength: reflectionController.text.trim().length,
+                    );
+                  }
 
                   if (success) {
+                    // Firebase Analytics 산책 완료 이벤트 기록
+                    await _logWalkCompletedEvent();
+                    
                     Navigator.of(context).pop();
                     widget.onWalkCompleted(true);
 
@@ -1074,6 +1086,9 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   );
 
                   if (sessionId != null) {
+                    // Firebase Analytics 산책 완료 이벤트 기록
+                    await _logWalkCompletedEvent();
+                    
                     Navigator.of(context).pop();
                     widget.onWalkCompleted(true);
 
@@ -2332,6 +2347,26 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         ),
       ),
     );
+  }
+
+  /// Firebase Analytics 산책 완료 이벤트 기록
+  Future<void> _logWalkCompletedEvent() async {
+    try {
+      final duration = widget.walkStateManager.actualDurationInMinutes ?? 0;
+      final distance = widget.walkStateManager.accumulatedDistanceKm ?? 0.0;
+      final hasPhoto = widget.walkStateManager.photoPath != null;
+      final hasAnswer = widget.walkStateManager.userAnswer?.isNotEmpty == true;
+      
+      await AnalyticsService().logWalkCompleted(
+        mateType: widget.walkStateManager.selectedMate ?? 'unknown',
+        durationMinutes: duration,
+        distanceKm: distance,
+        photoTaken: hasPhoto,
+        questionAnswered: hasAnswer,
+      );
+    } catch (e) {
+      LogService.error('WalkDiary', 'Analytics 이벤트 기록 실패', e);
+    }
   }
 }
 

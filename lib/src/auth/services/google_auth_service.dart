@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/core/services/analytics_service.dart';
 
 Future<bool> signInWithGoogle() async {
   try {
@@ -39,6 +40,9 @@ Future<bool> signInWithGoogle() async {
 
     LogService.info('Auth', '로그인 성공: ${user.displayName}');
 
+    // Firebase Analytics 로그인 이벤트 기록
+    await AnalyticsService().logLogin('google');
+
     // ✅ Firestore에 저장 (legacy profileImage → profileImageUrl 마이그레이션 포함)
     final userDoc =
         FirebaseFirestore.instance.collection('users').doc(user.uid);
@@ -65,6 +69,11 @@ Future<bool> signInWithGoogle() async {
       'profileImage': FieldValue.delete(),
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // merge: true → 중복 로그인 시 덮어쓰기 방지
+
+    // 신규 사용자인 경우 회원가입 이벤트 기록
+    if (userCredential.additionalUserInfo?.isNewUser == true) {
+      await AnalyticsService().logSignUp('google');
+    }
 
     return true;
   } catch (e) {

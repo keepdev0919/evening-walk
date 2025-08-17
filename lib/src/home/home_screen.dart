@@ -10,6 +10,7 @@ import 'package:walk/src/walk/screens/walk_history_screen.dart';
 import '../profile/screens/profile_screen.dart';
 import '../common/widgets/black_cat_widget.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/core/services/analytics_service.dart';
 
 // 상태 구분용 enum
 enum InfoStatus { loading, success, error }

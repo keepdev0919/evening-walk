@@ -26,6 +26,7 @@ dependencies:
   flutter_local_notifications: ^17.1.2
   cached_network_image: ^3.2.3
   firebase_app_check: ^0.3.2+10 # 최신 버전 확인 (pub.dev에서 확인)
+  firebase_analytics: ^11.4.12
   share_plus: ^7.2.2
   path_provider: ^2.1.4
   intl: ^0.19.0
@@ -42,6 +43,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -54,6 +56,31 @@ flutter:
     - family: Cafe24Oneprettynight
       fonts:
         - asset: assets/fonts/Cafe24Oneprettynight-v2.0.otf
+
+# 런처 아이콘 설정
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+  
+  # Android 세부 설정
+  adaptive_icon_background: "#ffffff"  # 흰색 배경 (필요시 색상 변경)
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+  
+  # iOS 세부 설정  
+  remove_alpha_ios: true
+  
+  # 웹, 윈도우, 맥 설정
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+  macos:
+    generate: true
+    image_path: "assets/images/app_icon.png"
 
 
 

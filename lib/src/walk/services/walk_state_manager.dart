@@ -8,6 +8,7 @@ import 'location_address_service.dart';
 import 'photo_capture_service.dart';
 import 'speech_bubble_state_service.dart';
 import '../../core/services/log_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../common/utils/string_validation_utils.dart';
 
 class WalkStateManager {
@@ -244,6 +245,17 @@ class WalkStateManager {
     LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
     LogService.walkState(
         '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
+        
+    // Firebase Analytics 산책 시작 이벤트 기록
+    try {
+      final startAddress = await getStartLocationAddress();
+      await AnalyticsService().logWalkStarted(
+        mateType: mate,
+        startLocation: startAddress,
+      );
+    } catch (e) {
+      LogService.error('WalkState', 'Analytics 산책 시작 이벤트 기록 실패', e);
+    }
   }
 
   // 실시간 위치 업데이트 처리 (에러 핸들링 강화)
@@ -278,7 +290,7 @@ class WalkStateManager {
 
       // 목적지 이벤트 확인
       final destinationResult =
-          _checkDestinationEvent(userLocation, forceDestinationEvent);
+          await _checkDestinationEvent(userLocation, forceDestinationEvent);
       if (destinationResult != null) return destinationResult;
 
       return null;
@@ -290,7 +302,21 @@ class WalkStateManager {
 
   // 사진 촬영 메서드 (서비스에 위임)
   Future<String?> takePhoto() async {
-    return await _photoCaptureService.takePhoto();
+    final photoPath = await _photoCaptureService.takePhoto();
+    
+    // 사진 촬영 성공 시 Analytics 이벤트 기록
+    if (photoPath != null) {
+      try {
+        await AnalyticsService().logPhotoTaken(
+          mateType: _selectedMate ?? 'unknown',
+          location: 'destination',
+        );
+      } catch (e) {
+        LogService.error('WalkState', 'Analytics 사진 촬영 이벤트 기록 실패', e);
+      }
+    }
+    
+    return photoPath;
   }
 
   // === 위치 정보 관련 메소드 ===
@@ -443,6 +469,16 @@ class WalkStateManager {
       _waypointEventOccurred = true;
       LogService.info('Walk', '경유지 도착! 질문은 사용자 선택 후 생성됩니다.');
       
+      // Firebase Analytics 경유지 도착 이벤트 기록
+      try {
+        await AnalyticsService().logWaypointArrived(
+          mateType: _selectedMate ?? 'unknown',
+          questionType: _coupleQuestionType ?? _friendQuestionType,
+        );
+      } catch (e) {
+        LogService.error('WalkState', 'Analytics 경유지 도착 이벤트 기록 실패', e);
+      }
+      
       // 더미 질문 반환 (실제 질문은 다이얼로그에서 생성)
       return "waypoint_arrived";
     } catch (e) {
@@ -452,7 +488,7 @@ class WalkStateManager {
   }
 
   /// 목적지 이벤트 확인 및 처리 (기존 로직 분리)
-  String? _checkDestinationEvent(LatLng userLocation, bool forceEvent) {
+  Future<String?> _checkDestinationEvent(LatLng userLocation, bool forceEvent) async {
     if (_destinationEventOccurred) return null;
 
     try {
@@ -467,6 +503,17 @@ class WalkStateManager {
       _destinationEventOccurred = true;
       _actualEndTime = DateTime.now();
       LogService.walkState('목적지 도착! 실제 종료 시간: $_actualEndTime');
+
+      // Firebase Analytics 목적지 도착 이벤트 기록
+      try {
+        final destinationAddress = await getDestinationLocationAddress();
+        await AnalyticsService().logDestinationArrived(
+          mateType: _selectedMate ?? 'unknown',
+          destinationName: destinationAddress,
+        );
+      } catch (e) {
+        LogService.error('WalkState', 'Analytics 목적지 도착 이벤트 기록 실패', e);
+      }
 
       return "destination_reached";
     } catch (e) {
