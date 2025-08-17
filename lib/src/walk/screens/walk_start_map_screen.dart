@@ -369,21 +369,14 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
         final EdgeInsets insets = MediaQuery.of(ctx).viewInsets;
         return StatefulBuilder(builder: (ctx, setInner) {
           return Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  Color(0xFF0F0F23),
-                ],
-              ),
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x40000000),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 24,
-                  offset: Offset(0, -8),
+                  offset: const Offset(0, -8),
                 ),
               ],
             ),
@@ -400,7 +393,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: Colors.grey.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -429,12 +422,12 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: Colors.white.withValues(alpha: 0.9),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.location_on,
-                              color: Colors.white,
+                              color: const Color(0xFF667EEA),
                               size: 24,
                             ),
                           ),
@@ -446,9 +439,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                 const Text(
                                   '목적지',
                                   style: TextStyle(
-                                    color: Colors.white70,
+                                    color: Colors.white,
                                     fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -476,19 +469,19 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                         '목적지 이름 수정',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white,
+                          color: Color(0xFF2D3748),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: _isDestNameFocused
                                 ? const Color(0xFF667EEA)
-                                : Colors.white.withValues(alpha: 0.2),
+                                : Colors.grey.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -501,14 +494,14 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                 TextEditingController(text: _selectedAddress),
                             maxLength: 300,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFF2D3748),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                             decoration: InputDecoration(
                               hintText: '예) 노을 맛집 우리동네 언덕',
                               hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: Colors.grey.withValues(alpha: 0.5),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -520,7 +513,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.clear_rounded,
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: Colors.grey.withValues(alpha: 0.6),
                                     size: 20,
                                   ),
                                   onPressed: () {
@@ -1131,9 +1124,9 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
             ? null
             : Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 12.0),
+                    horizontal: 18.0, vertical: 11.0),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Colors.white.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(24.0),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.2),
@@ -1159,14 +1152,14 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                   children: [
                     Icon(
                       Icons.directions_walk_rounded,
-                      color: Colors.white,
+                      color: Colors.black,
                       size: 24,
                     ),
                     const SizedBox(width: 2),
                     const Text(
                       '어디로 산책을 떠날까요?',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 18,
                         height: 1.2,
@@ -1901,21 +1894,14 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
     return SlideTransition(
       position: slideAnimation,
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E),
-              Color(0xFF0F0F23),
-            ],
-          ),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: Color(0x40000000),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 24,
-              offset: Offset(0, -8),
+              offset: const Offset(0, -8),
             ),
           ],
         ),
@@ -1977,7 +1963,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                             const Text(
                               '함께할 메이트를 선택해주세요',
                               style: TextStyle(
-                                color: Colors.white70,
+                                color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -2011,7 +1997,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                       '산책 메이트',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.white,
+                        color: Color(0xFF2D3748),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -2063,8 +2049,8 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                               border: Border.all(
                                 color: selected
                                     ? Colors.transparent
-                                    : Colors.white.withValues(alpha: 0.2),
-                                width: 1.5,
+                                    : const Color(0xFFE5E7EB),
+                                width: 2.0,
                               ),
                               boxShadow: selected
                                   ? [
@@ -2082,7 +2068,9 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                 Text(
                                   label,
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: selected
+                                        ? Colors.white
+                                        : Color(0xFF2D3748),
                                     fontSize: 16,
                                     fontWeight: selected
                                         ? FontWeight.w700
@@ -2095,7 +2083,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                   style: TextStyle(
                                     color: selected
                                         ? Colors.white70
-                                        : Colors.white54,
+                                        : Color(0xFF6B7280),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -2132,7 +2120,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                     '몇 명과 함께 하시나요?',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.white70,
+                                      color: Color(0xFF2D3748),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -2163,9 +2151,10 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                       child: Container(
                         height: 56,
                         decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 1.5,
+                            color: const Color(0xFFE5E7EB),
+                            width: 2.0,
                           ),
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -2178,7 +2167,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                               child: Text(
                                 '취소',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Color(0xFF2D3748),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -2207,6 +2196,12 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                               ? null
                               : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: canStart
+                                ? Colors.transparent
+                                : const Color(0xFFE5E7EB),
+                            width: 2.0,
+                          ),
                           boxShadow: canStart
                               ? [
                                   BoxShadow(
@@ -2243,7 +2238,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                     Icons.directions_walk_rounded,
                                     color: canStart
                                         ? Colors.white
-                                        : Colors.white54,
+                                        : Color(0xFF9CA3AF),
                                     size: 24,
                                   ),
                                   const SizedBox(width: 12),
@@ -2252,7 +2247,7 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
                                     style: TextStyle(
                                       color: canStart
                                           ? Colors.white
-                                          : Colors.white54,
+                                          : Color(0xFF9CA3AF),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -2292,16 +2287,14 @@ class _MateSheetState extends State<_MateSheet> with TickerProviderStateMixin {
           color: selected ? null : Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected
-                ? Colors.transparent
-                : Colors.white.withValues(alpha: 0.2),
-            width: 1,
+            color: selected ? Colors.transparent : const Color(0xFFE5E7EB),
+            width: 2.0,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: Colors.white,
+            color: selected ? Colors.white : Color(0xFF2D3748),
             fontSize: 14,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
