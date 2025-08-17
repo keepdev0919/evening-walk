@@ -1216,13 +1216,13 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF4A90E2).withValues(alpha: 0.1),
-                        const Color(0xFF87CEEB).withValues(alpha: 0.1),
+                        const Color(0xFFFF8C42).withValues(alpha: 0.1),
+                        const Color(0xFFFFB366).withValues(alpha: 0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20.0),
                     border: Border.all(
-                      color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                      color: const Color(0xFFFF8C42).withValues(alpha: 0.3),
                       width: 1.0,
                     ),
                   ),
@@ -1232,7 +1232,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                         width: 16,
                         height: 16,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF4A90E2),
+                          color: Color(0xFFFF8C42),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1253,7 +1253,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                                 text:
                                     '${AppConstants.waypointTriggerDistance.toInt()}m',
                                 style: const TextStyle(
-                                  color: Color(0xFF4A90E2),
+                                  color: Color(0xFFFF8C42),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),

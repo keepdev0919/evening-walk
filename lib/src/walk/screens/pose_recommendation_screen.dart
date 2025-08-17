@@ -172,7 +172,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       // 1) 세션이 없다면 새로 저장 (소감 제외)
       String? sessionId = widget.walkStateManager.savedSessionId;
       LogService.info('PoseRecommendation', '📄 기존 세션 ID: $sessionId');
-      
+
       if (sessionId == null) {
         LogService.info('PoseRecommendation', '💾 새 세션 저장 시작');
         sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
@@ -182,7 +182,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         );
         if (sessionId != null) {
           widget.walkStateManager.setSavedSessionId(sessionId);
-          LogService.info('PoseRecommendation', '✅ 새 세션 저장 완료 - ID: $sessionId');
+          LogService.info(
+              'PoseRecommendation', '✅ 새 세션 저장 완료 - ID: $sessionId');
         } else {
           LogService.error('PoseRecommendation', '❌ 새 세션 저장 실패', null);
         }
@@ -198,11 +199,13 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         totalDuration = widget.walkStateManager.actualDurationInMinutes;
       }
 
-      LogService.info('PoseRecommendation', '⏰ 업데이트할 데이터 - endTime: $endTime, totalDuration: $totalDuration, totalDistance: ${widget.walkStateManager.accumulatedDistanceKm}');
+      LogService.info('PoseRecommendation',
+          '⏰ 업데이트할 데이터 - endTime: $endTime, totalDuration: $totalDuration, totalDistance: ${widget.walkStateManager.accumulatedDistanceKm}');
 
       if (sessionId != null) {
         LogService.info('PoseRecommendation', '🔄 세션 업데이트 시작 - ID: $sessionId');
-        final updateSuccess = await walkSessionService.updateWalkSession(sessionId, {
+        final updateSuccess =
+            await walkSessionService.updateWalkSession(sessionId, {
           'endTime': endTime.toIso8601String(),
           'totalDuration': totalDuration,
           'totalDistance': widget.walkStateManager.accumulatedDistanceKm,
@@ -214,7 +217,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
           LogService.error('PoseRecommendation', '❌ 세션 업데이트 실패', null);
         }
       } else {
-        LogService.warning('PoseRecommendation', '⚠️ sessionId가 null이어서 업데이트 건너뜀');
+        LogService.warning(
+            'PoseRecommendation', '⚠️ sessionId가 null이어서 업데이트 건너뜀');
       }
 
       // 3) 홈 화면으로 이동 (스택 제거)
@@ -1026,31 +1030,35 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.file(
-                          File(_userPhotoPath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              child: const Center(
-                                child: Text(
-                                  '사진을 불러올 수 없습니다',
-                                  style: TextStyle(color: Colors.white70),
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 3.0,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.file(
+                            File(_userPhotoPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                child: const Center(
+                                  child: Text(
+                                    '사진을 불러올 수 없습니다',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        // 살짝 어둡게 보이도록 오버레이 (일관 유지)
-                        IgnorePointer(
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.18),
+                              );
+                            },
                           ),
-                        ),
-                      ],
+                          // 살짝 어둡게 보이도록 오버레이 (일관 유지)
+                          IgnorePointer(
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.18),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1229,38 +1237,44 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                           onTap: () => _showFullScreenNetworkImage(
                             _recommendedPoseImageUrl!,
                           ),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              CachedNetworkImage(
-                                imageUrl: _recommendedPoseImageUrl!,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.error_outline,
-                                          color: Colors.white70, size: 48),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        '이미지를 불러올 수 없습니다',
-                                        style: TextStyle(color: Colors.white70),
-                                      ),
-                                    ],
+                          child: InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 3.0,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                CachedNetworkImage(
+                                  imageUrl: _recommendedPoseImageUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.error_outline,
+                                            color: Colors.white70, size: 48),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          '이미지를 불러올 수 없습니다',
+                                          style:
+                                              TextStyle(color: Colors.white70),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              IgnorePointer(
-                                child: Container(
-                                  color: Colors.black.withValues(alpha: 0.12),
+                                IgnorePointer(
+                                  child: Container(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       )
@@ -1546,27 +1560,31 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                 : _userPhotoPath != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: GestureDetector(
-                          onTap: () => _showFullScreenPhoto(_userPhotoPath!),
-                          child: Image.file(
-                            File(_userPhotoPath!),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.error_outline,
-                                        color: Colors.red, size: 48),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      '사진을 불러올 수 없습니다',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                        child: InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 3.0,
+                          child: GestureDetector(
+                            onTap: () => _showFullScreenPhoto(_userPhotoPath!),
+                            child: Image.file(
+                              File(_userPhotoPath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.error_outline,
+                                          color: Colors.red, size: 48),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        '사진을 불러올 수 없습니다',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       )
@@ -1811,9 +1829,13 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.file(
-                File(photoPath),
-                fit: BoxFit.contain,
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.file(
+                  File(photoPath),
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             Positioned(

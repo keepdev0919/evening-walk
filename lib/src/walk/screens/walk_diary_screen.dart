@@ -48,8 +48,16 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   bool isEditingReflection = false;
   bool isEditingPhoto = false; // 사진 편집 모드
   bool hasRequestedPhotoRefreshAfterUpload = false;
+  bool isEditMode = false; // 전체 편집 모드 상태
   // 추천 포즈는 산책일기에서 표시하지 않습니다
   int? _recordedDurationMin; // 세션에 저장된 총 소요 시간(분)
+
+  // 편집 전 원본 데이터를 저장하여 변경사항 감지
+  String? _originalAnswer;
+  String? _originalReflection;
+  String? _originalPhotoPath;
+  String? _originalStartName;
+  String? _originalDestinationName;
 
   // 공유 기능을 위한 RepaintBoundary Key
   final GlobalKey _shareKey = GlobalKey();
@@ -70,6 +78,13 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     // 사진 경로 설정
     currentPhotoPath = widget.walkStateManager.photoPath;
     _userPhotoPath = widget.walkStateManager.photoPath; // 초기 설정
+
+    // 원본 데이터 저장 (변경사항 감지용)
+    _originalAnswer = widget.walkStateManager.userAnswer;
+    _originalReflection = widget.walkStateManager.userReflection;
+    _originalPhotoPath = widget.walkStateManager.photoPath;
+    _originalStartName = widget.walkStateManager.customStartName;
+    _originalDestinationName = widget.walkStateManager.destinationBuildingName;
 
     // 추천 포즈: 산책일기에서는 사용하지 않음
 
@@ -165,7 +180,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '산책 일기',
           style: TextStyle(
             color: Colors.white,
@@ -178,6 +193,36 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          // 편집 모드 토글 버튼
+          IconButton(
+            icon: Icon(
+              isEditMode ? Icons.save : Icons.edit,
+              color: Colors.white.withValues(alpha: 0.8),
+              size: 22,
+            ),
+            tooltip: isEditMode ? '편집 완료 및 저장' : '편집 모드',
+            onPressed: () {
+              if (isEditMode) {
+                // 편집 모드 종료 시 변경사항 확인
+                if (_hasChanges()) {
+                  _showSuccessSnackBar('저장되었습니다! ✨');
+                }
+
+                setState(() {
+                  isEditMode = false;
+                  // 편집 모드가 꺼지면 모든 편집 상태도 초기화
+                  isEditingAnswer = false;
+                  isEditingReflection = false;
+                  isEditingPhoto = false;
+                });
+              } else {
+                // 편집 모드 시작
+                setState(() {
+                  isEditMode = true;
+                });
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline, color: Colors.white, size: 24),
             tooltip: '도움말',
@@ -204,8 +249,8 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
+                  Colors.black.withValues(alpha: 0.5),
                   Colors.black.withValues(alpha: 0.6),
-                  Colors.black.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -557,6 +602,11 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           ),
         );
 
+        // 편집 모드가 아닐 때는 버튼들을 숨김
+        if (!isEditMode) {
+          return const SizedBox.shrink();
+        }
+
         if (isNarrow) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -822,6 +872,11 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               )
             : null;
 
+        // 편집 모드가 아닐 때는 버튼들을 숨김
+        if (!isEditMode) {
+          return const SizedBox.shrink();
+        }
+
         if (isNarrow) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -919,6 +974,11 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           ),
         );
 
+        // 편집 모드가 아닐 때는 버튼들을 숨김
+        if (!isEditMode) {
+          return const SizedBox.shrink();
+        }
+
         if (isNarrow) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -946,12 +1006,39 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        // 공유하기 버튼
-        Expanded(
+    // 편집 모드일 때는 액션 버튼들을 숨김
+    if (isEditMode) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(children: [
+      // 공유하기 버튼
+      Expanded(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.blue.withValues(alpha: 0.7),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: ElevatedButton.icon(
-            icon: const Icon(Icons.share, color: Colors.white),
+            icon: const Icon(Icons.share, color: Colors.blue),
             label: const Text(
               '공유하기',
               style: TextStyle(
@@ -961,24 +1048,47 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             ),
             onPressed: _onSharePressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.withValues(alpha: 0.8),
+              backgroundColor: Colors.transparent,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
               ),
             ),
           ),
         ),
+      ),
 
-        const SizedBox(width: 16),
+      const SizedBox(width: 16),
 
-        // 산책 저장 버튼
-        Expanded(
-          flex: 2,
+      // 산책 저장 버튼
+      Expanded(
+        flex: 2,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.12),
+                Colors.white.withValues(alpha: 0.06),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.green.withValues(alpha: 0.7),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: ElevatedButton.icon(
-            icon: const Icon(Icons.save, color: Colors.white),
+            icon: const Icon(Icons.save, color: Colors.green),
             label: const Text(
               '산책 저장',
               style: TextStyle(
@@ -1010,11 +1120,12 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                       'updatedAt': DateTime.now().toIso8601String(),
                     },
                   );
-                  
+
                   // Firebase Analytics 일기 작성 이벤트 기록 (소감이 있는 경우)
                   if (reflectionController.text.trim().isNotEmpty) {
                     await AnalyticsService().logDiaryWritten(
-                      mateType: widget.walkStateManager.selectedMate ?? 'unknown',
+                      mateType:
+                          widget.walkStateManager.selectedMate ?? 'unknown',
                       contentLength: reflectionController.text.trim().length,
                     );
                   }
@@ -1022,7 +1133,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   if (success) {
                     // Firebase Analytics 산책 완료 이벤트 기록
                     await _logWalkCompletedEvent();
-                    
+
                     Navigator.of(context).pop();
                     widget.onWalkCompleted(true);
 
@@ -1088,7 +1199,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   if (sessionId != null) {
                     // Firebase Analytics 산책 완료 이벤트 기록
                     await _logWalkCompletedEvent();
-                    
+
                     Navigator.of(context).pop();
                     widget.onWalkCompleted(true);
 
@@ -1149,18 +1260,17 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withValues(alpha: 0.8),
+              backgroundColor: Colors.transparent,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
               ),
             ),
           ),
         ),
-      ],
-    );
+      ),
+    ]);
   }
 
   Widget _buildImageWidget(String imagePath, {BoxFit? fit}) {
@@ -1343,7 +1453,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     '산책 경로',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,
                     ),
@@ -1376,7 +1486,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                           label: '출발지',
                           address: address,
                           isLoading: isLoading,
-                          onTap: isLoading
+                          onTap: (isLoading || !isEditMode)
                               ? null
                               : () {
                                   final initial =
@@ -1412,7 +1522,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                           label: '목적지',
                           address: address,
                           isLoading: isLoading,
-                          onTap: isLoading
+                          onTap: (isLoading || !isEditMode)
                               ? null
                               : () {
                                   final initial = widget.walkStateManager
@@ -2356,7 +2466,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
       final distance = widget.walkStateManager.accumulatedDistanceKm ?? 0.0;
       final hasPhoto = widget.walkStateManager.photoPath != null;
       final hasAnswer = widget.walkStateManager.userAnswer?.isNotEmpty == true;
-      
+
       await AnalyticsService().logWalkCompleted(
         mateType: widget.walkStateManager.selectedMate ?? 'unknown',
         durationMinutes: duration,
@@ -2497,26 +2607,26 @@ extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
                     children: [
                       _buildHelpItem(
                         number: '1',
-                        title: '위치 수정',
-                        description: '출발지와 목적지를 터치하여 표시명을 변경할 수 있어요.',
-                        icon: Icons.edit_location_alt,
-                        color: Colors.green,
+                        title: '편집 모드 활성화',
+                        description: '연필 아이콘을 눌러 편집 모드를 시작하세요.',
+                        icon: Icons.edit,
+                        color: Colors.blue,
                       ),
                       const SizedBox(height: 16),
                       _buildHelpItem(
                         number: '2',
-                        title: '사진 편집',
-                        description: '사진을 터치하여 재촬영하거나 삭제할 수 있어요.',
-                        icon: Icons.camera_alt,
-                        color: Colors.orange,
+                        title: '일기 내용 편집',
+                        description: '편집 모드에서 답변, 소감, 사진을 자유롭게 수정하세요.',
+                        icon: Icons.edit_note,
+                        color: Colors.green,
                       ),
                       const SizedBox(height: 16),
                       _buildHelpItem(
                         number: '3',
-                        title: '답변 & 소감',
-                        description: '경유지 답변과 산책 소감을 자유롭게 작성해보세요.',
-                        icon: Icons.edit_note,
-                        color: Colors.blue,
+                        title: '편집 완료 및 저장',
+                        description: '저장 아이콘을 눌러 변경사항을 저장하세요.',
+                        icon: Icons.save,
+                        color: Colors.orange,
                       ),
                       const SizedBox(height: 16),
                       _buildHelpItem(
@@ -2667,6 +2777,61 @@ extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 변경사항이 있는지 감지하는 메서드
+  bool _hasChanges() {
+    // 경유지 답변 변경 확인
+    final currentAnswer = answerEditController.text.trim();
+    final hasAnswerChanged = _originalAnswer != currentAnswer;
+
+    // 소감 변경 확인
+    final currentReflection = reflectionController.text.trim();
+    final hasReflectionChanged = _originalReflection != currentReflection;
+
+    // 사진 변경 확인
+    final hasPhotoChanged = _originalPhotoPath != currentPhotoPath;
+
+    // 출발지 이름 변경 확인
+    final hasStartNameChanged =
+        _originalStartName != widget.walkStateManager.customStartName;
+
+    // 목적지 이름 변경 확인
+    final hasDestinationNameChanged = _originalDestinationName !=
+        widget.walkStateManager.destinationBuildingName;
+
+    return hasAnswerChanged ||
+        hasReflectionChanged ||
+        hasPhotoChanged ||
+        hasStartNameChanged ||
+        hasDestinationNameChanged;
+  }
+
+  /// 성공 스낵바
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(
+            color: Colors.white,
+            width: 1,
+          ),
+        ),
       ),
     );
   }
