@@ -1318,7 +1318,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                                   children: [
                                     Icon(
                                       Icons.help_outline_rounded,
-                                      color: const Color(0xFF764ba2),
+                                      color: Colors.black,
                                       size: 28,
                                     ),
                                     const SizedBox(width: 12),
@@ -1515,7 +1515,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                       Icon(
                         Icons.help_outline_rounded,
                         size: 20,
-                        color: const Color(0xFF764ba2),
+                        color: Colors.black,
                       ),
                       const SizedBox(width: 6),
                       Text.rich(

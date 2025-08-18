@@ -174,7 +174,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
   void _maybeAddFootprint(LatLng current) {
     if (_footprintIcon == null) return; // 아이콘이 아직 준비되지 않은 경우
 
-    const double footprintDistance = 10.0;
+    const double footprintDistance = 20.0;
     if (_lastFootprintPosition != null) {
       final double d = Geolocator.distanceBetween(
         _lastFootprintPosition!.latitude,
@@ -1193,10 +1193,10 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                   children: [
                     Icon(
                       Icons.location_on,
-                      color: const Color(0xFF764ba2),
+                      color: Colors.black,
                       size: 28,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 6),
                     const Text(
                       '도착 반경 안내',
                       style: TextStyle(
