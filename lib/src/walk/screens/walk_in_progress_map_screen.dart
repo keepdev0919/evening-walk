@@ -684,7 +684,8 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
                                 false), // 경유지 버튼을 통한 재확인시에는 스낵바 표시 안함
                         _lastWaypointUserAnswer,
                         selectedMate: widget.selectedMate,
-                        walkStateManager: _walkStateManager);
+                        walkStateManager: _walkStateManager,
+                        hideReloadButton: true); // 경유지 재확인 버튼에서는 리로드 버튼 숨김
                   }
                 },
               ),
