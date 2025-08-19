@@ -26,7 +26,11 @@ import 'package:walk/src/walk/utils/heading_controller.dart';
 /// 산책 시작 전 목적지를 설정하는 지도 화면입니다.
 class WalkStartMapScreen extends StatefulWidget {
   // 단순화 플로우: 왕복/편도 제거
-  const WalkStartMapScreen({super.key});
+  const WalkStartMapScreen({super.key, this.preloadedPosition});
+
+  /// 미리 로딩된 위치 정보입니다.
+  /// null이면 일반적인 로딩 과정을 거칩니다.
+  final LatLng? preloadedPosition;
 
   @override
   State<WalkStartMapScreen> createState() => _WalkStartMapScreenState();
@@ -97,6 +101,14 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
   @override
   void initState() {
     super.initState();
+
+    // 미리 로딩된 위치 정보가 있다면 초기화를 건너뜁니다
+    if (widget.preloadedPosition != null) {
+      _isLoading = false;
+      _currentPosition = widget.preloadedPosition;
+      return;
+    }
+
     // 현재 사용자 정보를 가져옵니다.
     // _user = FirebaseAuth.instance.currentUser;
     // 현재 위치를 결정하고 지도를 초기화합니다.

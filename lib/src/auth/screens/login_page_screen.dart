@@ -15,6 +15,7 @@ class LoginPage extends StatelessWidget {
     Future<bool> Function() loginMethod, //얘는 signInWithGoogle,Kakao를 말함
   ) async {
     showDialog(
+      //사용자가 로그인 버튼 누르면 로그인 진행되는 동안 로딩 아이콘이 뜸
       context: context, //뒤의 context는 로그인페이지 context
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
@@ -23,9 +24,10 @@ class LoginPage extends StatelessWidget {
 
     final success = await loginMethod();
 
-    if (!context.mounted) return; // ✅ context 유효성 체크
+    if (!context.mounted)
+      return; // 비동기 작업(await) 후에 위젯이 화면에서 사라졌을 수도 있는 상황에 대비한 안전장치입니다. 이 코드가 없으면 앱이 비정상 종료될 수 있습니다.
 
-    Navigator.pop(context);
+    Navigator.pop(context); //로딩창을 닫는 코드
 
     if (success) {
       // 프로필 존재 여부를 확인하여 분기
@@ -91,6 +93,7 @@ class LoginPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
+      //배경이미지 -> 콘텐츠 -> 고양이 캐릭터 순으로 쌓임
       body: Stack(
         fit: StackFit.expand,
         children: [
