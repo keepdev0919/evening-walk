@@ -65,11 +65,11 @@ dependencies {
 
     // ✅ 사용할 Firebase SDK
     implementation "com.google.firebase:firebase-analytics"
+    implementation "com.google.firebase:firebase-auth"
 
     // 예: Firestore 사용 시
     // implementation "com.google.firebase:firebase-firestore"
-        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }
 
 

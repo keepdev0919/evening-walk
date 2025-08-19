@@ -162,66 +162,74 @@ class _WalkLoadingScreenState extends State<WalkLoadingScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 애니메이션과 말풍선을 포함한 스택
-                  Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none, // 말풍선이 잘리지 않도록 설정
-                    children: [
-                      // start.json 애니메이션
-                      Container(
-                        width: 200,
-                        height: 200,
-                        child: Lottie.asset(
-                          'assets/animations/start.json',
-                          fit: BoxFit.contain,
-                          repeat: true,
-                        ),
-                      ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenHeight = MediaQuery.of(context).size.height;
+                      final animationSize = screenHeight * 0.25; // 화면 높이의 25%
+                      final bubbleOffset = -(animationSize * 0.2); // 애니메이션 크기의 20% 위쪽
+                      
+                      return Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          // start.json 애니메이션
+                          Container(
+                            width: animationSize,
+                            height: animationSize,
+                            child: Lottie.asset(
+                              'assets/animations/start.json',
+                              fit: BoxFit.contain,
+                              repeat: true,
+                            ),
+                          ),
 
-                      // 말풍선 (애니메이션 위에 오버레이)
-                      Positioned(
-                        top: -40, // 애니메이션 위쪽에 위치
-                        child: Column(
-                          children: [
-                            // 말풍선 텍스트 부분
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                          // 말풍선 (애니메이션 위에 오버레이)
+                          Positioned(
+                            top: bubbleOffset,
+                            child: Column(
+                              children: [
+                                // 말풍선 텍스트 부분
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: screenHeight * 0.025,
+                                    vertical: screenHeight * 0.015,
                                   ),
-                                ],
-                              ),
-                              child: const Text(
-                                '지도 정보를 가져오고 있어요..!',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: Colors.black.withValues(alpha: 0.1),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    '지도 정보를 가져오고 있어요..!',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: screenHeight * 0.02,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
+                                // 말풍선 꼬리 (아래쪽을 가리킴)
+                                CustomPaint(
+                                  size: Size(screenHeight * 0.025, screenHeight * 0.012),
+                                  painter: SpeechBubbleTailPainter(),
+                                ),
+                              ],
                             ),
-                            // 말풍선 꼬리 (아래쪽을 가리킴)
-                            CustomPaint(
-                              size: const Size(20, 10),
-                              painter: SpeechBubbleTailPainter(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 80),

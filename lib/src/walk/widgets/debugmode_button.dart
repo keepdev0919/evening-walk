@@ -44,8 +44,8 @@ class DebugModeButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isLoading && kDebugMode) {
       return Positioned(
-        bottom: 32,
-        left: 16,
+        bottom: 250,
+        left: 150,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

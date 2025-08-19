@@ -61,6 +61,8 @@
             <data android:scheme="kakao30a23ff51af53fcc1aa6527354c21c10" android:host="oauth"/>
         </intent-filter>
     </activity>
+
+
     </application>
 
     <queries>
