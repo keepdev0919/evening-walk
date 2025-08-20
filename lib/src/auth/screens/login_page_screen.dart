@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../services/kakao_auth_service.dart';
 import '../services/google_auth_service.dart';
+import '../services/apple_auth_service.dart';
 import 'user_info_screen.dart' as userinfo;
 import 'package:walk/src/common/widgets/black_cat_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -178,6 +180,19 @@ class LoginPage extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              if (Platform.isIOS) ...[
+                                const SizedBox(height: 16),
+                                Center(
+                                  child: GestureDetector(
+                                    onTap: () => handleLogin(context,
+                                        AppleAuthService.signInWithApple),
+                                    child: Image.asset(
+                                      'assets/images/apple_login.png',
+                                      width: 200,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

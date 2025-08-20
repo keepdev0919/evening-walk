@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../common/widgets/black_cat_widget.dart';
 
-/// 온보딩 화면 (4장 슬라이드)
-/// 역할: 첫 로그인 후 간단한 안내를 4개의 페이지로 제공하고 마지막에 홈으로 진입시키는 화면
+/// 온보딩 화면 (5장 슬라이드)
+/// 역할: 첫 로그인 후 간단한 안내를 5개의 페이지로 제공하고 마지막에 홈으로 진입시키는 화면
 class Onboarding extends StatefulWidget {
   const Onboarding({super.key});
 
@@ -94,7 +94,7 @@ class _OnboardingState extends State<Onboarding> {
                             _buildSlide(
                               title: '', // title 제거
                               lines: const [
-                                '속은 편안하게, \n마음은 추억으로. \n 기분 좋은 저녁 산책',
+                                '저녁 식사 후 \n가벼운 산책으로 \n 가장 편안한 저녁을 \n 만나보세요',
                               ],
                               isFirstSlide: true, // 첫 번째 슬라이드 표시
                             ),
@@ -157,7 +157,7 @@ class _OnboardingState extends State<Onboarding> {
                           catText = '산책 메이트에 따라 \n이벤트가 달라진다냥 !';
                           break;
                         case 3:
-                          catText = '일기에 나도 넣어달라냥 !!!';
+                          catText = '나 건들면 물거라냥 !!!';
                           break;
                         case 4:
                           catText = '이 페이지는 내정보에서 \n다시 볼수있다냥 🐾';
@@ -398,34 +398,29 @@ class _OnboardingState extends State<Onboarding> {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: active ? 24 : 8,
           height: 8,
-          width: active ? 22 : 8,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: active ? 0.95 : 0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-                color: Colors.white.withValues(alpha: 0.8), width: 0.6),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(4),
           ),
         );
       }),
     );
   }
 
-  /// 텍스트에서 특정 키워드를 굵게 표시하는 RichText를 생성하는 메서드
   TextSpan _buildRichText(String text, List<String> boldKeywords,
       {double fontSize = 18}) {
     final List<TextSpan> spans = [];
     String remainingText = text;
-    int lastIndex = 0;
 
-    // 각 키워드를 순서대로 처리
-    for (String keyword in boldKeywords) {
-      final int index = remainingText.indexOf(keyword, lastIndex);
+    for (final keyword in boldKeywords) {
+      final index = remainingText.toLowerCase().indexOf(keyword.toLowerCase());
       if (index != -1) {
-        // 키워드 앞의 일반 텍스트
-        if (index > lastIndex) {
+        // 키워드 앞의 텍스트
+        if (index > 0) {
           spans.add(TextSpan(
-            text: remainingText.substring(lastIndex, index),
+            text: remainingText.substring(0, index),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.95),
               fontSize: fontSize,
@@ -436,11 +431,11 @@ class _OnboardingState extends State<Onboarding> {
           ));
         }
 
-        // 굵은 키워드
+        // 키워드 (굵게)
         spans.add(TextSpan(
-          text: keyword,
+          text: remainingText.substring(index, index + keyword.length),
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: Colors.white,
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
             height: 1.35,
@@ -448,14 +443,15 @@ class _OnboardingState extends State<Onboarding> {
           ),
         ));
 
-        lastIndex = index + keyword.length;
+        // 키워드 뒤의 텍스트
+        remainingText = remainingText.substring(index + keyword.length);
       }
     }
 
-    // 마지막 남은 텍스트 추가
-    if (lastIndex < remainingText.length) {
+    // 남은 텍스트
+    if (remainingText.isNotEmpty) {
       spans.add(TextSpan(
-        text: remainingText.substring(lastIndex),
+        text: remainingText,
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.95),
           fontSize: fontSize,
@@ -464,20 +460,6 @@ class _OnboardingState extends State<Onboarding> {
           fontFamily: 'Cafe24Oneprettynight',
         ),
       ));
-    }
-
-    // 만약 아무 키워드도 찾지 못했다면 원본 텍스트를 그대로 반환
-    if (spans.isEmpty) {
-      return TextSpan(
-        text: text,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.95),
-          fontSize: fontSize,
-          fontWeight: FontWeight.normal,
-          height: 1.35,
-          fontFamily: 'Cafe24Oneprettynight',
-        ),
-      );
     }
 
     return TextSpan(children: spans);

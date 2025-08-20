@@ -37,6 +37,8 @@ dependencies:
   video_player: ^2.8.6
   flutter_email_sender: ^6.0.3
   url_launcher: ^6.3.0
+  sign_in_with_apple: ^5.0.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
