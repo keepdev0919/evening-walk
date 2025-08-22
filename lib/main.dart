@@ -17,6 +17,7 @@ import 'src/walk/providers/upload_provider.dart';
 import 'src/common/services/toast_service.dart';
 import 'src/core/services/analytics_service.dart';
 import 'src/walk/services/interstitial_ad_service.dart';
+import 'src/core/services/revenue_cat_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +45,10 @@ void main() async {
   // 전면광고 미리 로드
   final adService = InterstitialAdService();
   unawaited(adService.loadInterstitialAd());
+
+  // RevenueCat 초기화
+  final revenueCatService = RevenueCatService();
+  unawaited(revenueCatService.initialize());
 
   runApp(const MyApp()); //이렇게 쓸수 있게 해주는게 아래 {super.key} 때문
 }

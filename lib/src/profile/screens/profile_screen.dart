@@ -13,6 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:walk/src/auth/screens/login_page_screen.dart';
 import 'package:walk/src/auth/screens/onboarding_screen.dart';
 import 'package:walk/src/core/services/log_service.dart';
+import 'package:walk/src/core/services/revenue_cat_service.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// 사용자 프로필을 표시하고 수정하는 페이지입니다.
 class Profile extends StatefulWidget {
@@ -444,7 +446,39 @@ class _ProfileState extends State<Profile> {
                                       spacing: 12,
                                       runSpacing: 8,
                                       children: [
-                                        // 개발자에게 문의 버튼
+                                        // 후원 버튼 (위치 변경)
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.coffee,
+                                              color: Colors.orange, size: 18),
+                                          label: const Text(
+                                            '개발자야 커피먹고 일더해라! ☕',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.white,
+                                            backgroundColor: Colors.orange
+                                                .withValues(alpha: 0.15),
+                                            side: BorderSide(
+                                                color: Colors.orange
+                                                    .withValues(alpha: 0.4)),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ).copyWith(
+                                            overlayColor:
+                                                const WidgetStatePropertyAll(
+                                              Color.fromRGBO(255, 165, 0, 0.2),
+                                            ),
+                                          ),
+                                          onPressed: () =>
+                                              _showDonationDialog(),
+                                        ),
+                                        // 개발자에게 문의 버튼 (위치 변경)
                                         OutlinedButton.icon(
                                           icon: const Icon(
                                               Icons.contact_support,
@@ -670,6 +704,14 @@ class _ProfileState extends State<Profile> {
 
   // 회원탈퇴 기능은 테스트 단계에서 비활성화되었습니다.
 
+  /// 후원 다이얼로그 표시
+  void _showDonationDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => _DonationDialog(),
+    );
+  }
+
   /// 편집 모드가 아닐 때 편집 안내 스낵바를 표시합니다.
   /// 역할: 사용자가 화면을 터치하면 우측 상단 연필 아이콘을 안내합니다.
   void _showEditHintSnackBar() {
@@ -888,6 +930,293 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
         ],
+      ),
+    );
+  }
+}
+
+/// 후원 다이얼로그 위젯
+class _DonationDialog extends StatefulWidget {
+  @override
+  State<_DonationDialog> createState() => _DonationDialogState();
+}
+
+class _DonationDialogState extends State<_DonationDialog> {
+  final RevenueCatService _revenueCatService = RevenueCatService();
+  bool _isLoading = true;
+  bool _isPurchasing = false;
+  List<Package> _packages = [];
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPackages();
+  }
+
+  Future<void> _loadPackages() async {
+    try {
+      await _revenueCatService.refreshOfferings();
+      final packages = _revenueCatService.getDonationPackages();
+
+      setState(() {
+        _packages = packages;
+        _isLoading = false;
+        _errorMessage = packages.isEmpty ? '후원 상품을 불러올 수 없습니다.' : null;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '후원 상품 로드 중 오류가 발생했습니다.';
+      });
+    }
+  }
+
+  Future<void> _makePurchase(Package package) async {
+    setState(() {
+      _isPurchasing = true;
+    });
+
+    try {
+      final result = await _revenueCatService.makeDonation(package);
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: Colors.green.withValues(alpha: 0.9),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else if (!result.isCancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: Colors.red.withValues(alpha: 0.9),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPurchasing = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black.withValues(alpha: 0.95),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Colors.orange, width: 2),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 제목
+            Row(
+              children: [
+                const Icon(Icons.coffee, color: Colors.orange, size: 28),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '개발자 후원하기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 60,
+              height: 3,
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 설명 텍스트
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: const Text(
+                '저녁산책 앱이 도움이 되셨다면\n개발자에게 커피 한 잔..?! ☕',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 로딩/에러/상품 목록 표시
+            Flexible(
+              child: _buildContent(),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 구매 복원 버튼
+            TextButton(
+              onPressed: _isPurchasing ? null : _restorePurchases,
+              child: const Text(
+                '구매 복원',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.orange),
+            SizedBox(height: 16),
+            Text(
+              '후원 상품을 불러오는 중...',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadPackages,
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: _packages.length,
+      itemBuilder: (context, index) {
+        final package = _packages[index];
+        final product = package.storeProduct;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ElevatedButton(
+            onPressed: _isPurchasing ? null : () => _makePurchase(package),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.withValues(alpha: 0.9),
+              foregroundColor: Colors.white,
+              elevation: 4,
+              padding: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isPurchasing
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Text(
+                        product.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        product.priceString,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (product.description.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          product.description,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _restorePurchases() async {
+    final result = await _revenueCatService.restorePurchases();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.isSuccess
+            ? Colors.green.withValues(alpha: 0.9)
+            : Colors.red.withValues(alpha: 0.9),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
