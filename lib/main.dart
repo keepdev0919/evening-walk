@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,6 +16,7 @@ import 'src/walk/screens/walk_history_screen.dart';
 import 'src/walk/providers/upload_provider.dart';
 import 'src/common/services/toast_service.dart';
 import 'src/core/services/analytics_service.dart';
+import 'src/walk/services/interstitial_ad_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +37,13 @@ void main() async {
   KakaoSdk.init(
     nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? '',
   );
+
+  WidgetsFlutterBinding.ensureInitialized();
+  unawaited(MobileAds.instance.initialize());
+
+  // 전면광고 미리 로드
+  final adService = InterstitialAdService();
+  unawaited(adService.loadInterstitialAd());
 
   runApp(const MyApp()); //이렇게 쓸수 있게 해주는게 아래 {super.key} 때문
 }

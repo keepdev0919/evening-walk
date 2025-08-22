@@ -39,6 +39,7 @@ dependencies:
   url_launcher: ^6.3.0
   sign_in_with_apple: ^5.0.0
   crypto: ^3.0.3
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -73,10 +74,7 @@ flutter_launcher_icons:
   # iOS 세부 설정  
   remove_alpha_ios: true
   
-  # 웹, 윈도우, 맥 설정
-  web:
-    generate: true
-    image_path: "assets/images/app_icon.png"
+  # 윈도우, 맥 설정
   windows:
     generate: true
     image_path: "assets/images/app_icon.png"

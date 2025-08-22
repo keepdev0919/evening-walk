@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
 import 'common_arrival_dialog.dart';
 import '../services/walk_state_manager.dart';
 import '../services/firestore_question_service.dart';
+import '../services/interstitial_ad_service.dart';
 import '../../core/services/analytics_service.dart';
 
 class WaypointDialogs {
@@ -22,7 +24,13 @@ class WaypointDialogs {
       icon: Icons.card_giftcard,
       iconColor: Colors.orange,
       message: '경유지 이벤트를 확인해봐요!',
-      onEventConfirm: () {
+      onEventConfirm: () async {
+        // 전면광고 표시 (미리 로드된 광고 사용)
+        final adService = InterstitialAdService();
+        await adService.showInterstitialAd();
+        // 광고 표시 후 다음 광고 미리 로드
+        unawaited(adService.loadInterstitialAd());
+
         // 연인 모드: 질문 종류 선택 다이얼로그 표시
         if (selectedMate == '연인') {
           _showQuestionTypeSelector(context).then((selection) async {
@@ -118,7 +126,8 @@ class WaypointDialogs {
           updateWaypointEventState(true, question, null);
           WaypointDialogs.showQuestionDialog(
               context, question, updateWaypointEventState, null,
-              selectedMate: selectedMate, walkStateManager: walkStateManager,
+              selectedMate: selectedMate,
+              walkStateManager: walkStateManager,
               hideReloadButton: isFromWaypointButton);
         }
       },
@@ -152,10 +161,9 @@ class WaypointDialogs {
         bool isReloading = false;
         int reloadCount = isReloadAlreadyUsed ? 0 : 1;
         bool isReloadUsed = isReloadAlreadyUsed;
-        
+
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-
             return Dialog(
               insetPadding: EdgeInsets.zero,
               backgroundColor: Colors.transparent,
@@ -197,208 +205,248 @@ class WaypointDialogs {
                             ),
                           ),
                           // 우측에 재로드 아이콘과 횟수 표시 (동적 테마) - hideReloadButton이 true면 숨김
-                          hideReloadButton ? Container(width: 80, height: 40) : Container(
-                            decoration: BoxDecoration(
-                              color: (isReloading || isReloadUsed)
-                                  ? Colors.grey.withValues(alpha: 0.15)
-                                  : Colors.orange.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: (isReloading || isReloadUsed)
-                                    ? Colors.grey.withValues(alpha: 0.4)
-                                    : Colors.orange.withValues(alpha: 0.4),
-                                width: 1,
-                              ),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: (isReloading || isReloadUsed)
-                                    ? null
-                                    : () async {
-                                        print('🔥 DEBUG: 리로드 버튼 클릭됨');
-                                        print('🔥 DEBUG: 현재 질문: $question');
-                                        print(
-                                            '🔥 DEBUG: selectedMate: $selectedMate');
-
-                                        // 재로드 상태로 변경
-                                        setState(() {
-                                          isReloading = true;
-                                          reloadCount = 0;
-                                          isReloadUsed = true;
-                                        });
-                                        print(
-                                            '🔥 DEBUG: 재로드 상태로 변경됨: isReloading=$isReloading, reloadCount=$reloadCount');
-
-                                        // 새로운 질문 가져오기
-                                        print('🔥 DEBUG: 리로드 조건 체크 - selectedMate: $selectedMate, walkStateManager: $walkStateManager');
-                                        if (selectedMate != null) {
-                                          print('🔥 DEBUG: 새로운 질문 가져오기 시작');
-                                          String newQuestion = question;
-
-                                          try {
-                                            final questionService =
-                                                FirestoreQuestionService();
-
-                                            // 최대 5번까지 시도하여 다른 질문 찾기
-                                            for (int attempt = 0; attempt < 5; attempt++) {
-                                              String? candidateQuestion;
-                                              
-                                              if (selectedMate == '연인') {
-                                                final questionType = preservedCoupleQuestionType ?? 
-                                                    (walkStateManager != null
-                                                        ? (walkStateManager.coupleQuestionType ?? 'talk')
-                                                        : 'talk');
-                                                print('🔥 DEBUG: 연인 질문 타입 (preserved: $preservedCoupleQuestionType, walkState: ${walkStateManager?.coupleQuestionType}): $questionType');
-                                                candidateQuestion = await questionService
-                                                    .getQuestionForMate(
-                                                  selectedMate,
-                                                  coupleQuestionType:
-                                                      questionType,
-                                                );
-                                              } else if (selectedMate
-                                                  .startsWith('친구')) {
-                                                final questionType = preservedFriendQuestionType ?? 
-                                                    (walkStateManager != null
-                                                        ? (walkStateManager.friendQuestionType ?? 'talk')
-                                                        : 'talk');
-                                                candidateQuestion = await questionService
-                                                    .getQuestionForMate(
-                                                  selectedMate,
-                                                  friendQuestionType:
-                                                      questionType,
-                                                );
-                                              } else {
-                                                // 혼자, 반려견, 가족 등
-                                                candidateQuestion = await questionService
-                                                    .getQuestionForMate(
-                                                        selectedMate);
-                                              }
-
-                                              // 다른 질문을 찾았으면 사용
-                                              if (candidateQuestion != null && candidateQuestion != question) {
-                                                newQuestion = candidateQuestion;
-                                                print('🔥 DEBUG: 새로운 질문 찾음 (시도 ${attempt + 1}): $newQuestion');
-                                                break;
-                                              }
-                                              
-                                              print('🔥 DEBUG: 시도 ${attempt + 1}: 같은 질문 또는 null');
-                                            }
-
-                                            // 새로운 질문으로 다이얼로그 업데이트
-                                            print(
-                                                '🔥 DEBUG: 새 질문으로 다이얼로그 업데이트: $newQuestion');
-                                            Navigator.of(dialogContext).pop();
-                                            WaypointDialogs
-                                                .showQuestionDialog(
-                                              context,
-                                              newQuestion,
-                                              updateWaypointEventState,
-                                              answerController.text
-                                                      .trim()
-                                                      .isNotEmpty
-                                                  ? answerController.text
-                                                      .trim()
-                                                  : null,
-                                              selectedMate: selectedMate,
-                                              walkStateManager:
-                                                  walkStateManager,
-                                              isReloadAlreadyUsed: true,
-                                              preservedCoupleQuestionType: preservedCoupleQuestionType ?? 
-                                                  (walkStateManager?.coupleQuestionType),
-                                              preservedFriendQuestionType: preservedFriendQuestionType ?? 
-                                                  (walkStateManager?.friendQuestionType),
-                                              hideReloadButton: hideReloadButton,
-                                            );
-                                          } catch (e) {
-                                            print('🔥 DEBUG: 질문 로드 에러: $e');
-                                            // 에러 발생 시 상태 복원
-                                            setState(() {
-                                              isReloading = false;
-                                              reloadCount = 1;
-                                              isReloadUsed = false;
-                                            });
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                    '새로운 질문을 가져오는데 실패했습니다.'),
-                                                backgroundColor: Colors.red
-                                                    .withValues(alpha: 0.8),
-                                                duration:
-                                                    const Duration(seconds: 2),
-                                              ),
-                                            );
-                                          }
-                                        } else {
-                                          print('🔥 DEBUG: selectedMate가 null이어서 질문 로드 불가');
-                                          // 질문 로드를 시도하지 않음 - selectedMate가 null
-                                          setState(() {
-                                            isReloading = false;
-                                            reloadCount = 1;
-                                            isReloadUsed = false;
-                                          });
-                                          
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text('메이트 정보가 없어서 새로운 질문을 가져올 수 없습니다.'),
-                                              backgroundColor: Colors.red
-                                                  .withValues(alpha: 0.8),
-                                              duration:
-                                                  const Duration(seconds: 2),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
+                          hideReloadButton
+                              ? Container(width: 80, height: 40)
+                              : Container(
+                                  decoration: BoxDecoration(
+                                    color: (isReloading || isReloadUsed)
+                                        ? Colors.grey.withValues(alpha: 0.15)
+                                        : Colors.orange.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: (isReloading || isReloadUsed)
+                                          ? Colors.grey.withValues(alpha: 0.4)
+                                          : Colors.orange
+                                              .withValues(alpha: 0.4),
+                                      width: 1,
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.refresh_rounded,
-                                        color: (isReloading || isReloadUsed)
-                                            ? Colors.grey.withValues(alpha: 0.8)
-                                            : Colors.orange
-                                                .withValues(alpha: 0.8),
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Container(
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: (isReloading || isReloadUsed)
+                                          ? null
+                                          : () async {
+                                              print('🔥 DEBUG: 리로드 버튼 클릭됨');
+                                              print(
+                                                  '🔥 DEBUG: 현재 질문: $question');
+                                              print(
+                                                  '🔥 DEBUG: selectedMate: $selectedMate');
+
+                                              // 재로드 상태로 변경
+                                              setState(() {
+                                                isReloading = true;
+                                                reloadCount = 0;
+                                                isReloadUsed = true;
+                                              });
+                                              print(
+                                                  '🔥 DEBUG: 재로드 상태로 변경됨: isReloading=$isReloading, reloadCount=$reloadCount');
+
+                                              // 새로운 질문 가져오기
+                                              print(
+                                                  '🔥 DEBUG: 리로드 조건 체크 - selectedMate: $selectedMate, walkStateManager: $walkStateManager');
+                                              if (selectedMate != null) {
+                                                print(
+                                                    '🔥 DEBUG: 새로운 질문 가져오기 시작');
+                                                String newQuestion = question;
+
+                                                try {
+                                                  final questionService =
+                                                      FirestoreQuestionService();
+
+                                                  // 최대 5번까지 시도하여 다른 질문 찾기
+                                                  for (int attempt = 0;
+                                                      attempt < 5;
+                                                      attempt++) {
+                                                    String? candidateQuestion;
+
+                                                    if (selectedMate == '연인') {
+                                                      final questionType =
+                                                          preservedCoupleQuestionType ??
+                                                              (walkStateManager !=
+                                                                      null
+                                                                  ? (walkStateManager
+                                                                          .coupleQuestionType ??
+                                                                      'talk')
+                                                                  : 'talk');
+                                                      print(
+                                                          '🔥 DEBUG: 연인 질문 타입 (preserved: $preservedCoupleQuestionType, walkState: ${walkStateManager?.coupleQuestionType}): $questionType');
+                                                      candidateQuestion =
+                                                          await questionService
+                                                              .getQuestionForMate(
+                                                        selectedMate,
+                                                        coupleQuestionType:
+                                                            questionType,
+                                                      );
+                                                    } else if (selectedMate
+                                                        .startsWith('친구')) {
+                                                      final questionType =
+                                                          preservedFriendQuestionType ??
+                                                              (walkStateManager !=
+                                                                      null
+                                                                  ? (walkStateManager
+                                                                          .friendQuestionType ??
+                                                                      'talk')
+                                                                  : 'talk');
+                                                      candidateQuestion =
+                                                          await questionService
+                                                              .getQuestionForMate(
+                                                        selectedMate,
+                                                        friendQuestionType:
+                                                            questionType,
+                                                      );
+                                                    } else {
+                                                      // 혼자, 반려견, 가족 등
+                                                      candidateQuestion =
+                                                          await questionService
+                                                              .getQuestionForMate(
+                                                                  selectedMate);
+                                                    }
+
+                                                    // 다른 질문을 찾았으면 사용
+                                                    if (candidateQuestion !=
+                                                            null &&
+                                                        candidateQuestion !=
+                                                            question) {
+                                                      newQuestion =
+                                                          candidateQuestion;
+                                                      print(
+                                                          '🔥 DEBUG: 새로운 질문 찾음 (시도 ${attempt + 1}): $newQuestion');
+                                                      break;
+                                                    }
+
+                                                    print(
+                                                        '🔥 DEBUG: 시도 ${attempt + 1}: 같은 질문 또는 null');
+                                                  }
+
+                                                  // 새로운 질문으로 다이얼로그 업데이트
+                                                  print(
+                                                      '🔥 DEBUG: 새 질문으로 다이얼로그 업데이트: $newQuestion');
+                                                  Navigator.of(dialogContext)
+                                                      .pop();
+                                                  WaypointDialogs
+                                                      .showQuestionDialog(
+                                                    context,
+                                                    newQuestion,
+                                                    updateWaypointEventState,
+                                                    answerController.text
+                                                            .trim()
+                                                            .isNotEmpty
+                                                        ? answerController.text
+                                                            .trim()
+                                                        : null,
+                                                    selectedMate: selectedMate,
+                                                    walkStateManager:
+                                                        walkStateManager,
+                                                    isReloadAlreadyUsed: true,
+                                                    preservedCoupleQuestionType:
+                                                        preservedCoupleQuestionType ??
+                                                            (walkStateManager
+                                                                ?.coupleQuestionType),
+                                                    preservedFriendQuestionType:
+                                                        preservedFriendQuestionType ??
+                                                            (walkStateManager
+                                                                ?.friendQuestionType),
+                                                    hideReloadButton:
+                                                        hideReloadButton,
+                                                  );
+                                                } catch (e) {
+                                                  print(
+                                                      '🔥 DEBUG: 질문 로드 에러: $e');
+                                                  // 에러 발생 시 상태 복원
+                                                  setState(() {
+                                                    isReloading = false;
+                                                    reloadCount = 1;
+                                                    isReloadUsed = false;
+                                                  });
+
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                          '새로운 질문을 가져오는데 실패했습니다.'),
+                                                      backgroundColor:
+                                                          Colors.red.withValues(
+                                                              alpha: 0.8),
+                                                      duration: const Duration(
+                                                          seconds: 2),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                print(
+                                                    '🔥 DEBUG: selectedMate가 null이어서 질문 로드 불가');
+                                                // 질문 로드를 시도하지 않음 - selectedMate가 null
+                                                setState(() {
+                                                  isReloading = false;
+                                                  reloadCount = 1;
+                                                  isReloadUsed = false;
+                                                });
+
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        '메이트 정보가 없어서 새로운 질문을 가져올 수 없습니다.'),
+                                                    backgroundColor: Colors.red
+                                                        .withValues(alpha: 0.8),
+                                                    duration: const Duration(
+                                                        seconds: 2),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
+                                          horizontal: 12,
+                                          vertical: 8,
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: (isReloading || isReloadUsed)
-                                              ? Colors.grey
-                                                  .withValues(alpha: 0.8)
-                                              : Colors.orange
-                                                  .withValues(alpha: 0.8),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          '$reloadCount',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.refresh_rounded,
+                                              color: (isReloading ||
+                                                      isReloadUsed)
+                                                  ? Colors.grey
+                                                      .withValues(alpha: 0.8)
+                                                  : Colors.orange
+                                                      .withValues(alpha: 0.8),
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: (isReloading ||
+                                                        isReloadUsed)
+                                                    ? Colors.grey
+                                                        .withValues(alpha: 0.8)
+                                                    : Colors.orange
+                                                        .withValues(alpha: 0.8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '$reloadCount',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
