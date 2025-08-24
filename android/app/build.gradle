@@ -21,6 +21,18 @@ if (googleMapsApiKey == null || googleMapsApiKey.isEmpty()) {
     throw new RuntimeException("Google Maps API 키가 설정되지 않았습니다. assets/config/.env 파일에 GOOGLE_MAPS_API_KEY를 추가하세요.")
 }
 
+// 키스토어 속성 파일 읽기
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    println "✅ 키스토어 파일 로드 성공: ${keystorePropertiesFile.absolutePath}"
+    println "✅ 키스토어 속성: ${keystoreProperties}"
+} else {
+    println "❌ 키스토어 파일을 찾을 수 없음: ${keystorePropertiesFile.absolutePath}"
+    throw new RuntimeException("키스토어 파일을 찾을 수 없습니다: ${keystorePropertiesFile.absolutePath}")
+}
+
 android {
     namespace = "com.ikjun.walk"
     compileSdk = flutter.compileSdkVersion
