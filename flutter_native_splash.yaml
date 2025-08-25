@@ -1,0 +1,19 @@
+flutter_native_splash:
+  # 배경 색상만 설정 (이미지 제거)
+  color: "#1a1a2e"
+  
+  # 앱 아이콘 설정
+  image: "assets/images/app_icon.png"
+  
+  # iOS 설정
+  ios: true
+  
+  # 웹 설정 (사용 안함)
+  web: false
+  
+  # 전체 화면 설정
+  fullscreen: true
+  
+  # 정렬 설정
+  android_gravity: center
+  ios_content_mode: center
