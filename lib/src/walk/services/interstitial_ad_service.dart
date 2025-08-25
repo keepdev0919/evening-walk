@@ -3,7 +3,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 /// 전면광고 관리를 위한 서비스 (싱글톤)
 class InterstitialAdService {
-  static final InterstitialAdService _instance = InterstitialAdService._internal();
+  static final InterstitialAdService _instance =
+      InterstitialAdService._internal();
   factory InterstitialAdService() => _instance;
   InterstitialAdService._internal();
 
@@ -55,13 +56,13 @@ class InterstitialAdService {
     _interstitialAd = null;
   }
 
-  /// AdMob ID 반환 (테스트용 광고 단위 ID 사용)
+  /// AdMob ID 반환 (실제 광고 단위 ID 사용)
   String _getAdUnitId() {
-    // 테스트용 광고 ID - AdMob 계정 승인 후 실제 ID로 변경 필요
+    // 실제 광고 ID - AdMob 계정에서 생성된 전면광고 단위 ID
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // 테스트용 Android 전면광고
+      return 'ca-app-pub-3226220338912114/7270433935'; // Android 전면광고
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/4411468910'; // 테스트용 iOS 전면광고
+      return 'ca-app-pub-3226220338912114/5143782281'; // iOS 전면광고
     }
     return '';
   }

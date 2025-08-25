@@ -9,6 +9,7 @@ import '../widgets/region_selector_widget.dart';
 import '../widgets/gender_selector_widget.dart';
 // 이메일 로직 제거: 인스타그램 링크로 대체
 import 'package:walk/src/auth/services/logout_service.dart';
+import 'package:walk/src/auth/services/account_deletion_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:walk/src/auth/screens/login_page_screen.dart';
 import 'package:walk/src/auth/screens/onboarding_screen.dart';
@@ -544,7 +545,38 @@ class _ProfileState extends State<Profile> {
                                           ),
                                           onPressed: _confirmAndLogout,
                                         ),
-                                        // 회원탈퇴 버튼 제거 (테스트 단계에서는 Firebase 콘솔에서 직접 삭제)
+                                        // 회원탈퇴 버튼
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.delete_forever,
+                                              color: Colors.redAccent,
+                                              size: 18),
+                                          label: const Text(
+                                            '회원탈퇴',
+                                            style: TextStyle(
+                                                color: Colors.redAccent,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.redAccent,
+                                            backgroundColor: Colors.redAccent
+                                                .withValues(alpha: 0.08),
+                                            side: BorderSide(
+                                                color: Colors.redAccent
+                                                    .withValues(alpha: 0.4)),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ).copyWith(
+                                            overlayColor:
+                                                const WidgetStatePropertyAll(
+                                              Color.fromRGBO(244, 67, 54, 0.12),
+                                            ),
+                                          ),
+                                          onPressed: _confirmAndDeleteAccount,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -664,6 +696,197 @@ class _ProfileState extends State<Profile> {
   /// 실제 로그아웃 처리 (서비스 호출)
   Future<void> _performLogout() async {
     await AuthLogoutService.signOut();
+  }
+
+  /// 회원탈퇴 확인 다이얼로그 후 회원탈퇴 실행
+  Future<void> _confirmAndDeleteAccount() async {
+    // 1단계: 회원탈퇴 경고 다이얼로그
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.redAccent, width: 1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.warning, color: Colors.redAccent, size: 24),
+            const SizedBox(width: 8),
+            const Text('회원탈퇴 경고',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          '정말로 회원탈퇴를 진행하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.\n⚠️ 모든 데이터가 영구적으로 삭제됩니다.\n⚠️ 산책 기록, 프로필 정보 등이 모두 사라집니다.',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('진행'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldProceed != true) return;
+
+    // 2단계: 최종 확인 다이얼로그
+    final finalConfirmation = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.95),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.redAccent, width: 2),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_forever, color: Colors.redAccent, size: 28),
+            const SizedBox(width: 8),
+            const Text('최종 확인',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          '회원탈퇴를 최종 확인합니다.\n\n이 작업을 진행하면:\n• 계정이 영구적으로 삭제됩니다\n• 모든 데이터가 복구 불가능합니다\n• 앱을 다시 사용하려면 재가입이 필요합니다\n\n정말로 진행하시겠습니까?',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('아니오', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('네, 탈퇴합니다'),
+          ),
+        ],
+      ),
+    );
+
+    if (finalConfirmation != true) return;
+
+    // 실제 회원탈퇴 실행
+    try {
+      if (!mounted) return;
+
+      // 로딩 다이얼로그 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.black.withValues(alpha: 0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Colors.redAccent),
+              SizedBox(height: 16),
+              Text(
+                '회원탈퇴를 진행하고 있습니다...',
+                style: TextStyle(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // 회원탈퇴 서비스 실행
+      final result = await AccountDeletionService().deleteAccount();
+
+      if (!mounted) return;
+
+      // 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      if (result.isSuccess) {
+        // 성공 시 완료 다이얼로그
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.black.withValues(alpha: 0.9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.green, width: 1),
+            ),
+            title: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                const SizedBox(width: 8),
+                const Text('회원탈퇴 완료',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            content: const Text(
+              '회원탈퇴가 완료되었습니다.\n\n앱을 종료합니다.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  // 앱 종료
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // 실패 시 에러 다이얼로그
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('회원탈퇴 실패: ${result.message}'),
+            backgroundColor: Colors.red.withValues(alpha: 0.85),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      // 로딩 다이얼로그 닫기
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('회원탈퇴 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red.withValues(alpha: 0.85),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   /// 개발자에게 문의 - 인스타그램 계정으로 이동
