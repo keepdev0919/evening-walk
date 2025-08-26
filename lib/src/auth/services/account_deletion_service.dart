@@ -54,22 +54,46 @@ class AccountDeletionService {
 
   /// Firestore 사용자 데이터 삭제
   Future<void> _deleteFirestoreData(String uid) async {
+    // 각 삭제 단계를 독립적으로 처리하여 일부 실패해도 계속 진행
+    
+    // 1. 사용자별 산책 기록 서브컬렉션 삭제 (users/{uid}/walk_sessions)
+    await _deleteUserWalkSessions(uid);
+
+    // 2. 전역 산책 기록 데이터 삭제 (walk_sessions 컬렉션)
+    await _deleteWalkSessions(uid);
+
+    // 3. 사용자 기본 정보 삭제 (users/{uid} 문서)
     try {
-      // 사용자 기본 정보 삭제
       await _firestore.collection('users').doc(uid).delete();
-      LogService.debug('AccountDeletion', 'Firestore 사용자 데이터 삭제 완료');
-
-      // 산책 기록 데이터 삭제 (walk_sessions 컬렉션)
-      await _deleteWalkSessions(uid);
-
-      // 기타 사용자 관련 데이터가 있다면 여기에 추가
+      LogService.debug('AccountDeletion', 'Firestore 사용자 기본 정보 삭제 완료');
     } catch (e) {
-      LogService.error('AccountDeletion', 'Firestore 데이터 삭제 실패: $e');
-      // Firestore 삭제 실패는 전체 프로세스를 중단하지 않음
+      LogService.error('AccountDeletion', 'Firestore 사용자 기본 정보 삭제 실패: $e');
+    }
+
+    LogService.debug('AccountDeletion', 'Firestore 데이터 삭제 프로세스 완료');
+  }
+
+  /// 사용자별 산책 기록 서브컬렉션 삭제 (users/{uid}/walk_sessions)
+  Future<void> _deleteUserWalkSessions(String uid) async {
+    try {
+      final QuerySnapshot userWalkSessions = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('walk_sessions')
+          .get();
+
+      for (final doc in userWalkSessions.docs) {
+        await doc.reference.delete();
+      }
+
+      LogService.debug('AccountDeletion', 
+          '사용자별 산책 기록 ${userWalkSessions.docs.length}개 삭제 완료');
+    } catch (e) {
+      LogService.error('AccountDeletion', '사용자별 산책 기록 삭제 실패: $e');
     }
   }
 
-  /// 산책 기록 데이터 삭제
+  /// 전역 산책 기록 데이터 삭제 (walk_sessions 컬렉션)
   Future<void> _deleteWalkSessions(String uid) async {
     try {
       final QuerySnapshot walkSessions = await _firestore
@@ -81,19 +105,26 @@ class AccountDeletionService {
         await doc.reference.delete();
       }
 
-      LogService.debug(
-          'AccountDeletion', '산책 기록 ${walkSessions.docs.length}개 삭제 완료');
+      LogService.debug('AccountDeletion', 
+          '전역 산책 기록 ${walkSessions.docs.length}개 삭제 완료');
     } catch (e) {
-      LogService.error('AccountDeletion', '산책 기록 삭제 실패: $e');
+      LogService.error('AccountDeletion', '전역 산책 기록 삭제 실패: $e');
     }
   }
 
   /// Storage 프로필 이미지 삭제
   Future<void> _deleteStorageData(String uid) async {
     try {
-      final storageRef = _storage.ref().child('profile_images').child(uid);
-      await storageRef.delete();
-      LogService.debug('AccountDeletion', 'Storage 프로필 이미지 삭제 완료');
+      // 사용자 프로필 폴더의 모든 파일 삭제
+      final userFolderRef = _storage.ref().child('profile_images').child(uid);
+      final ListResult result = await userFolderRef.listAll();
+      
+      for (final Reference fileRef in result.items) {
+        await fileRef.delete();
+        LogService.debug('AccountDeletion', '프로필 이미지 삭제: ${fileRef.fullPath}');
+      }
+      
+      LogService.debug('AccountDeletion', 'Storage 프로필 이미지 삭제 완료 (${result.items.length}개)');
     } catch (e) {
       LogService.error('AccountDeletion', 'Storage 데이터 삭제 실패: $e');
       // Storage 삭제 실패는 전체 프로세스를 중단하지 않음

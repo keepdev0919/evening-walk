@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:walk/src/walk/services/walk_session_service.dart';
 import 'package:walk/src/walk/services/walk_state_manager.dart';
@@ -257,31 +256,143 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
           ),
           // 메인 콘텐츠
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                children: [
-                  // 위치 정보 헤더
-                  _buildLocationInfoHeader(),
+            child: GestureDetector(
+              onTap: () {
+                if (!isEditMode) {
+                  _showEditModeGuide();
+                }
+              },
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  children: [
+                    // 위치 정보 헤더
+                    _buildLocationInfoHeader(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // 경유지 경험 섹션 (편집 가능)
-                  if (widget.walkStateManager.waypointQuestion != null)
+                    // 경유지 경험 섹션 (편집 가능)
+                    if (widget.walkStateManager.waypointQuestion != null)
+                      _buildExperienceSection(
+                        title: '경유지에서',
+                        leading: const Icon(
+                          Icons.card_giftcard,
+                          color: Colors.orange,
+                          size: 18,
+                        ),
+                        trailing: _buildMateChip(widget.selectedMate!),
+                        content: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Q. ${widget.walkStateManager.waypointQuestion}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: answerEditController.text.trim().isEmpty &&
+                                      !isEditingAnswer
+                                  ? Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      child: const Text(
+                                        '답변을 남기지 않았어요.',
+                                        style: TextStyle(
+                                          color: Colors.white38,
+                                          fontSize: 14,
+                                          fontStyle: FontStyle.italic,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    )
+                                  : TextField(
+                                      controller: answerEditController,
+                                      readOnly: !isEditingAnswer,
+                                      maxLines: 2,
+                                      maxLength: 300,
+                                      onTap: !isEditingAnswer
+                                          ? () {
+                                              if (answerEditController.text
+                                                  .trim()
+                                                  .isNotEmpty) {
+                                                _showFullScreenText(
+                                                  '경유지 답변',
+                                                  answerEditController.text,
+                                                );
+                                              }
+                                            }
+                                          : null,
+                                      style: TextStyle(
+                                        color: isEditingAnswer
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 14,
+                                        height: 1.4,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: isEditingAnswer
+                                            ? '(답변을 입력하거나 수정하세요)'
+                                            : null,
+                                        hintStyle: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 13,
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.all(12),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildAnswerEditButtons(),
+                          ],
+                        ),
+                      ),
+
+                    if (widget.walkStateManager.waypointQuestion != null)
+                      const SizedBox(height: 16),
+
+                    // 목적지 경험 섹션 (편집 가능)
                     _buildExperienceSection(
-                      title: '경유지에서',
+                      title: '목적지에서',
                       leading: const Icon(
-                        Icons.card_giftcard,
-                        color: Colors.orange,
+                        Icons.flag,
+                        color: Colors.red,
                         size: 18,
                       ),
-                      trailing: _buildMateChip(widget.selectedMate!),
                       content: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Q. ${widget.walkStateManager.waypointQuestion}',
-                            style: const TextStyle(
+                          _buildPhotoSection(),
+                          const SizedBox(height: 8),
+                          _buildPhotoEditButtons(),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 소감 입력 섹션
+                    _buildExperienceSection(
+                      title: '💭 오늘의 소감',
+                      content: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '오늘 산책은 어떠셨나요?',
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -293,199 +404,86 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                               color: Colors.white.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                  color: Colors.white.withValues(alpha: 0.2)),
+                            ),
+                            child: TextField(
+                              controller: reflectionController,
+                              readOnly: !isEditingReflection,
+                              maxLines: 2,
+                              maxLength: 300,
+                              onTap: !isEditingReflection
+                                  ? () {
+                                      if (reflectionController.text
+                                          .trim()
+                                          .isNotEmpty) {
+                                        _showFullScreenText(
+                                          '오늘의 소감',
+                                          reflectionController.text,
+                                        );
+                                      }
+                                    }
+                                  : null,
+                              style: TextStyle(
+                                color: isEditingReflection
+                                    ? Colors.white
+                                    : Colors.white70,
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    '예) 날씨가 좋아서 기분이 좋았어요. 다음에도 이런 산책을 하고 싶어요.',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 13,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.all(12),
                               ),
                             ),
-                            child: answerEditController.text.trim().isEmpty &&
-                                    !isEditingAnswer
-                                ? Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    child: const Text(
-                                      '답변을 남기지 않았어요.',
-                                      style: TextStyle(
-                                        color: Colors.white38,
-                                        fontSize: 14,
-                                        fontStyle: FontStyle.italic,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  )
-                                : TextField(
-                                    controller: answerEditController,
-                                    readOnly: !isEditingAnswer,
-                                    maxLines: 2,
-                                    maxLength: 300,
-                                    onTap: !isEditingAnswer
-                                        ? () {
-                                            if (answerEditController.text
-                                                .trim()
-                                                .isNotEmpty) {
-                                              _showFullScreenText(
-                                                '경유지 답변',
-                                                answerEditController.text,
-                                              );
-                                            }
-                                          }
-                                        : null,
-                                    style: TextStyle(
-                                      color: isEditingAnswer
-                                          ? Colors.white
-                                          : Colors.white70,
-                                      fontSize: 14,
-                                      height: 1.4,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: isEditingAnswer
-                                          ? '(답변을 입력하거나 수정하세요)'
-                                          : null,
-                                      hintStyle: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 13,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.all(12),
-                                    ),
-                                  ),
                           ),
                           const SizedBox(height: 8),
-                          _buildAnswerEditButtons(),
+                          _buildReflectionEditButtons(),
                         ],
                       ),
                     ),
 
-                  if (widget.walkStateManager.waypointQuestion != null)
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  // 목적지 경험 섹션 (편집 가능)
-                  _buildExperienceSection(
-                    title: '목적지에서',
-                    leading: const Icon(
-                      Icons.flag,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 내가 찍은 사진 섹션
-                        const Text(
-                          '내가 찍은 사진',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildPhotoSection(),
-                        const SizedBox(height: 8),
-                        _buildPhotoEditButtons(),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 소감 입력 섹션
-                  _buildExperienceSection(
-                    title: '💭 오늘의 소감',
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '오늘 산책은 어떠셨나요?',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2)),
-                          ),
-                          child: TextField(
-                            controller: reflectionController,
-                            readOnly: !isEditingReflection,
-                            maxLines: 2,
-                            maxLength: 300,
-                            onTap: !isEditingReflection
-                                ? () {
-                                    if (reflectionController.text
-                                        .trim()
-                                        .isNotEmpty) {
-                                      _showFullScreenText(
-                                        '오늘의 소감',
-                                        reflectionController.text,
-                                      );
-                                    }
-                                  }
-                                : null,
+                    // 버튼 영역
+                    if (widget.isViewMode)
+                      // 읽기 모드: 닫기 버튼만 표시
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          label: const Text(
+                            '닫기',
                             style: TextStyle(
-                              color: isEditingReflection
-                                  ? Colors.white
-                                  : Colors.white70,
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
-                            decoration: InputDecoration(
-                              hintText:
-                                  '예) 날씨가 좋아서 기분이 좋았어요. 다음에도 이런 산책을 하고 싶어요.',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 13,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(12),
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildReflectionEditButtons(),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 버튼 영역
-                  if (widget.isViewMode)
-                    // 읽기 모드: 닫기 버튼만 표시
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        label: const Text(
-                          '닫기',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.withValues(alpha: 0.8),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3)),
+                            ),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.withValues(alpha: 0.8),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                                color: Colors.grey.withValues(alpha: 0.3)),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    // 편집 모드: 저장 및 공유 버튼
-                    _buildActionButtons(),
-                ],
+                      )
+                    else
+                      // 편집 모드: 저장 및 공유 버튼
+                      _buildActionButtons(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -2807,6 +2805,26 @@ extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
         hasPhotoChanged ||
         hasStartNameChanged ||
         hasDestinationNameChanged;
+  }
+
+  /// 편집 모드 안내 스낵바
+  void _showEditModeGuide() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('상단의 연필 아이콘을 눌러 편집하세요!'),
+        backgroundColor: Colors.black.withValues(alpha: 0.6),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(
+            color: Colors.white,
+            width: 1,
+          ),
+        ),
+      ),
+    );
   }
 
   /// 성공 스낵바

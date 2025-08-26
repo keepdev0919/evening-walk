@@ -15,7 +15,7 @@ class AppleAuthService {
       // Apple 로그인 요청
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
-          AppleIDAuthorizationScopes.email,
+          // AppleIDAuthorizationScopes.email, // 이메일 스코프 제거
           AppleIDAuthorizationScopes.fullName,
         ],
       );
@@ -66,11 +66,12 @@ class AppleAuthService {
 
       await userDoc.set({
         'uid': user.uid,
-        'email': user.email ?? '',
+        // 'email': user.email ?? '', // 이메일 필드 제거
         'provider': 'apple',
         'profileImageUrl': finalProfileUrl,
         // 더 이상 사용하지 않는 legacy 키 정리
         'profileImage': FieldValue.delete(),
+        'email': FieldValue.delete(), // 기존 이메일 필드도 삭제
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 

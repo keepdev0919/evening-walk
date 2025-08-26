@@ -1,17 +1,25 @@
 /// 문자열 유효성 검사를 위한 유틸리티 클래스
 /// 앱 전반에서 사용되는 문자열 검증 로직을 중앙화
 class StringValidationUtils {
-  
   /// 플레이스홀더 문자들 (지역에 따라 반환되는 무의미한 문자들)
-  static const _placeholderChars = {'.', '·', '-', '_', '?', '정보없음', 'N/A', 'null'};
+  static const _placeholderChars = {
+    '.',
+    '·',
+    '-',
+    '_',
+    '?',
+    '정보없음',
+    'N/A',
+    'null'
+  };
 
   /// 주어진 문자열이 유효하지 않은 플레이스홀더인지 확인
   static bool isInvalidPlaceholder(String? value) {
     if (value == null) return true;
-    
+
     final trimmed = value.trim();
     if (trimmed.isEmpty) return true;
-    
+
     // 소문자로 변환하여 대소문자 구분 없이 비교
     final lowerValue = trimmed.toLowerCase();
     return _placeholderChars.contains(lowerValue);
@@ -20,7 +28,7 @@ class StringValidationUtils {
   /// 문자열을 안전하게 정리 (null, 빈 문자열, 플레이스홀더 제거)
   static String? sanitizeString(String? value) {
     if (isInvalidPlaceholder(value)) return null;
-    
+
     return value!.trim();
   }
 
@@ -35,20 +43,13 @@ class StringValidationUtils {
     return null;
   }
 
-  /// 이메일 형식 검증
-  static bool isValidEmail(String? email) {
-    if (email == null || email.isEmpty) return false;
-    
-    final emailRegex = RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    );
-    return emailRegex.hasMatch(email);
-  }
+  // 이메일 검증 함수 제거 - 더 이상 사용하지 않음
+  // static bool isValidEmail(String? email) { ... }
 
   /// 한국 전화번호 형식 검증
   static bool isValidKoreanPhoneNumber(String? phone) {
     if (phone == null || phone.isEmpty) return false;
-    
+
     // 하이픈 제거 후 검증
     final cleanPhone = phone.replaceAll('-', '').replaceAll(' ', '');
     final phoneRegex = RegExp(r'^(010|011|016|017|018|019)[0-9]{7,8}$');
@@ -58,12 +59,12 @@ class StringValidationUtils {
   /// 문자열 길이 검증 (최소/최대 길이)
   static bool isValidLength(String? value, {int? minLength, int? maxLength}) {
     if (value == null) return minLength == null || minLength == 0;
-    
+
     final length = value.length;
-    
+
     if (minLength != null && length < minLength) return false;
     if (maxLength != null && length > maxLength) return false;
-    
+
     return true;
   }
 
@@ -71,7 +72,7 @@ class StringValidationUtils {
   static bool isValidNickname(String? nickname) {
     if (nickname == null || nickname.isEmpty) return false;
     if (!isValidLength(nickname, minLength: 2, maxLength: 12)) return false;
-    
+
     final nicknameRegex = RegExp(r'^[가-힣a-zA-Z0-9_]+$');
     return nicknameRegex.hasMatch(nickname);
   }
@@ -99,7 +100,7 @@ class StringValidationUtils {
   static List<String> removeDuplicates(List<String?> values) {
     final seen = <String>{};
     final result = <String>[];
-    
+
     for (final value in values) {
       final sanitized = sanitizeString(value);
       if (sanitized != null && !seen.contains(sanitized)) {
@@ -107,7 +108,7 @@ class StringValidationUtils {
         result.add(sanitized);
       }
     }
-    
+
     return result;
   }
 }

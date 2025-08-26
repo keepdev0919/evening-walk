@@ -24,7 +24,7 @@ Future<bool> signInWithKakao() async {
 
     // 2. 카카오 사용자 정보 가져오기
     final kakaoUser = await UserApi.instance.me();
-    final email = kakaoUser.kakaoAccount?.email ?? '';
+    // final email = kakaoUser.kakaoAccount?.email ?? ''; // 이메일 필드 제거
     final profileImage = kakaoUser.kakaoAccount?.profile?.profileImageUrl ?? '';
 
     //1.provider 만들기
@@ -64,11 +64,12 @@ Future<bool> signInWithKakao() async {
 
     await userDoc.set({
       'uid': user.uid,
-      'email': email,
+      // 'email': email, // 이메일 필드 제거
       'provider': 'kakao',
       'profileImageUrl': finalProfileUrl,
       // 더 이상 사용하지 않는 legacy 키 정리
       'profileImage': FieldValue.delete(),
+      'email': FieldValue.delete(), // 기존 이메일 필드도 삭제
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // 중복 로그인 대비
 

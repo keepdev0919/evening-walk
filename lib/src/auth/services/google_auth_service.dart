@@ -62,11 +62,12 @@ Future<bool> signInWithGoogle() async {
 
     await userDoc.set({
       'uid': user.uid,
-      'email': user.email ?? '',
+      // 'email': user.email ?? '', // 이메일 필드 제거
       'provider': 'google',
       'profileImageUrl': finalProfileUrl,
       // 더 이상 사용하지 않는 legacy 키 정리
       'profileImage': FieldValue.delete(),
+      'email': FieldValue.delete(), // 기존 이메일 필드도 삭제
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // merge: true → 중복 로그인 시 덮어쓰기 방지
 
