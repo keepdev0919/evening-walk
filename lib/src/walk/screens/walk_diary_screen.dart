@@ -203,10 +203,6 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             onPressed: () {
               if (isEditMode) {
                 // 편집 모드 종료 시 변경사항 확인
-                if (_hasChanges()) {
-                  _showSuccessSnackBar('저장되었습니다! ✨');
-                }
-
                 setState(() {
                   isEditMode = false;
                   // 편집 모드가 꺼지면 모든 편집 상태도 초기화
@@ -778,17 +774,37 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               if (tempPhotoPath != null) {
                 widget.walkStateManager
                     .saveAnswerAndPhoto(photoPath: tempPhotoPath);
+
+                // Firebase도 함께 업데이트하여 데이터 일관성 유지
+                if (widget.sessionId != null) {
+                  try {
+                    await WalkSessionService().updateWalkSession(
+                      widget.sessionId!,
+                      {
+                        'takenPhotoPath': tempPhotoPath, // 새로운 사진 경로로 업데이트
+                        'updatedAt': DateTime.now().toIso8601String(),
+                      },
+                    );
+                    LogService.info('Walk', '사진 편집 완료: Firebase 업데이트 성공');
+
+                    // 새로운 사진이므로 백그라운드에서 Firebase Storage로 업로드 시작
+                    final uploadProvider =
+                        Provider.of<UploadProvider>(context, listen: false);
+                    uploadProvider.startBackgroundUpload(
+                      widget.sessionId!,
+                      tempPhotoPath!, // null 체크를 이미 했으므로 안전함
+                    );
+                  } catch (e) {
+                    LogService.error('Walk', '사진 편집 완료: Firebase 업데이트 실패', e);
+                    // Firebase 업데이트 실패 시에도 로컬은 업데이트하여 사용자 경험 유지
+                  }
+                }
+
                 setState(() {
                   currentPhotoPath = tempPhotoPath;
                   tempPhotoPath = null;
                   isEditingPhoto = false;
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('사진이 저장되었습니다. ✨'),
-                    backgroundColor: Colors.black.withValues(alpha: 0.6),
-                  ),
-                );
               }
             } else {
               // 편집 모드 시작 또는 사진 촬영

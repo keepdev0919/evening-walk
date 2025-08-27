@@ -25,12 +25,6 @@ class WaypointDialogs {
       iconColor: Colors.orange,
       message: '경유지 이벤트를 확인해봐요!',
       onEventConfirm: () async {
-        // 전면광고 표시 (미리 로드된 광고 사용)
-        final adService = InterstitialAdService();
-        await adService.showInterstitialAd();
-        // 광고 표시 후 다음 광고 미리 로드
-        unawaited(adService.loadInterstitialAd());
-
         // 연인 모드: 질문 종류 선택 다이얼로그 표시
         if (selectedMate == '연인') {
           _showQuestionTypeSelector(context).then((selection) async {
