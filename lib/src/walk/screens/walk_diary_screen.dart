@@ -1156,25 +1156,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                       SnackBar(
                         content: const Text(
                           '산책이 저장되었습니다 ✨',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                         backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        duration: const Duration(seconds: 2),
+                        duration: const Duration(seconds: 1),
                         behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 48, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(
-                            color: Colors.white,
-                            width: 1,
-                          ),
-                        ),
                       ),
                     );
 
@@ -1222,25 +1207,10 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                       SnackBar(
                         content: const Text(
                           '산책이 저장되었습니다 ✨',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                         backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        duration: const Duration(seconds: 2),
+                        duration: const Duration(seconds: 1),
                         behavior: SnackBarBehavior.floating,
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 48, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(
-                            color: Colors.white,
-                            width: 1,
-                          ),
-                        ),
                       ),
                     );
 
@@ -2827,18 +2797,10 @@ extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
   void _showEditModeGuide() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('상단의 연필 아이콘을 눌러 편집하세요!'),
+        content: const Text('상단 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
         backgroundColor: Colors.black.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(
-            color: Colors.white,
-            width: 1,
-          ),
-        ),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
