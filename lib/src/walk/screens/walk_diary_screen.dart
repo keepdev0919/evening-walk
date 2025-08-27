@@ -1152,31 +1152,18 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     widget.onWalkCompleted(true);
 
                     // 저장 성공 스낵바 표시
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          '산책이 저장되었습니다 ✨',
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            '산책이 저장되었습니다 ✨',
+                          ),
+                          backgroundColor: Colors.black.withValues(alpha: 0.6),
+                          duration: const Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
                         ),
-                        backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-
-                    // 1초 후 홈화면으로 이동
-                    Future.delayed(const Duration(seconds: 1), () {
-                      if (widget.returnRoute != null) {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          widget.returnRoute!,
-                          (route) => false,
-                        );
-                      } else {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/homescreen',
-                          (route) => false,
-                        );
-                      }
-                    });
+                      );
+                    }
                   } else {
                     ToastService.showError('업데이트에 실패했습니다. 다시 시도해주세요.');
                   }
@@ -1203,25 +1190,27 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     widget.onWalkCompleted(true);
 
                     // 저장 성공 스낵바 표시
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          '산책이 저장되었습니다 ✨',
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            '산책이 저장되었습니다 ✨',
+                          ),
+                          backgroundColor: Colors.black.withValues(alpha: 0.6),
+                          duration: const Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
                         ),
-                        backgroundColor: Colors.black.withValues(alpha: 0.6),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                      );
+                    }
 
                     // 1초 후 홈화면으로 이동
                     Future.delayed(const Duration(seconds: 1), () {
-                      if (widget.returnRoute != null) {
+                      if (mounted && widget.returnRoute != null) {
                         Navigator.of(context).pushNamedAndRemoveUntil(
                           widget.returnRoute!,
                           (route) => false,
                         );
-                      } else {
+                      } else if (mounted) {
                         Navigator.of(context).pushNamedAndRemoveUntil(
                           '/homescreen',
                           (route) => false,
@@ -2431,16 +2420,24 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
 
   /// 공유 중 오류 발생 시 스낵바 표시
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    // 위젯이 여전히 트리에 있는지 확인
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      // 에러가 발생해도 앱이 크래시되지 않도록 처리
+      debugPrint('에러 스낵바 표시 실패: $e');
+    }
   }
 
   /// Firebase Analytics 산책 완료 이벤트 기록
@@ -2795,40 +2792,56 @@ extension _WalkDiaryScreenStateHelper on _WalkDiaryScreenState {
 
   /// 편집 모드 안내 스낵바
   void _showEditModeGuide() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('상단 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
-        backgroundColor: Colors.black.withValues(alpha: 0.6),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    // 위젯이 여전히 트리에 있는지 확인
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('상단 연필 아이콘을 누르면 편집할 수 있어요. ✨'),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      // 에러가 발생해도 앱이 크래시되지 않도록 처리
+      debugPrint('스낵바 표시 실패: $e');
+    }
   }
 
   /// 성공 스낵바
   void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    // 위젯이 여전히 트리에 있는지 확인
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.black.withValues(alpha: 0.6),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(
+              color: Colors.white,
+              width: 1,
+            ),
           ),
         ),
-        backgroundColor: Colors.black.withValues(alpha: 0.6),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(
-            color: Colors.white,
-            width: 1,
-          ),
-        ),
-      ),
-    );
+      );
+    } catch (e) {
+      // 에러가 발생해도 앱이 크래시되지 않도록 처리
+      debugPrint('성공 스낵바 표시 실패: $e');
+    }
   }
 }

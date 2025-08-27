@@ -1,0 +1,41 @@
+현재 Storage 규칙의 문제점과 수정안:
+
+=== 현재 문제 ===
+user_photos/{userId}/{fileName} 규칙에서:
+- list 권한이 request.auth.uid == userId 조건만 있음
+- 회원탈퇴 시 listAll() 호출할 때 권한 부족으로 403 에러 발생
+
+=== 해결책 1: Storage 규칙 수정 (권장) ===
+user_photos/{userId} 폴더 레벨에서 list 권한을 별도로 처리:
+
+// 수정된 Storage 규칙:
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // ... 기존 규칙들 ...
+
+    // 3) 사용자 산책 사진: 소유자만 접근
+    // 폴더 레벨에서 list 권한 별도 처리
+    match /user_photos/{userId} {
+      allow list: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 파일 레벨에서 get/write 권한 처리
+    match /user_photos/{userId}/{fileName} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && (request.resource == null || (
+                        request.resource.size < 20 * 1024 * 1024
+                        && request.resource.contentType.matches('image/.*')
+                        && fileName.matches('(?i).+\\.(png|jpe?g|webp)$')
+                      ));
+    }
+
+    // ... 기존 규칙들 ...
+  }
+}
+
+=== 해결책 2: 코드에서 권한 확인 추가 (임시 방편) ===
+AccountDeletionService에서 Storage 삭제 전에 auth 상태 확인

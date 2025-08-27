@@ -276,10 +276,6 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
           backgroundColor: Colors.black.withValues(alpha: 0.6),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
         ),
       );
     }

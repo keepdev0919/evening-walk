@@ -83,8 +83,8 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
 
   // --- 방향(컴퍼스) 관련 ---
   double? _currentHeading; // 현재 각도(도)
-  late AnimationController _headingAnimationController;
-  late Animation<double> _headingAnimation; // 라디안 단위
+  AnimationController? _headingAnimationController; // nullable로 변경
+  Animation<double>? _headingAnimation; // nullable로 변경
   // 컴퍼스 직접 구독 제거. HeadingController를 사용합니다.
   // StreamSubscription<CompassEvent>? _compassSubscription; // deprecated
   HeadingController? _headingController;
@@ -106,6 +106,11 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     if (widget.preloadedPosition != null) {
       _isLoading = false;
       _currentPosition = widget.preloadedPosition;
+      // preloadedPosition이 있어도 _headingAnimationController는 초기화해야 함
+      _headingAnimationController = AnimationController(
+          duration: const Duration(milliseconds: 500), vsync: this);
+      _headingAnimation = Tween<double>(begin: 0.0, end: 0.0)
+          .animate(_headingAnimationController!);
       return;
     }
 
@@ -115,7 +120,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     _headingAnimationController = AnimationController(
         duration: const Duration(milliseconds: 500), vsync: this);
     _headingAnimation = Tween<double>(begin: 0.0, end: 0.0)
-        .animate(_headingAnimationController);
+        .animate(_headingAnimationController!);
 
     // 통합 헤딩 컨트롤러 시작 및 구독 (지도의 bearing 보정 적용)
     _headingController = HeadingController()..start();
@@ -144,7 +149,7 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     _headingSub?.cancel();
     _headingController?.dispose();
     _positionStreamSubscription?.cancel();
-    _headingAnimationController.dispose();
+    _headingAnimationController?.dispose();
     super.dispose();
   }
 
@@ -154,12 +159,18 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
   // 사용하지 않는 보간 함수는 제거 (경량화)
 
   void _updateUserHeading(double newHeading) {
+    // _headingAnimationController가 null이면 초기화
+    if (_headingAnimationController == null) {
+      _headingAnimationController = AnimationController(
+          duration: const Duration(milliseconds: 500), vsync: this);
+    }
+
     if (_currentHeading == null) {
       _currentHeading = newHeading;
       _headingAnimation = Tween<double>(
         begin: newHeading * (3.14159 / 180),
         end: newHeading * (3.14159 / 180),
-      ).animate(_headingAnimationController);
+      ).animate(_headingAnimationController!);
       if (mounted) setState(() {});
       return;
     }
@@ -179,10 +190,10 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
     }
     _headingAnimation = Tween<double>(begin: fromAngle, end: toAngle).animate(
       CurvedAnimation(
-          parent: _headingAnimationController, curve: Curves.easeInOut),
+          parent: _headingAnimationController!, curve: Curves.easeInOut),
     );
     _currentHeading = newHeading;
-    _headingAnimationController.forward(from: 0.0);
+    _headingAnimationController!.forward(from: 0.0);
   }
 
   /// 지도가 생성될 때 호출되는 콜백 함수입니다.
@@ -1591,13 +1602,39 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
               top: _userOverlayOffset!.dy - 12,
               child: IgnorePointer(
                 ignoring: true,
-                child: AnimatedBuilder(
-                  animation: _headingAnimation,
-                  builder: (context, child) {
-                    return Transform.rotate(
-                      alignment: Alignment.center,
-                      angle: _headingAnimation.value,
-                      child: Container(
+                child: _headingAnimation != null
+                    ? AnimatedBuilder(
+                        animation: _headingAnimation!,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            alignment: Alignment.center,
+                            angle: _headingAnimation!.value,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue.withValues(alpha: 0.9),
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.navigation,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
@@ -1618,9 +1655,6 @@ class _WalkStartMapScreenState extends State<WalkStartMapScreen>
                           size: 16,
                         ),
                       ),
-                    );
-                  },
-                ),
               ),
             ),
           // 현재 위치에 붙는 말풍선 오버레이 (시작 화면 전용 텍스트)

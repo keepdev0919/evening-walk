@@ -784,7 +784,7 @@ class _ProfileState extends State<Profile> {
 
     if (finalConfirmation != true) return;
 
-    // 실제 회원탈퇴 실행
+    // 실제 회원탈퇴 실행 (타임아웃 처리 포함)
     try {
       if (!mounted) return;
 
@@ -807,13 +807,28 @@ class _ProfileState extends State<Profile> {
                 style: TextStyle(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
+              SizedBox(height: 8),
+              Text(
+                '이 작업은 최대 30초 정도 소요될 수 있습니다.',
+                style: TextStyle(color: Colors.white60, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
       );
 
-      // 회원탈퇴 서비스 실행
-      final result = await AccountDeletionService().deleteAccount();
+      // 회원탈퇴 서비스 실행 (타임아웃 30초)
+      final result = await Future.any([
+        AccountDeletionService().deleteAccount(),
+        Future.delayed(const Duration(seconds: 30)).then((_) => 
+          AccountDeletionResult(
+            isSuccess: false, 
+            message: '회원탈퇴 처리 시간이 초과되었습니다. 네트워크를 확인하고 다시 시도해주세요.',
+            failedStep: '타임아웃',
+          )
+        ),
+      ]);
 
       if (!mounted) return;
 
@@ -822,70 +837,174 @@ class _ProfileState extends State<Profile> {
 
       if (result.isSuccess) {
         // 성공 시 완료 다이얼로그
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: Colors.black.withValues(alpha: 0.9),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: Colors.green, width: 1),
-            ),
-            title: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 24),
-                const SizedBox(width: 8),
-                const Text('회원탈퇴 완료',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w700)),
-              ],
-            ),
-            content: const Text(
-              '회원탈퇴가 완료되었습니다.\n\n앱을 종료합니다.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  // 앱 종료
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('확인'),
-              ),
-            ],
-          ),
-        );
+        await _showAccountDeletionSuccessDialog();
       } else {
-        // 실패 시 에러 다이얼로그
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('회원탈퇴 실패: ${result.message}'),
-            backgroundColor: Colors.red.withValues(alpha: 0.85),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        // 실패 시 에러 다이얼로그 (실패한 단계 정보 포함)
+        _showAccountDeletionErrorDialog(result.message, result.failedStep);
       }
     } catch (e) {
       if (!mounted) return;
 
-      // 로딩 다이얼로그 닫기
-      Navigator.of(context).pop();
+      // 로딩 다이얼로그 닫기 (안전하게)
+      try {
+        Navigator.of(context).pop();
+      } catch (_) {
+        // 다이얼로그가 이미 닫힌 경우 무시
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('회원탈퇴 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red.withValues(alpha: 0.85),
-          duration: const Duration(seconds: 3),
+      _showAccountDeletionErrorDialog('회원탈퇴 처리 중 예상치 못한 오류가 발생했습니다: $e', '예상치못한오류');
+    }
+  }
+
+  /// 회원탈퇴 성공 다이얼로그 표시
+  Future<void> _showAccountDeletionSuccessDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.green, width: 1.5),
         ),
-      );
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 28),
+            const SizedBox(width: 12),
+            const Text('회원탈퇴 완료',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
+          ],
+        ),
+        content: const Text(
+          '회원탈퇴가 성공적으로 완료되었습니다.\n\n✓ 모든 개인 데이터 삭제 완료\n✓ 산책 기록 삭제 완료\n✓ 계정 삭제 완료\n\n그동안 저녁 산책을 이용해주셔서 감사했습니다.',
+          style: TextStyle(color: Colors.white70, height: 1.5),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              // 안전한 로그아웃 및 화면 전환
+              await _safeLogoutAndNavigate();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('로그인 화면으로', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 회원탈퇴 실패 다이얼로그 표시 (상세 정보 포함)
+  void _showAccountDeletionErrorDialog(String errorMessage, [String? failedStep]) {
+    String detailedMessage = errorMessage;
+    
+    // 실패한 단계에 따른 추가 안내 메시지
+    if (failedStep != null) {
+      switch (failedStep) {
+        case 'Firestore 데이터 삭제':
+          detailedMessage += '\n\n희드지만 일부 데이터가 삭제되었을 수 있습니다.';
+          break;
+        case 'Storage 데이터 삭제':
+          detailedMessage += '\n\n계정 데이터는 삭제되었지만 사진 파일 삭제에 문제가 있었습니다.';
+          break;
+        case 'Auth 계정 삭제':
+          detailedMessage += '\n\n데이터는 삭제되었지만 계정 삭제에 문제가 있었습니다. 잠시 후 다시 시도해주세요.';
+          break;
+        case '타임아웃':
+          detailedMessage += '\n\n네트워크 연결을 확인하고 WiFi나 모바일 데이터가 안정적인지 확인해주세요.';
+          break;
+      }
+    }
+    
+    // 더 상세한 오류 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.redAccent, width: 1),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent, size: 24),
+            const SizedBox(width: 8),
+            const Text('회원탈퇴 실패',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            detailedMessage,
+            style: const TextStyle(color: Colors.white70, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('확인', 
+                style: TextStyle(color: Colors.white70)),
+          ),
+          if (failedStep == '타임아웃' || failedStep == 'Auth 계정 삭제')
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                // 재시도 로직
+                _confirmAndDeleteAccount();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.8),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('다시 시도'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 안전한 로그아웃 및 화면 전환
+  Future<void> _safeLogoutAndNavigate() async {
+    try {
+      LogService.info('Profile', '회원탈퇴 성공 후 로그인 화면으로 이동 시작');
+      
+      // 1단계: Firebase Auth에서 로그아웃 (이미 삭제된 계정일 수 있음)
+      try {
+        await FirebaseAuth.instance.signOut();
+        LogService.info('Profile', '로그아웃 완료');
+      } catch (e) {
+        // 계정이 이미 삭제된 경우 로그아웃 실패할 수 있음
+        LogService.info('Profile', '로그아웃 실패 (계정 이미 삭제된 경우): $e');
+      }
+
+      // 2단계: 잠시 대기 (Firebase 상태 동기화)
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 3단계: 로그인 화면으로 이동 (모든 이전 화면 제거)
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // 로그아웃 실패 시에도 강제로 화면 전환
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
+      }
     }
   }
 

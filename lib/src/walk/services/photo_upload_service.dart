@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walk/src/core/services/log_service.dart';
@@ -8,78 +9,107 @@ class PhotoUploadService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// 목적지 사진을 Firebase Storage에 업로드
+  /// 목적지 사진을 Firebase Storage에 업로드 (재시도 포함)
   /// 
   /// [filePath]: 로컬 사진 파일 경로
   /// [sessionId]: 산책 세션 ID (파일명에 사용)
   /// [onProgress]: 업로드 진행률 콜백 (0.0 ~ 1.0)
+  /// [maxRetries]: 최대 재시도 횟수 (기본값 3)
   /// 
   /// Returns: 업로드된 사진의 다운로드 URL, 실패 시 null
   Future<String?> uploadDestinationPhoto({
     required String filePath,
     required String sessionId,
     Function(double progress)? onProgress,
+    int maxRetries = 3,
   }) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        LogService.warning('Walk', 'PhotoUploadService: 사용자가 로그인되지 않음');
-        return null;
-      }
-
-      final file = File(filePath);
-      if (!await file.exists()) {
-        LogService.info('Walk', 'PhotoUploadService: 파일이 존재하지 않음: $filePath');
-        return null;
-      }
-
-      // Storage 경로: user_photos/{userId}/{sessionId}_destination.jpg
-      final String fileName = '${sessionId}_destination.jpg';
-      final String storagePath = 'user_photos/${user.uid}/$fileName';
-
-      LogService.info('Walk', 'PhotoUploadService: 업로드 시작 - $storagePath');
-
-      // Firebase Storage에 업로드
-      final Reference ref = _storage.ref().child(storagePath);
-      final UploadTask uploadTask = ref.putFile(
-        file,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-          customMetadata: {
-            'sessionId': sessionId,
-            'uploadedBy': user.uid,
-            'uploadedAt': DateTime.now().millisecondsSinceEpoch.toString(),
-          },
-        ),
-      );
-
-      // 업로드 진행률 모니터링
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        LogService.info('Walk', 'PhotoUploadService: 업로드 진행률: ${(progress * 100).toStringAsFixed(1)}%');
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        LogService.info('Walk', 'PhotoUploadService: 업로드 시도 $attempt/$maxRetries');
         
-        // 진행률 콜백 호출
-        if (onProgress != null) {
-          onProgress(progress);
+        final user = _auth.currentUser;
+        if (user == null) {
+          LogService.warning('Walk', 'PhotoUploadService: 사용자가 로그인되지 않음');
+          return null;
         }
-      });
 
-      // 업로드 완료 대기
-      final TaskSnapshot snapshot = await uploadTask;
-      
-      if (snapshot.state == TaskState.success) {
-        // 다운로드 URL 획득
-        final String downloadUrl = await ref.getDownloadURL();
-        LogService.info('Walk', 'PhotoUploadService: 업로드 완료 - URL: $downloadUrl');
-        return downloadUrl;
-      } else {
-        LogService.info('Walk', 'PhotoUploadService: 업로드 실패 - State: ${snapshot.state}');
-        return null;
+        final file = File(filePath);
+        if (!await file.exists()) {
+          LogService.warning('Walk', 'PhotoUploadService: 파일이 존재하지 않음: $filePath');
+          return null;
+        }
+
+        // 파일 크기 및 형식 검증
+        final int fileSizeBytes = await file.length();
+        final double fileSizeMB = fileSizeBytes / (1024 * 1024);
+        LogService.info('Walk', 'PhotoUploadService: 업로드할 파일 크기: ${fileSizeMB.toStringAsFixed(2)}MB');
+        
+        if (fileSizeMB > 20) {
+          LogService.warning('Walk', 'PhotoUploadService: 파일 크기가 너무 큼 (${fileSizeMB.toStringAsFixed(2)}MB > 20MB)');
+          return null;
+        }
+
+        // Storage 경로: user_photos/{userId}/{sessionId}_destination.jpg
+        final String fileName = '${sessionId}_destination.jpg';
+        final String storagePath = 'user_photos/${user.uid}/$fileName';
+
+        LogService.info('Walk', 'PhotoUploadService: 업로드 시작 - $storagePath');
+
+        // Firebase Storage에 업로드
+        final Reference ref = _storage.ref().child(storagePath);
+        final UploadTask uploadTask = ref.putFile(
+          file,
+          SettableMetadata(
+            contentType: 'image/jpeg',
+            customMetadata: {
+              'sessionId': sessionId,
+              'uploadedBy': user.uid,
+              'uploadedAt': DateTime.now().millisecondsSinceEpoch.toString(),
+              'originalPath': filePath,
+            },
+          ),
+        );
+
+        // 업로드 진행률 모니터링 (첫 번째 시도에서만)
+        if (attempt == 1 && onProgress != null) {
+          uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+            final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+            LogService.info('Walk', 'PhotoUploadService: 업로드 진행률: ${(progress * 100).toStringAsFixed(1)}%');
+            onProgress(progress);
+          });
+        }
+
+        // 업로드 완료 대기 (타임아웃 30초)
+        final TaskSnapshot snapshot = await uploadTask.timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException('업로드 타임아웃 (30초)', const Duration(seconds: 30));
+          },
+        );
+        
+        if (snapshot.state == TaskState.success) {
+          // 다운로드 URL 획득
+          final String downloadUrl = await ref.getDownloadURL();
+          LogService.info('Walk', 'PhotoUploadService: 목적지 사진 업로드 성공 - URL: $downloadUrl');
+          return downloadUrl;
+        } else {
+          throw Exception('업로드 상태 비정상: ${snapshot.state}');
+        }
+        
+      } catch (e) {
+        LogService.warning('Walk', 'PhotoUploadService: 업로드 시도 $attempt/$maxRetries 실패: $e');
+        
+        if (attempt == maxRetries) {
+          LogService.error('Walk', 'PhotoUploadService: 목적지 사진 업로드 최종 실패 ($maxRetries회 시도)', e);
+          return null;
+        }
+        
+        // 재시도 전 대기
+        await Future.delayed(Duration(seconds: attempt * 2));
       }
-    } catch (e) {
-      LogService.error('Walk', 'PhotoUploadService: 사진 업로드 중 오류 발생', e);
-      return null;
     }
+    
+    return null;
   }
 
   /// 업로드된 사진 삭제

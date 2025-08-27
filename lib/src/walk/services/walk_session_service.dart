@@ -3,13 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walk/src/walk/models/walk_session.dart';
 import 'package:walk/src/walk/services/walk_state_manager.dart';
 import 'package:walk/src/core/services/log_service.dart';
-// import 'package:walk/src/features/walk/application/services/photo_upload_service.dart';
+import 'package:walk/src/walk/services/photo_upload_service.dart';
 
 /// 산책 세션 관리를 위한 Firebase 연동 서비스
 class WalkSessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // final PhotoUploadService _photoUploadService = PhotoUploadService(); // 미사용
+  final PhotoUploadService _photoUploadService = PhotoUploadService();
 
   /// 산책 세션을 Firebase에 저장 (에러 핸들링 강화)
   Future<String?> saveWalkSession({
@@ -46,21 +46,31 @@ class WalkSessionService {
           .collection('walk_sessions')
           .doc();
 
-      // // 사진이 있으면 Firebase Storage에 업로드
-      // String? uploadedPhotoUrl;
-      // if (walkStateManager.photoPath != null) {
-      //   LogService.info('Walk', 'WalkSessionService: 사진 업로드 시작');
-      //   uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
-      //     filePath: walkStateManager.photoPath!,
-      //     sessionId: docRef.id,
-      //   );
+      // 사진이 있으면 Firebase Storage에 업로드
+      String? uploadedPhotoUrl;
+      if (walkStateManager.photoPath != null) {
+        LogService.info('Walk', 'WalkSessionService: 목적지 사진 업로드 시작');
+        LogService.info('Walk', 'WalkSessionService: 로컬 사진 경로: ${walkStateManager.photoPath}');
+        
+        try {
+          uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
+            filePath: walkStateManager.photoPath!,
+            sessionId: docRef.id,
+          );
 
-      //   if (uploadedPhotoUrl != null) {
-      //     LogService.info('Walk', 'WalkSessionService: 사진 업로드 완료 - $uploadedPhotoUrl');
-      //   } else {
-      //     LogService.info('Walk', 'WalkSessionService: 사진 업로드 실패');
-      //   }
-      // }
+          if (uploadedPhotoUrl != null) {
+            LogService.info('Walk', 'WalkSessionService: 목적지 사진 업로드 완료 - $uploadedPhotoUrl');
+          } else {
+            LogService.warning('Walk', 'WalkSessionService: 목적지 사진 업로드 실패 - null 반환');
+          }
+        } catch (e) {
+          LogService.error('Walk', 'WalkSessionService: 목적지 사진 업로드 중 오류 발생', e);
+          // 업로드 실패해도 산책 기록 저장은 계속 진행
+          uploadedPhotoUrl = null;
+        }
+      } else {
+        LogService.info('Walk', 'WalkSessionService: 업로드할 목적지 사진이 없음');
+      }
 
       // WalkSession 객체 생성
       final walkSession = WalkSession.fromWalkStateManager(
@@ -76,7 +86,7 @@ class WalkSessionService {
         waypointQuestion: walkStateManager.waypointQuestion,
         waypointAnswer: walkStateManager.userAnswer,
         poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
-        takenPhotoPath: walkStateManager.photoPath, // 업로드된 Storage URL 사용
+        takenPhotoPath: uploadedPhotoUrl ?? walkStateManager.photoPath, // 업로드 성공시 Storage URL, 실패시 로컬 경로
         walkReflection: walkReflection,
         locationName: locationName,
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
