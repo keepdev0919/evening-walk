@@ -505,7 +505,7 @@ class _WalkHistoryScreenState extends State<WalkHistoryScreen> {
       walkStateManager.setCustomStartName(session.customStartName);
     }
     walkStateManager.setWaypointQuestion(session.waypointQuestion);
-    walkStateManager.saveAnswerAndPhoto(
+    walkStateManager.saveUserAnswerAndPhoto(
       answer: session.waypointAnswer,
       photoPath: session.takenPhotoPath,
     );

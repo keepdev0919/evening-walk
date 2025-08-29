@@ -550,7 +550,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
             if (isEditingAnswer) {
               FocusScope.of(context).unfocus();
               final updated = answerEditController.text.trim();
-              widget.walkStateManager.saveAnswerAndPhoto(
+              widget.walkStateManager.saveUserAnswerAndPhoto(
                 answer: updated.isEmpty ? null : updated,
               );
               setState(() {
@@ -582,7 +582,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               content: '경유지 답변을 삭제하시겠습니까?',
               onConfirm: () {
                 answerEditController.clear();
-                widget.walkStateManager.saveAnswerAndPhoto(clearAnswer: true);
+                widget.walkStateManager.saveUserAnswerAndPhoto(clearAnswer: true);
                 setState(() {
                   isEditingAnswer = true;
                 });
@@ -773,7 +773,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
               // 저장 완료
               if (tempPhotoPath != null) {
                 widget.walkStateManager
-                    .saveAnswerAndPhoto(photoPath: tempPhotoPath);
+                    .saveUserAnswerAndPhoto(photoPath: tempPhotoPath);
 
                 // Firebase도 함께 업데이트하여 데이터 일관성 유지
                 if (widget.sessionId != null) {
@@ -859,7 +859,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                     content: '목적지 사진을 제거하시겠습니까?',
                     onConfirm: () {
                       widget.walkStateManager
-                          .saveAnswerAndPhoto(clearPhoto: true);
+                          .saveUserAnswerAndPhoto(clearPhoto: true);
                       if (widget.sessionId != null) {
                         // Firestore에 즉시 반영
                         WalkSessionService().updateWalkSession(

@@ -11,18 +11,31 @@ import '../../core/services/log_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../common/utils/string_validation_utils.dart';
 
+/// 리팩토링된 산책 상태 관리자
+/// SRP를 준수하여 책임을 분리하고, 의존성 주입을 통해 테스트 가능성을 높임
 class WalkStateManager {
-  // 핸들러 및 프로바이더 인스턴스
-  final WaypointEventHandler _waypointHandler = WaypointEventHandler();
-  final DestinationEventHandler _destinationHandler = DestinationEventHandler();
-  final FirestoreQuestionService _questionService = FirestoreQuestionService();
+  // 의존성 주입을 통한 서비스 분리
+  final WaypointEventHandler _waypointHandler;
+  final DestinationEventHandler _destinationHandler;
+  final FirestoreQuestionService _questionService;
+  final LocationAddressService _locationAddressService;
+  final PhotoCaptureService _photoCaptureService;
+  final SpeechBubbleStateService _speechBubbleService;
 
-  // 새로운 서비스 인스턴스들
-  final LocationAddressService _locationAddressService =
-      LocationAddressService();
-  final PhotoCaptureService _photoCaptureService = PhotoCaptureService();
-  final SpeechBubbleStateService _speechBubbleService =
-      SpeechBubbleStateService();
+  // 생성자에서 의존성 주입 (테스트 가능성 향상)
+  WalkStateManager({
+    WaypointEventHandler? waypointHandler,
+    DestinationEventHandler? destinationHandler,
+    FirestoreQuestionService? questionService,
+    LocationAddressService? locationAddressService,
+    PhotoCaptureService? photoCaptureService,
+    SpeechBubbleStateService? speechBubbleService,
+  })  : _waypointHandler = waypointHandler ?? WaypointEventHandler(),
+        _destinationHandler = destinationHandler ?? DestinationEventHandler(),
+        _questionService = questionService ?? FirestoreQuestionService(),
+        _locationAddressService = locationAddressService ?? LocationAddressService(),
+        _photoCaptureService = photoCaptureService ?? PhotoCaptureService(),
+        _speechBubbleService = speechBubbleService ?? SpeechBubbleStateService();
 
   // 산책 상태 변수
   LatLng? _startLocation; // 출발지 위치 추가
@@ -107,7 +120,7 @@ class WalkStateManager {
     );
   }
 
-  /// 답변 및 사진 저장 메소드
+  /// 답변 및 사진 저장 (개선된 인터페이스)
   ///
   /// 역할: 주어진 파라미터만 선택적으로 반영합니다. null이 전달되었더라도
   ///       기본적으로는 기존 값을 보존하며, 명시적으로 지울 때는 clear 플래그를 사용합니다.
@@ -116,7 +129,7 @@ class WalkStateManager {
   /// - photoPath: 업데이트할 사진 경로 (null이면 기본적으로 변경 없음)
   /// - clearAnswer: true인 경우 답변을 명시적으로 null로 초기화
   /// - clearPhoto: true인 경우 사진 경로를 명시적으로 null로 초기화
-  void saveAnswerAndPhoto({
+  void saveUserAnswerAndPhoto({
     String? answer,
     String? photoPath,
     bool clearAnswer = false,
@@ -134,8 +147,8 @@ class WalkStateManager {
       _photoPath = photoPath;
     }
 
-    LogService.walkState(' 답변 저장 -> "$_userAnswer"');
-    LogService.walkState(' 사진 경로 저장 -> "$_photoPath"');
+    LogService.walkState('답변 저장: "$_userAnswer"');
+    LogService.walkState('사진 경로 저장: "$_photoPath"');
   }
 
   // 목적지 추천 포즈 이미지 URL 저장 메소드
@@ -207,56 +220,87 @@ class WalkStateManager {
     );
   }
 
-  // 산책 시작 시 초기화
+  /// 산책 시작 - 명확한 파라미터와 검증 로직 포함
   Future<void> startWalk({
-    required LatLng start,
-    required LatLng destination,
-    required String mate,
+    required LatLng startLocation,
+    required LatLng destinationLocation,
+    required String selectedMate,
     String? friendGroupType,
   }) async {
-    _startLocation = start; // 출발지 위치 저장
-    _destinationLocation = destination;
-    _selectedMate = mate;
+    // 입력 데이터 검증
+    if (!_isValidLocation(startLocation)) {
+      throw ArgumentError('유효하지 않은 출발지 좌표입니다.');
+    }
+    if (!_isValidLocation(destinationLocation)) {
+      throw ArgumentError('유효하지 않은 목적지 좌표입니다.');
+    }
+    if (selectedMate.isEmpty) {
+      throw ArgumentError('동반자를 선택해주세요.');
+    }
+
+    // 상태 초기화 및 설정
+    await _initializeWalkState(startLocation, destinationLocation, selectedMate, friendGroupType);
+    
+    LogService.walkState('산책 시작 완료 - 출발지: $_startLocation, 목적지: $_destinationLocation');
+  }
+
+  /// 산책 상태 초기화 (private 메서드로 분리)
+  Future<void> _initializeWalkState(
+    LatLng startLocation,
+    LatLng destinationLocation, 
+    String selectedMate,
+    String? friendGroupType,
+  ) async {
+    _startLocation = startLocation;
+    _destinationLocation = destinationLocation;
+    _selectedMate = selectedMate;
     _friendGroupType = friendGroupType;
-    _friendQuestionType = null; // 초기화
-    _coupleQuestionType = null; // 초기화
-    _waypointLocation = _waypointHandler.generateWaypoint(start, destination);
+    _friendQuestionType = null;
+    _coupleQuestionType = null;
+    
+    _waypointLocation = _waypointHandler.generateWaypoint(startLocation, destinationLocation);
+    
+    // 이벤트 상태 초기화
     _waypointEventOccurred = false;
     _destinationEventOccurred = false;
-
-    _waypointQuestion = null;
-    _userAnswer = null;
-    _photoPath = null;
-
-    // 말풍선 초기화
-    _speechBubbleService.reset();
-    _userReflection = null;
-    _poseImageUrl = null;
-    _savedSessionId = null;
-    _destinationBuildingName = null;
-    _customStartName = null;
-
-    // 실제 산책 시작 시간 기록
+    
+    // 데이터 초기화
+    _clearEventData();
+    
+    // 시간 및 거리 추적 초기화
     _actualStartTime = DateTime.now();
-    _actualEndTime = null; // 초기화
-    // 누적 거리 초기화
+    _actualEndTime = null;
     _accumulatedDistanceMeters = 0.0;
     _lastUserLocation = null;
-
-    LogService.walkState(' 실제 산책 시작 시간 기록 -> $_actualStartTime');
-    LogService.walkState(
-        '산책 시작. 출발지: $_startLocation, 경유지: $_waypointLocation');
+    
+    // 말풍선 상태 초기화
+    _speechBubbleService.reset();
+    
+    LogService.walkState('실제 산책 시작 시간 기록: $_actualStartTime');
 
     // Firebase Analytics 산책 시작 이벤트 기록
     try {
       final startAddress = await getStartLocationAddress();
       await AnalyticsService().logWalkStarted(
-        mateType: mate,
+        mateType: selectedMate,
         startLocation: startAddress,
       );
     } catch (e) {
       LogService.error('WalkState', 'Analytics 산책 시작 이벤트 기록 실패', e);
     }
+  }
+
+  /// 이벤트 관련 데이터 초기화
+  void _clearEventData() {
+    _waypointQuestion = null;
+    _userAnswer = null;
+    _photoPath = null;
+    _userReflection = null;
+    _poseImageUrl = null;
+    _routeSnapshotPng = null;
+    _savedSessionId = null;
+    _destinationBuildingName = null;
+    _customStartName = null;
   }
 
   // 실시간 위치 업데이트 처리 (에러 핸들링 강화)

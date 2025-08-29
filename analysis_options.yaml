@@ -21,8 +21,37 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # 코드 품질 개선을 위한 추가 규칙들
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    avoid_unnecessary_containers: true
+    sized_box_for_whitespace: true
+    use_key_in_widget_constructors: true
+    
+    # 성능 최적화를 위한 규칙들
+    avoid_function_literals_in_foreach_calls: true
+    prefer_collection_literals: true
+    prefer_spread_collections: true
+    
+    # 가독성 개선을 위한 규칙들
+    always_declare_return_types: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    sort_constructors_first: true
+    sort_unnamed_constructors_first: true
+    
+    # 에러 방지를 위한 규칙들
+    avoid_empty_else: true
+    cancel_subscriptions: true
+    close_sinks: true
+    
+    # 보안을 위한 규칙들 
+    avoid_web_libraries_in_flutter: true
+    
+    # 주석 및 문서화 규칙들
+    package_api_docs: true
+    public_member_api_docs: false  # 너무 엄격하므로 비활성화
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

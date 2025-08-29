@@ -240,7 +240,7 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     }
     // 사용자가 경유지 질문에 답변을 제출한 경우, 매니저에 즉시 저장하여 일기에서 보이도록 함
     if (answer != null && answer.trim().isNotEmpty) {
-      _walkStateManager.saveAnswerAndPhoto(answer: answer.trim());
+      _walkStateManager.saveUserAnswerAndPhoto(answer: answer.trim());
     }
 
     // 경유지 이벤트가 시작되면 (나중에 버튼이든 이벤트 확인이든) 말풍선 상태 변경
@@ -448,9 +448,9 @@ class _WalkInProgressMapScreenState extends State<WalkInProgressMapScreen>
     // 프로필/경유지/목적지 마커는 사용하지 않고, 오버레이 Lottie로 대체합니다.
 
     await _walkStateManager.startWalk(
-      start: widget.startLocation,
-      destination: widget.destinationLocation,
-      mate: widget.selectedMate,
+      startLocation: widget.startLocation,
+      destinationLocation: widget.destinationLocation,
+      selectedMate: widget.selectedMate,
       friendGroupType: widget.selectedMate.startsWith('친구(')
           ? (widget.selectedMate.contains('2명') ? 'two' : 'many')
           : null,

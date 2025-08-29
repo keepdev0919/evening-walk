@@ -9,7 +9,9 @@
       "Bash(rm:*)",
       "Bash(touch:*)",
       "Bash(del \"lib\\src\\features\\profile\\presentation\\widgets\\email.dart\")",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(del \"C:\\Users\\FEELCOM\\KeepDev\\EveningWalk\\lib\\src\\walk\\services\\refactored_walk_state_manager.dart\")",
+      "Bash(flutter test:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

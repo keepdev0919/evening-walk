@@ -1,30 +1,63 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// 저녁 산책 앱의 기본 위젯 테스트
+// 
+// 앱의 주요 화면과 기능들이 올바르게 작동하는지 확인합니다.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:walk/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  setUpAll(() async {
+    // 테스트 환경에서 필요한 초기화
+    await dotenv.load(fileName: 'assets/config/.env');
+  });
+
+  testWidgets('MyApp widget smoke test', (WidgetTester tester) async {
+    // MyApp 위젯을 빌드하고 첫 프레임을 트리거
     await tester.pumpWidget(const MyApp());
+    
+    // 앱이 로딩 중임을 나타내는 CircularProgressIndicator 확인
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    
+    // 앱 제목이 올바른지 확인
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(materialApp.title, '산책 앱');
+    
+    // 디버그 배너가 비활성화되어 있는지 확인
+    expect(materialApp.debugShowCheckedModeBanner, false);
+    
+    // Material3가 비활성화되어 있는지 확인 (useMaterial3: false)
+    expect(materialApp.theme?.useMaterial3, false);
+    
+    // 폰트 패밀리가 올바른지 확인
+    expect(materialApp.theme?.textTheme.bodyMedium?.fontFamily, 'Cafe24Oneprettynight');
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('App routes are configured correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+    
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    
+    // 필요한 라우트들이 정의되어 있는지 확인
+    expect(materialApp.routes, isNotNull);
+    expect(materialApp.routes!.containsKey('/login'), true);
+    expect(materialApp.routes!.containsKey('/homescreen'), true);
+    expect(materialApp.routes!.containsKey('/walk_history'), true);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('SnackBar theme is configured correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+    
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    final snackBarTheme = materialApp.theme?.snackBarTheme;
+    
+    expect(snackBarTheme, isNotNull);
+    expect(snackBarTheme?.behavior, SnackBarBehavior.floating);
+    expect(snackBarTheme?.elevation, 0);
+    expect(snackBarTheme?.contentTextStyle?.fontFamily, 'Cafe24Oneprettynight');
+    expect(snackBarTheme?.contentTextStyle?.fontSize, 16);
+    expect(snackBarTheme?.contentTextStyle?.color, Colors.white);
   });
 }

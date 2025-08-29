@@ -129,7 +129,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
     try {
       final photoPath = await widget.walkStateManager.takePhoto();
       if (photoPath != null) {
-        widget.walkStateManager.saveAnswerAndPhoto(photoPath: photoPath);
+        widget.walkStateManager.saveUserAnswerAndPhoto(photoPath: photoPath);
         setState(() {
           _userPhotoPath = photoPath;
         });
@@ -154,7 +154,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
       title: '사진 삭제',
       content: '촬영한 사진을 삭제하시겠습니까?',
       onConfirm: () {
-        widget.walkStateManager.saveAnswerAndPhoto(clearPhoto: true);
+        widget.walkStateManager.saveUserAnswerAndPhoto(clearPhoto: true);
         setState(() {
           _userPhotoPath = null;
         });

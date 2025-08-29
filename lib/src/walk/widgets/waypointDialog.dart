@@ -8,6 +8,7 @@ import '../services/walk_state_manager.dart';
 import '../services/firestore_question_service.dart';
 import '../services/interstitial_ad_service.dart';
 import '../../core/services/analytics_service.dart';
+import '../../core/services/log_service.dart';
 
 class WaypointDialogs {
   static Future<void> showWaypointArrivalDialog({
@@ -31,9 +32,9 @@ class WaypointDialogs {
             String questionType = 'talk';
             if (selection == _QuestionType.balanceGame) {
               questionType = 'balance';
-              print('🔥 DEBUG: 밸런스게임 선택됨, questionType = $questionType');
+              LogService.debug('WaypointDialog', '밸런스게임 선택됨, questionType = $questionType');
             } else {
-              print('🔥 DEBUG: 커플질문 선택됨, questionType = $questionType');
+              LogService.debug('WaypointDialog', '커플질문 선택됨, questionType = $questionType');
             }
 
             // WalkStateManager에 연인 질문 타입 설정 및 새로운 질문 가져오기
@@ -41,19 +42,19 @@ class WaypointDialogs {
 
             if (walkStateManager != null) {
               walkStateManager.setCoupleQuestionType(questionType);
-              print(
-                  '🔥 DEBUG: WalkStateManager에 coupleQuestionType 설정: $questionType');
+              LogService.debug('WaypointDialog', 
+                  'WalkStateManager에 coupleQuestionType 설정: $questionType');
             }
 
             // FirestoreQuestionService에 직접 질문 요청
             final questionService = FirestoreQuestionService();
-            print(
-                '🔥 DEBUG: 직접 호출 전 - selectedMate=$selectedMate, questionType=$questionType');
+            LogService.debug('WaypointDialog',
+                '직접 호출 전 - selectedMate=$selectedMate, questionType=$questionType');
             final newQuestion = await questionService.getQuestionForMate(
               selectedMate,
               coupleQuestionType: questionType,
             );
-            print('🔥 DEBUG: Firestore에서 가져온 새 질문: $newQuestion');
+            LogService.debug('WaypointDialog', 'Firestore에서 가져온 새 질문: $newQuestion');
             finalQuestion = newQuestion ?? "기본 연인 질문";
             print('🔥 DEBUG: 최종 질문: $finalQuestion');
 

@@ -127,7 +127,7 @@ class MyApp extends StatelessWidget {
                 // if 조건에서 무조건 존재하기때문에 snapshot.data는 nullable이였는데 절대 null이 아님을 의미하는 !를 붙여 dart에게 확신줌.
               } else {
                 return const Scaffold(
-                    body: Center(child: Text("문제가 발생했습니다."))); // 에러 발생 시
+                    body: Center(child: Text('문제가 발생했습니다.'))); // 에러 발생 시
               }
             },
           ),
