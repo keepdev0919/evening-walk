@@ -46,28 +46,13 @@ class WalkSessionService {
           .collection('walk_sessions')
           .doc();
 
-      // 사진이 있으면 Firebase Storage에 업로드
-      String? uploadedPhotoUrl;
+      // 사진이 있으면 백그라운드에서 업로드 시작 (비동기)
       if (walkStateManager.photoPath != null) {
-        LogService.info('Walk', 'WalkSessionService: 목적지 사진 업로드 시작');
+        LogService.info('Walk', 'WalkSessionService: 목적지 사진 백그라운드 업로드 시작');
         LogService.info('Walk', 'WalkSessionService: 로컬 사진 경로: ${walkStateManager.photoPath}');
         
-        try {
-          uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
-            filePath: walkStateManager.photoPath!,
-            sessionId: docRef.id,
-          );
-
-          if (uploadedPhotoUrl != null) {
-            LogService.info('Walk', 'WalkSessionService: 목적지 사진 업로드 완료 - $uploadedPhotoUrl');
-          } else {
-            LogService.warning('Walk', 'WalkSessionService: 목적지 사진 업로드 실패 - null 반환');
-          }
-        } catch (e) {
-          LogService.error('Walk', 'WalkSessionService: 목적지 사진 업로드 중 오류 발생', e);
-          // 업로드 실패해도 산책 기록 저장은 계속 진행
-          uploadedPhotoUrl = null;
-        }
+        // 백그라운드에서 사진 업로드 (await 없이)
+        _uploadPhotoInBackground(walkStateManager.photoPath!, docRef.id);
       } else {
         LogService.info('Walk', 'WalkSessionService: 업로드할 목적지 사진이 없음');
       }
@@ -86,7 +71,7 @@ class WalkSessionService {
         waypointQuestion: walkStateManager.waypointQuestion,
         waypointAnswer: walkStateManager.userAnswer,
         poseImageUrl: walkStateManager.poseImageUrl, // 추천 포즈 URL 저장
-        takenPhotoPath: uploadedPhotoUrl ?? walkStateManager.photoPath, // 업로드 성공시 Storage URL, 실패시 로컬 경로
+        takenPhotoPath: walkStateManager.photoPath, // 로컬 경로로 저장, 백그라운드에서 Storage URL로 업데이트
         walkReflection: walkReflection,
         locationName: locationName,
         endTime: walkStateManager.actualEndTime, // 실제 종료 시간 설정
@@ -366,6 +351,35 @@ class WalkSessionService {
     } catch (e) {
       LogService.error('Walk', 'WalkSessionService: 산책 세션 즉시 저장 중 오류 발생', e);
       return null;
+    }
+  }
+
+  /// 백그라운드에서 사진을 업로드하고 Firestore 업데이트
+  void _uploadPhotoInBackground(String photoPath, String sessionId) async {
+    try {
+      LogService.info('Walk', 'WalkSessionService: 백그라운드 사진 업로드 시작 - $sessionId');
+      
+      // Firebase Storage에 업로드
+      final uploadedPhotoUrl = await _photoUploadService.uploadDestinationPhoto(
+        filePath: photoPath,
+        sessionId: sessionId,
+      );
+
+      if (uploadedPhotoUrl != null) {
+        LogService.info('Walk', 'WalkSessionService: 백그라운드 사진 업로드 완료 - $uploadedPhotoUrl');
+        
+        // Firestore에서 사진 URL 업데이트
+        await updateWalkSession(sessionId, {
+          'takenPhotoPath': uploadedPhotoUrl,
+          'photoUploadedAt': DateTime.now().toIso8601String(),
+        });
+        
+        LogService.info('Walk', 'WalkSessionService: Firestore 사진 URL 업데이트 완료 - $sessionId');
+      } else {
+        LogService.warning('Walk', 'WalkSessionService: 백그라운드 사진 업로드 실패 - $sessionId');
+      }
+    } catch (e) {
+      LogService.error('Walk', 'WalkSessionService: 백그라운드 사진 업로드 중 오류 발생 - $sessionId', e);
     }
   }
 }

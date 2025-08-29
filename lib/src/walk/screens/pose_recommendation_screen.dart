@@ -175,7 +175,7 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
 
       if (sessionId == null) {
         LogService.info('PoseRecommendation', '💾 새 세션 저장 시작');
-        sessionId = await walkSessionService.saveWalkSessionWithoutPhoto(
+        sessionId = await walkSessionService.saveWalkSession(
           walkStateManager: widget.walkStateManager,
           walkReflection: null,
           locationName: widget.walkStateManager.destinationBuildingName,
@@ -1646,8 +1646,8 @@ class _PoseRecommendationScreenState extends State<PoseRecommendationScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 24),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

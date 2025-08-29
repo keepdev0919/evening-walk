@@ -1172,8 +1172,7 @@ class _WalkDiaryScreenState extends State<WalkDiaryScreen> {
                   final uploadProvider =
                       Provider.of<UploadProvider>(context, listen: false);
 
-                  final sessionId =
-                      await walkSessionService.saveWalkSessionWithoutPhoto(
+                  final sessionId = await walkSessionService.saveWalkSession(
                     walkStateManager: widget.walkStateManager,
                     walkReflection: reflectionController.text.trim().isEmpty
                         ? null

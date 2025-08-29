@@ -9,7 +9,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/date_symbol_data_local.dart';
-// import 'package:firebase_app_check/firebase_app_check.dart'; // 이 줄 추가
 import 'src/auth/screens/login_page_screen.dart';
 import 'src/home/home_screen.dart';
 import 'src/walk/screens/walk_history_screen.dart';
@@ -27,11 +26,6 @@ void main() async {
   // 한국어 로케일 데이터 초기화
   await initializeDateFormatting('ko_KR', null);
 
-  // // Firebase App Check 초기화 (디버그 공급자 사용)
-  // await FirebaseAppCheck.instance.activate(
-  //   androidProvider: AndroidProvider.debug, // Android 에뮬레이터/디바이스용
-  //   appleProvider: AppleProvider.debug, // iOS 시뮬레이터/디바이스용
-  // );
 
   // await FirebaseAuth.instance.signOut();
 
