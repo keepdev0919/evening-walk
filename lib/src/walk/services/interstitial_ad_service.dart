@@ -56,13 +56,13 @@ class InterstitialAdService {
     _interstitialAd = null;
   }
 
-  /// AdMob ID 반환 (실제 광고 단위 ID 사용)
+  /// AdMob ID 반환
   String _getAdUnitId() {
-    // 실제 광고 ID - AdMob 계정에서 생성된 전면광고 단위 ID
+    // 테스트 광고 id로 설정.
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3226220338912114/7270433935'; // Android 전면광고
+      return 'ca-app-pub-3940256099942544/1033173712'; // Android 전면광고
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3226220338912114/5143782281'; // iOS 전면광고
+      return 'ca-app-pub-3940256099942544/4411468910'; // iOS 전면광고
     }
     return '';
   }
